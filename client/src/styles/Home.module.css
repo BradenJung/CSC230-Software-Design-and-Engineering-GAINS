@@ -18,6 +18,11 @@
   gap: 24px;
 }
 
+.navFlex {
+  display: flex;
+  justify-content: space-between;
+}
+
 .navLink {
   color: #ffffff;
   text-decoration: none;
@@ -28,6 +33,22 @@
 }
 
 .navLink:hover {
+  color: #4a9eff;
+}
+
+.navButton {
+  background: #4a9eff;
+  color: #ffffff;
+  border-radius: 4px;
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 500;
+  padding: 8px 8px;
+  transition: color 0.2s;
+}
+
+.navButton:hover {
+  background: #ffffff;
   color: #4a9eff;
 }
 
@@ -362,6 +383,15 @@
   flex: 1;
   font-size: 12px;
   padding: 6px 8px;
+}
+
+.link {
+  color: #ffffff;
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 500;
+  padding: 8px 0;
+  transition: color 0.2s;
 }
 
 /* Responsive Design */
