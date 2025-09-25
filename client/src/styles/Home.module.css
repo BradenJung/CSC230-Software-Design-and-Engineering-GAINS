@@ -598,3 +598,546 @@
     border-bottom: 1px solid #333;
   }
 }
+
+/* Home Page Mockup */
+/* Outer wrapper for the home screen; mirrors dashboard charcoal backdrop */
+.home {
+  min-height: 100vh;
+  background: #1a1a1a;
+  color: #f1f4f9;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Vertical stack that spaces the home sections with generous padding */
+.homeMain {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 64px;
+  padding: 48px clamp(24px, 6vw, 80px) 80px;
+}
+
+/* Top hero panel with muted card styling and responsive two-column layout */
+.heroSection {
+  background: #202227;
+  border: 1px solid #2f333d;
+  border-radius: 16px;
+  display: grid;
+  gap: clamp(28px, 4vw, 48px);
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  padding: clamp(28px, 4vw, 48px);
+}
+
+/* Column housing the primary headline and description copy */
+.heroCopy {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* Eyebrow tag for the hero; small uppercase text in grey-blue */
+.heroEyebrow {
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  font-size: 12px;
+  font-weight: 600;
+  color: #8f9ab0;
+  margin: 0;
+}
+
+/* Main hero heading; medium weight with responsive scale */
+.heroTitle {
+  font-size: clamp(28px, 4vw, 38px);
+  font-weight: 600;
+  line-height: 1.2;
+  margin: 0;
+  color: #ffffff;
+}
+
+/* Supporting blurb capped in width with soft blue-grey tone */
+.heroSubtitle {
+  margin: 0;
+  color: #b9c2d4;
+  font-size: 16px;
+  line-height: 1.6;
+  max-width: 520px;
+}
+
+/* Row of CTA buttons that wraps on small viewports */
+.heroActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  margin-top: 8px;
+}
+
+/* CTA button base styles shared by primary and secondary variations */
+.primaryButton,
+.secondaryButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px 22px;
+  border-radius: 999px;
+  font-weight: 600;
+  font-size: 14px;
+  text-decoration: none;
+  transition: background 0.2s ease, color 0.2s ease, border 0.2s ease;
+  cursor: pointer;
+}
+
+/* Filled pill button used for primary actions */
+.primaryButton {
+  background: #4a9eff;
+  color: #0b0d12;
+  border: 1px solid #4a9eff;
+}
+
+/* Slight hover lift via brighter blue border and fill */
+.primaryButton:hover {
+  background: #5da8ff;
+  border-color: #5da8ff;
+}
+
+/* Outline pill button for supporting actions */
+.secondaryButton {
+  background: transparent;
+  color: #d4ddf0;
+  border: 1px solid #3a4150;
+}
+
+/* Hover state that borrows the GAINS blue edge and bright text */
+.secondaryButton:hover {
+  border-color: #4a9eff;
+  color: #ffffff;
+}
+
+/* Right-side hero visual placeholder styled as a subdued card */
+.heroIllustration {
+  background: #181c24;
+  border: 1px solid #2a303a;
+  border-radius: 14px;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* Three faux window dots echoing desktop UI chrome */
+.illustrationHeader {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Base styling for the window dots; color overrides below */
+.statusDot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #4a9eff;
+  opacity: 0.6;
+}
+
+/* Success dot variant */
+.statusDot:nth-child(2) {
+  background: #52d273;
+}
+
+/* Warning dot variant */
+.statusDot:nth-child(3) {
+  background: #ffb347;
+}
+
+/* Wrapper for the fake chart and metric summary blocks */
+.illustrationBody {
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+/* Faux chart container with dark slate background and border */
+.chartPlaceholder {
+  flex: 1;
+  min-width: 200px;
+  background: #1f2430;
+  border-radius: 12px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  border: 1px solid #2d3442;
+}
+
+/* Vertical bars sized inline to hint at data visualization */
+.chartBars {
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+  height: 130px;
+}
+
+/* Individual mock bars using translucent GAINS blue */
+.chartBars span {
+  flex: 1;
+  background: #4a9eff;
+  border-radius: 6px 6px 2px 2px;
+  display: block;
+  opacity: 0.75;
+}
+
+/* Legend lines that mimic chart keys */
+.chartLegend {
+  display: flex;
+  gap: 10px;
+}
+
+/* Grey pill legend indicators */
+.chartLegend span {
+  flex: 1;
+  height: 4px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.3);
+}
+
+/* Column of key metrics aligned with the mock chart */
+.chartMetrics {
+  min-width: 160px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  align-content: start;
+}
+
+/* Uppercase label text for the mock metrics */
+.chartMetricLabel {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #8d96a7;
+  margin: 0;
+}
+
+/* Numerical values shown alongside the labels */
+.chartMetricValue {
+  font-size: 16px;
+  font-weight: 600;
+  color: #ffffff;
+  margin: 0;
+}
+
+/* Section presenting the three quick-hit metrics */
+.metricsSection {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 28px;
+  text-align: center;
+}
+
+/* Shared title styling across home sections */
+.sectionTitle {
+  font-size: clamp(24px, 3vw, 30px);
+  font-weight: 600;
+  margin: 0;
+  color: #f4f7ff;
+}
+
+/* Subtitle copy in muted blue-grey for context */
+.sectionSubtitle {
+  margin: 0;
+  color: #9aa3b5;
+  font-size: 15px;
+  line-height: 1.6;
+  max-width: 520px;
+}
+
+/* Responsive grid for metric cards */
+.metricsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 18px;
+  width: 100%;
+}
+
+/* Individual metric card styled like the dashboard tool list */
+.metricCard {
+  background: #1f2128;
+  border: 1px solid #2c313b;
+  border-radius: 14px;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+/* Numbers shown inside metric cards */
+.metricValue {
+  font-size: 24px;
+  font-weight: 600;
+  color: #ffffff;
+  margin: 0;
+}
+
+/* Uppercase labels for metric cards */
+.metricLabel {
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #868fa3;
+  margin: 0;
+}
+
+/* Feature listing wrapper with spacing similar to data panels */
+.featuresSection {
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+}
+
+/* Header row combining title and subtitle text */
+.sectionHeaderRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: flex-end;
+  justify-content: space-between;
+}
+
+/* Grid of individual feature capsules */
+.featureGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 18px;
+}
+
+/* Feature capsule mirroring left-panel cards */
+.featureCard {
+  background: #20242d;
+  border: 1px solid #2c323b;
+  border-radius: 14px;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* Small badge showing feature initials */
+.featureIcon {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: rgba(74, 158, 255, 0.14);
+  color: #4a9eff;
+  font-weight: 600;
+  font-size: 16px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Feature title typography */
+.featureTitle {
+  font-size: 18px;
+  font-weight: 600;
+  margin: 0;
+  color: #f5f8ff;
+}
+
+/* Feature description copy */
+.featureDescription {
+  margin: 0;
+  color: #a8b3c6;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+/* Workflow preview container styled as a double-column card */
+.previewSection {
+  display: grid;
+  grid-template-columns: minmax(240px, 1fr) minmax(320px, 420px);
+  gap: 28px;
+  background: #202227;
+  border: 1px solid #2f333d;
+  border-radius: 16px;
+  padding: clamp(24px, 4vw, 40px);
+  align-items: center;
+}
+
+/* Text column within the workflow preview */
+.previewContent {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* Unordered list showing three workflow points */
+.previewList {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* Each list item with a blue dot marker */
+.previewList li {
+  position: relative;
+  padding-left: 18px;
+  color: #bec6d5;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+/* Blue pill marker for the workflow list */
+.previewList li::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 8px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #4a9eff;
+}
+
+/* Inline link used for the preview prompt */
+.inlineLink {
+  color: #7fa8e8;
+  text-decoration: none;
+  font-weight: 500;
+}
+
+/* Underline appears on hover for the inline link */
+.inlineLink:hover {
+  text-decoration: underline;
+}
+
+/* Card showing the three step walkthrough */
+.previewCard {
+  background: #1b1f27;
+  border: 1px solid #2a3038;
+  border-radius: 14px;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+/* Header for the preview card with workflow tag */
+.previewHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+}
+
+/* Pill tag highlighting the workflow context */
+.previewTag {
+  background: rgba(74, 158, 255, 0.15);
+  color: #99c3ff;
+  border-radius: 999px;
+  padding: 6px 12px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+/* Title text inside the preview card */
+.previewTitle {
+  font-size: 16px;
+  font-weight: 600;
+  color: #f5f8ff;
+}
+
+/* Column of step rows */
+.previewSteps {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+/* Individual step row with bordered background */
+.previewStep {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  background: #1f232b;
+  border-radius: 12px;
+  padding: 14px 16px;
+  border: 1px solid #2b313a;
+}
+
+/* Numbered badge for each workflow step */
+.stepBadge {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: #4a9eff;
+  color: #0b0d12;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+}
+
+/* Step title text */
+.stepLabel {
+  margin: 0;
+  color: #f0f3f9;
+  font-weight: 600;
+  font-size: 15px;
+}
+
+/* Step detail copy */
+.stepDescription {
+  margin: 2px 0 0;
+  color: #9ea7bb;
+  font-size: 13px;
+}
+
+/* Final call-to-action panel matching other cards */
+.ctaSection {
+  background: #202227;
+  border: 1px solid #2f333d;
+  border-radius: 16px;
+  padding: clamp(24px, 4vw, 40px);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+/* Wrapper for the two CTA buttons */
+.ctaActions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+@media (max-width: 960px) {
+  .homeMain {
+    gap: 48px;
+    padding-bottom: 64px;
+  }
+
+  .previewSection {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 640px) {
+  .heroActions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .featureGrid {
+    grid-template-columns: 1fr;
+  }
+}
