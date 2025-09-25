@@ -1,5 +1,6 @@
 import Head from "next/head";
 import { useState } from "react";
+import Header from "../components/header";
 import styles from "../styles/Home.module.css";
 
 export default function linear() {
@@ -168,7 +169,9 @@ points(df$time, df$value, col = "red", pch = 16)`,
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <link rel="icon" href="/favicon.ico" />
       </Head>
-      
+
+      <Header />
+
       <div className={styles.dashboard}>
         {/* Top Navigation */}
         <nav className={styles.navbar}>

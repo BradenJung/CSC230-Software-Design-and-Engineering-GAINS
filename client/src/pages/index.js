@@ -1,12 +1,9 @@
-import { useState } from "react";
-import Home from "./home"
-import Header from "../components/header"
-import Footer from "../components/footer"
+import Home from "./home";
 
 export default function Index() {
   return (
     <>
-      <Header></Header>
+      {/* Home already renders the shared header, avoid double nav */}
       <Home></Home>
     </>
   );
