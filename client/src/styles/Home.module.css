@@ -724,7 +724,7 @@
   gap: 20px;
 }
 
-/* Three faux window dots echoing desktop UI chrome */
+/* Three window dots echoing macOS window controls */
 .illustrationHeader {
   display: flex;
   align-items: center;
@@ -736,18 +736,18 @@
   width: 10px;
   height: 10px;
   border-radius: 50%;
-  background: #4a9eff;
+  background: #ff2155;
   opacity: 0.6;
 }
 
-/* Success dot variant */
+/* Yellow dot */
 .statusDot:nth-child(2) {
-  background: #52d273;
+  background: #ffc31c;
 }
 
-/* Warning dot variant */
+/* Green dot */
 .statusDot:nth-child(3) {
-  background: #ffb347;
+  background: #26e743;
 }
 
 /* Wrapper for the fake chart and metric summary blocks */
