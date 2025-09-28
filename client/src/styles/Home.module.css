@@ -21,6 +21,7 @@
 .navFlex {
   display: flex;
   justify-content: space-between;
+  align-items: center;
 }
 
 .navLink {
@@ -1151,4 +1152,319 @@
   .featureGrid {
     grid-template-columns: 1fr;
   }
+}
+
+/* Dashboard Mockup Styles for About Page */
+.dashboardIllustration {
+  margin: 20px 0;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid #2a3038;
+}
+
+.dashboardMockup {
+  background: #1a1a1a;
+  border-radius: 8px;
+  overflow: hidden;
+  font-size: 12px;
+}
+
+.mockupHeader {
+  background: #2a2a2a;
+  padding: 8px 12px;
+  border-bottom: 1px solid #333;
+}
+
+.mockupNav {
+  display: flex;
+  gap: 16px;
+}
+
+.mockupNav span {
+  color: #ffffff;
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.mockupContent {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  min-height: 200px;
+}
+
+.mockupLeftPanel {
+  background: #1e1e1e;
+  border-right: 1px solid #333;
+  padding: 12px;
+}
+
+.mockupRightPanel {
+  background: #1e1e1e;
+  border-left: 1px solid #333;
+  padding: 12px;
+}
+
+.mockupCenterPanel {
+  background: #1a1a1a;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+
+.mockupPanelHeader h4 {
+  font-size: 12px;
+  font-weight: 600;
+  color: #ffffff;
+  margin: 0 0 8px 0;
+}
+
+.mockupDataCard,
+.mockupToolCard {
+  background: #2a2a2a;
+  border: 1px solid #333;
+  border-radius: 6px;
+  padding: 8px;
+  margin-bottom: 6px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.mockupDataIcon,
+.mockupToolIcon {
+  font-size: 16px;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.mockupDataInfo h5,
+.mockupToolInfo h5 {
+  font-size: 11px;
+  font-weight: 600;
+  color: #ffffff;
+  margin: 0;
+}
+
+.mockupDataInfo p,
+.mockupToolInfo p {
+  font-size: 10px;
+  color: #aaa;
+  margin: 0;
+}
+
+.mockupDataTable {
+  background: #2a2a2a;
+  border: 1px solid #333;
+  border-radius: 6px;
+  overflow: hidden;
+  width: 100%;
+  max-width: 200px;
+}
+
+.mockupTableHeader {
+  background: #333;
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  padding: 6px;
+}
+
+.mockupTableHeader span {
+  font-size: 10px;
+  font-weight: 600;
+  color: #ffffff;
+  text-align: center;
+}
+
+.mockupTableRow {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  padding: 4px 6px;
+  border-bottom: 1px solid #333;
+}
+
+.mockupTableRow:last-child {
+  border-bottom: none;
+}
+
+.mockupTableRow span {
+  font-size: 10px;
+  color: #ffffff;
+  text-align: center;
+}
+
+.mockupToolDetails {
+  text-align: center;
+}
+
+.mockupToolDetails h4 {
+  font-size: 14px;
+  font-weight: 600;
+  color: #ffffff;
+  margin: 0 0 8px 0;
+}
+
+.mockupChartIcon {
+  font-size: 32px;
+  margin: 8px 0;
+}
+
+.mockupActionButtons {
+  display: flex;
+  gap: 4px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.mockupActionButtons button {
+  background: #2a2a2a;
+  border: 1px solid #333;
+  color: #ffffff;
+  padding: 4px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 9px;
+}
+
+.mockupCodeSection h4 {
+  font-size: 12px;
+  font-weight: 600;
+  color: #ffffff;
+  margin: 0 0 8px 0;
+}
+
+.mockupCodeBlock {
+  background: #0d1117;
+  border: 1px solid #333;
+  border-radius: 6px;
+  padding: 8px;
+  max-width: 300px;
+}
+
+.mockupCodeBlock pre {
+  margin: 0;
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+  font-size: 9px;
+  line-height: 1.4;
+  color: #e6edf3;
+  white-space: pre-wrap;
+}
+
+.mockupArguments h4 {
+  font-size: 12px;
+  font-weight: 600;
+  color: #ffffff;
+  margin: 0 0 8px 0;
+}
+
+.mockupArgGroup {
+  margin-bottom: 6px;
+}
+
+.mockupArgGroup label {
+  display: block;
+  font-size: 10px;
+  font-weight: 500;
+  color: #ffffff;
+  margin-bottom: 2px;
+}
+
+.mockupArgGroup input {
+  width: 100%;
+  background: #2a2a2a;
+  border: 1px solid #333;
+  color: #ffffff;
+  padding: 4px 6px;
+  border-radius: 4px;
+  font-size: 9px;
+}
+
+/* FAQ Styles */
+.faqContainer {
+  max-width: 800px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.faqItem {
+  background: linear-gradient(135deg, #292929 0%, #222222 100%);
+  border: 1px solid #1b1e22;
+  border-radius: 12px;
+  overflow: hidden;
+  transition: all 0.3s ease;
+}
+
+.faqItem:hover {
+  border-color: #2a3038;
+}
+
+.faqQuestion {
+  width: 100%;
+  background: transparent;
+  border: none;
+  padding: 20px 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+  transition: background 0.2s ease;
+  text-align: left;
+}
+
+.faqQuestion:hover {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.faqQuestionText {
+  font-size: 16px;
+  font-weight: 600;
+  color: #f5f8ff;
+  margin: 0;
+  flex: 1;
+  padding-right: 16px;
+}
+
+.faqIcon {
+  font-size: 20px;
+  font-weight: 300;
+  color: #4a9eff;
+  transition: transform 0.3s ease;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: rgba(74, 158, 255, 0.1);
+}
+
+.faqIconOpen {
+  transform: rotate(45deg);
+  background: rgba(74, 158, 255, 0.2);
+}
+
+.faqAnswer {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.3s ease, padding 0.3s ease;
+  background: rgba(0, 0, 0, 0.1);
+}
+
+.faqAnswerOpen {
+  max-height: 500px;
+  padding: 0 24px 24px 24px;
+}
+
+.faqAnswer p {
+  margin: 0;
+  color: #a8b3c6;
+  font-size: 15px;
+  line-height: 1.6;
+  padding-top: 8px;
 }

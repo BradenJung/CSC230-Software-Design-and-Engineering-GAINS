@@ -5,6 +5,8 @@ export default function Header() {
   // Surface every routable page so teammates can reach each screen quickly
   const navItems = [
     { href: "/home", label: "Home" },
+    { href: "/about", label: "About" },
+    { href: "/faq", label: "FAQ" },
   ];
 
   const authButtons = [
