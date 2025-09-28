@@ -603,7 +603,7 @@
 /* Outer wrapper for the home screen; mirrors dashboard charcoal backdrop */
 .home {
   min-height: 100vh;
-  background: #1a1a1a;
+  background: linear-gradient(135deg, #191919 0%, #020202 100%);
   color: #f1f4f9;
   display: flex;
   flex-direction: column;
@@ -620,8 +620,8 @@
 
 /* Top hero panel with muted card styling and responsive two-column layout */
 .heroSection {
-  background: #202227;
-  border: 1px solid #2f333d;
+  background: linear-gradient(135deg, #2d2d2d 0%, #000005 100%);
+  border: 1px solid #191d27;
   border-radius: 16px;
   display: grid;
   gap: clamp(28px, 4vw, 48px);
@@ -642,7 +642,7 @@
   text-transform: uppercase;
   font-size: 12px;
   font-weight: 600;
-  color: #8f9ab0;
+  color: #979ba5;
   margin: 0;
 }
 
@@ -658,10 +658,18 @@
 /* Supporting blurb capped in width with soft blue-grey tone */
 .heroSubtitle {
   margin: 0;
-  color: #b9c2d4;
+  color: #aeb0b6;
   font-size: 16px;
   line-height: 1.6;
   max-width: 520px;
+}
+
+.heroCaption {
+  font-size: clamp(14px, 4vw, 10px);
+  font-weight: 300;
+  line-height: 1.2;
+  margin: 0;
+  color: #9c9c9c;
 }
 
 /* Row of CTA buttons that wraps on small viewports */
@@ -689,15 +697,17 @@
 
 /* Filled pill button used for primary actions */
 .primaryButton {
-  background: #4a9eff;
-  color: #0b0d12;
-  border: 1px solid #4a9eff;
+  background: linear-gradient(135deg, #4a9eff 0%, #275fbe 100%);
+  border: none;
+  border-radius: 12px;
+  color: #ffffff;
 }
 
 /* Slight hover lift via brighter blue border and fill */
 .primaryButton:hover {
   background: #5da8ff;
   border-color: #5da8ff;
+  color: #ffffff;
 }
 
 /* Outline pill button for supporting actions */
@@ -705,6 +715,7 @@
   background: transparent;
   color: #d4ddf0;
   border: 1px solid #3a4150;
+  border-radius: 12px;
 }
 
 /* Hover state that borrows the GAINS blue edge and bright text */
@@ -863,8 +874,8 @@
 
 /* Individual metric card styled like the dashboard tool list */
 .metricCard {
-  background: #1f2128;
-  border: 1px solid #2c313b;
+  background: linear-gradient(135deg, #292929 0%, #222222 100%);
+  border: 1px solid #212326;
   border-radius: 14px;
   padding: 24px;
   display: flex;
@@ -914,8 +925,8 @@
 
 /* Feature capsule mirroring left-panel cards */
 .featureCard {
-  background: #20242d;
-  border: 1px solid #2c323b;
+  background: linear-gradient(135deg, #292929 0%, #222222 100%);
+  border: 1px solid #1b1e22;
   border-radius: 14px;
   padding: 24px;
   display: flex;
@@ -958,8 +969,8 @@
   display: grid;
   grid-template-columns: minmax(240px, 1fr) minmax(320px, 420px);
   gap: 28px;
-  background: #202227;
-  border: 1px solid #2f333d;
+  background: linear-gradient(135deg, #292929 0%, #222222 100%);
+  border: 1px solid #17181a;
   border-radius: 16px;
   padding: clamp(24px, 4vw, 40px);
   align-items: center;
@@ -1065,7 +1076,7 @@
   display: flex;
   gap: 12px;
   align-items: center;
-  background: #1f232b;
+  background: linear-gradient(135deg, #151515 0%, #01010f 100%);
   border-radius: 12px;
   padding: 14px 16px;
   border: 1px solid #2b313a;
@@ -1102,8 +1113,8 @@
 
 /* Final call-to-action panel matching other cards */
 .ctaSection {
-  background: #202227;
-  border: 1px solid #2f333d;
+  background: linear-gradient(135deg, #151515 0%, #01010f 100%);
+  border: 1px solid #18191d;
   border-radius: 16px;
   padding: clamp(24px, 4vw, 40px);
   display: flex;

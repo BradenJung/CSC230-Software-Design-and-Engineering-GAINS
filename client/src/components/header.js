@@ -8,7 +8,7 @@ export default function Header() {
   ];
 
   const authButtons = [
-    { href: "/login", label: "Login", style: "secondary" },
+    { href: "/login", label: "Sign In", style: "secondary" },
     { href: "/signup", label: "Sign Up", style: "primary" },
   ];
 

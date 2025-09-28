@@ -43,7 +43,7 @@ export default function Home() {
         <section className={styles.heroSection}>
           <div className={styles.heroCopy}>
             <p className={styles.heroEyebrow}>CSC 230 Software Design</p>
-            <p className={styles.hereEyebrow}>Group: Yaroslav, Jonathan, Aiden, Kevin, Murat, Braden</p>
+            
             <h1 className={styles.heroTitle}>
               Prototype, analyze, and present data stories in minutes.
             </h1>
@@ -51,12 +51,13 @@ export default function Home() {
               Explore a sandbox of statistical tools built for quick experimentation. Jump into
               regression, iterate on visuals, and keep collaborators aligned with a shared workspace.
             </p>
+            <p className={styles.heroCaption}>By Yaroslav, Jonathan, Aiden, Kevin, Murat, Braden</p>
             <div className={styles.heroActions}>
               <Link href="/signup" className={styles.primaryButton}>
                 Create an account
               </Link>
               <Link href="/linear-regression" className={styles.secondaryButton}>
-                Launch linear regression
+                Sign In
               </Link>
             </div>
           </div>
