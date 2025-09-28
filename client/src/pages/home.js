@@ -92,8 +92,11 @@ export default function Home() {
           </div>
         </section>
 
-        <section className={styles.metricsSection}>
-          <h2 className={styles.sectionTitle}>Built for fast classroom experimentation</h2>
+        <section className={styles.featuresSection}>
+          <div className={styles.sectionHeaderRow}>
+            <h2 className={styles.sectionTitle}>Tools that make analysis approachable</h2>
+            
+          </div>
           <div className={styles.metricsGrid}>
             {metrics.map(({ value, label }) => (
               <div key={label} className={styles.metricCard}>
@@ -106,7 +109,7 @@ export default function Home() {
 
         <section className={styles.featuresSection}>
           <div className={styles.sectionHeaderRow}>
-            <h2 className={styles.sectionTitle}>Tools that make analysis approachable</h2>
+          <h2 className={styles.sectionTitle}>Built for fast classroom experimentation</h2>
             <p className={styles.sectionSubtitle}>
               Mix and match visualizations, run regressions, and document findings without leaving the
               workspace.
