@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import Header from "../components/header";
+import Footer from "../components/footer";
 import layoutStyles from "../styles/Home.module.css";
 import projectStyles from "../styles/Project.module.css";
 
@@ -15,6 +16,7 @@ export default function Project() {
   const [projects, setProjects] = useState(INITIAL_PROJECTS);
   const [nextIndex, setNextIndex] = useState(() => INITIAL_PROJECTS.length + 1);
   const [deleteMode, setDeleteMode] = useState(false);
+  const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
     if (typeof window === "undefined") {
@@ -22,26 +24,22 @@ export default function Project() {
     }
     try {
       const stored = window.localStorage.getItem(STORAGE_KEY);
-      if (!stored) {
-        return;
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (Array.isArray(parsed?.projects) && typeof parsed?.nextIndex === "number") {
+          setProjects(parsed.projects);
+          setNextIndex(parsed.nextIndex);
+        }
       }
-      const parsed = JSON.parse(stored);
-      if (
-        !parsed ||
-        !Array.isArray(parsed.projects) ||
-        typeof parsed.nextIndex !== "number"
-      ) {
-        return;
-      }
-      setProjects(parsed.projects);
-      setNextIndex(parsed.nextIndex);
     } catch (err) {
       console.error("Failed to read stored projects", err);
+    } finally {
+      setHydrated(true);
     }
   }, []);
 
   useEffect(() => {
-    if (typeof window === "undefined") {
+    if (typeof window === "undefined" || !hydrated) {
       return;
     }
     try {
@@ -52,7 +50,7 @@ export default function Project() {
     } catch (err) {
       console.error("Failed to persist projects", err);
     }
-  }, [projects, nextIndex]);
+  }, [projects, nextIndex, hydrated]);
 
   const deleteButtonClassName = useMemo(() => {
     const base = `${layoutStyles.primaryButton} ${projectStyles.actionButton} ${projectStyles.deleteButton}`;
@@ -157,6 +155,7 @@ export default function Project() {
           )}
         </section>
       </main>
+      <Footer />
     </div>
   );
 }
