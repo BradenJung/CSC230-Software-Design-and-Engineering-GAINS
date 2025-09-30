@@ -160,3 +160,52 @@
   font-size: 15px;
   color: #c2ccdf;
 }
+
+.settingsOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(9, 15, 36, 0.72);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  z-index: 1000;
+}
+
+.settingsModal {
+  background: rgba(22, 32, 59, 0.95);
+  border: 1px solid rgba(65, 153, 255, 0.5);
+  border-radius: 16px;
+  padding: 32px;
+  width: min(420px, 100%);
+  box-shadow: 0 20px 40px rgba(5, 10, 25, 0.4);
+  color: #f0f4fb;
+  text-align: center;
+}
+
+.settingsModalTitle {
+  margin: 0 0 12px;
+  font-size: 24px;
+}
+
+.settingsModalCopy {
+  margin: 0 0 24px;
+  font-size: 16px;
+  color: #c2ccdf;
+}
+
+.closeSettingsButton {
+  border: none;
+  border-radius: 999px;
+  padding: 10px 20px;
+  font-weight: 600;
+  cursor: pointer;
+  background: linear-gradient(135deg, #4a9eff 0%, #2972e3 100%);
+  color: #ffffff;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.closeSettingsButton:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 12px 24px rgba(41, 114, 227, 0.35);
+}

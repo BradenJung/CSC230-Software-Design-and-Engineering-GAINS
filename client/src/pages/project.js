@@ -17,6 +17,7 @@ export default function Project() {
   const [nextIndex, setNextIndex] = useState(() => INITIAL_PROJECTS.length + 1);
   const [deleteMode, setDeleteMode] = useState(false);
   const [hydrated, setHydrated] = useState(false);
+  const [settingsProject, setSettingsProject] = useState(null);
 
   useEffect(() => {
     if (typeof window === "undefined") {
@@ -105,11 +106,16 @@ export default function Project() {
     }
   }
 
-  function handleSettingsClick(event) {
+  function handleSettingsClick(event, project) {
     event.stopPropagation();
     if (deleteMode) {
       return;
     }
+    setSettingsProject(project);
+  }
+
+  function handleCloseSettings() {
+    setSettingsProject(null);
   }
 
   return (
@@ -172,7 +178,7 @@ export default function Project() {
                   <button
                     type="button"
                     className={projectStyles.settingsButton}
-                    onClick={handleSettingsClick}
+                    onClick={(event) => handleSettingsClick(event, project)}
                     aria-label={`Settings for ${project.name}`}
                   >
                     <img
@@ -188,6 +194,35 @@ export default function Project() {
             </div>
           )}
         </section>
+        {settingsProject && (
+          <div
+            className={projectStyles.settingsOverlay}
+            role="presentation"
+            onClick={handleCloseSettings}
+          >
+            <div
+              className={projectStyles.settingsModal}
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="project-settings-title"
+              onClick={(event) => event.stopPropagation()}
+            >
+              <h2 id="project-settings-title" className={projectStyles.settingsModalTitle}>
+                Settings
+              </h2>
+              <p className={projectStyles.settingsModalCopy}>
+                Settings for {settingsProject.name}
+              </p>
+              <button
+                type="button"
+                className={projectStyles.closeSettingsButton}
+                onClick={handleCloseSettings}
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        )}
       </main>
       <Footer />
     </div>
