@@ -4,6 +4,7 @@ import Footer from "../components/footer";
 import layoutStyles from "../styles/Home.module.css";
 import projectStyles from "../styles/Project.module.css";
 
+// Persist projects in localStorage so we remember state between sessions
 const STORAGE_KEY = "gains-projects";
 const INITIAL_PROJECTS = [
   { id: 1, name: "Sample Project 1" },
@@ -13,16 +14,21 @@ const INITIAL_PROJECTS = [
 ];
 
 export default function Project() {
+  // Track the list of projects and the next id we should assign
   const [projects, setProjects] = useState(INITIAL_PROJECTS);
   const [nextIndex, setNextIndex] = useState(() => INITIAL_PROJECTS.length + 1);
+  // Delete-related UI state
   const [deleteMode, setDeleteMode] = useState(false);
+  // Set once localStorage has been read on the client
   const [hydrated, setHydrated] = useState(false);
+  // The project currently being edited in the modal
   const [settingsProject, setSettingsProject] = useState(null);
 
   useEffect(() => {
     if (typeof window === "undefined") {
       return;
     }
+    // On first client render, hydrate from localStorage if possible
     try {
       const stored = window.localStorage.getItem(STORAGE_KEY);
       if (stored) {
@@ -43,6 +49,7 @@ export default function Project() {
     if (typeof window === "undefined" || !hydrated) {
       return;
     }
+    // Persist projects whenever they change
     try {
       window.localStorage.setItem(
         STORAGE_KEY,
@@ -53,11 +60,13 @@ export default function Project() {
     }
   }, [projects, nextIndex, hydrated]);
 
+  // Recompute the delete button styling when delete mode toggles
   const deleteButtonClassName = useMemo(() => {
     const base = `${layoutStyles.primaryButton} ${projectStyles.actionButton} ${projectStyles.deleteButton}`;
     return deleteMode ? `${base} ${projectStyles.deleteButtonActive}` : base;
   }, [deleteMode]);
 
+  // Give project cards a distinct style while delete mode is active
   const cardClassName = useMemo(() => {
     return deleteMode
       ? `${projectStyles.projectCard} ${projectStyles.projectCardDeleteMode}`
@@ -65,6 +74,7 @@ export default function Project() {
   }, [deleteMode]);
 
   function handleCreateProject() {
+    // Create a new project with an incrementing label and id
     setProjects((prev) => {
       const label = `Sample Project ${nextIndex}`;
       const project = { id: nextIndex, name: label };
@@ -77,6 +87,7 @@ export default function Project() {
     if (projects.length === 0 && !deleteMode) {
       return;
     }
+    // Flip delete mode so cards become clickable for removal
     setDeleteMode((prev) => !prev);
   }
 
@@ -84,6 +95,7 @@ export default function Project() {
     if (!deleteMode) {
       return;
     }
+    // Remove the selected project and exit delete mode afterward
     setProjects((prev) => prev.filter((project) => project.id !== id));
     setDeleteMode(false);
   }
@@ -111,10 +123,12 @@ export default function Project() {
     if (deleteMode) {
       return;
     }
+    // Open the settings modal for the selected project
     setSettingsProject(project);
   }
 
   function handleCloseSettings() {
+    // Close the modal and clear the selected project
     setSettingsProject(null);
   }
 
@@ -213,6 +227,7 @@ export default function Project() {
               <p className={projectStyles.settingsModalCopy}>
                 Settings for {settingsProject.name}
               </p>
+              {/* Basic placeholder content until the modal is expanded */}
               <button
                 type="button"
                 className={projectStyles.closeSettingsButton}
