@@ -1,0 +1,121 @@
+.projectIntro {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.pageTitle {
+  font-size: clamp(28px, 4vw, 36px);
+  font-weight: 600;
+  margin: 0;
+  color: #f1f4f9;
+}
+
+.actionsRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.actionButton {
+  min-width: 180px;
+  justify-content: center;
+}
+
+.deleteButton {
+  background: linear-gradient(135deg, #ff6b6b 0%, #d43b3b 100%);
+  color: #ffffff;
+}
+
+.deleteButton:hover {
+  background: #ff7d7d;
+  color: #ffffff;
+}
+
+.deleteButtonActive {
+  box-shadow: 0 0 0 2px rgba(255, 225, 225, 0.35);
+  transform: translateY(-1px);
+}
+
+.selectAllButton {
+  min-width: 160px;
+  border: 1px solid #ff7d7d !important;
+  color: #ffe6e6 !important;
+}
+
+.selectAllButton:hover {
+  background: rgba(255, 125, 125, 0.1);
+  border-color: #ff9d9d !important;
+  color: #ffffff !important;
+}
+
+.deleteHelper {
+  margin: 0;
+  font-size: 14px;
+  color: #ffc6c6;
+}
+
+.projectsSection {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  align-items: center;
+}
+
+.projectsGrid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 24px;
+  max-width: 1200px;
+  width: 100%;
+}
+
+@media (max-width: 1200px) {
+  .projectsGrid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 900px) {
+  .projectsGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 640px) {
+  .projectsGrid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.projectCard {
+  width: 100%;
+  background: rgba(244, 247, 252, 0.12);
+  border: 2px solid #30c8f7;
+  border-radius: 18px;
+  padding: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  font-weight: 600;
+  color: #f0f4fb;
+  transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+  cursor: pointer;
+}
+
+.projectCard:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 28px rgba(9, 15, 36, 0.35);
+}
+
+.projectCardDeleteMode {
+  border-color: #ff7d7d;
+  box-shadow: 0 0 0 2px rgba(255, 125, 125, 0.4);
+}
+
+.emptyState {
+  margin: 0;
+  font-size: 15px;
+  color: #c2ccdf;
+}
