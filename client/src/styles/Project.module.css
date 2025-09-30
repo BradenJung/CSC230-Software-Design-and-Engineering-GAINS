@@ -93,15 +93,14 @@
   background: rgba(244, 247, 252, 0.12);
   border: 2px solid #30c8f7;
   border-radius: 18px;
-  padding: 22px;
+  padding: 18px 22px;
   display: flex;
   align-items: center;
-  justify-content: center;
-  text-align: center;
+  justify-content: space-between;
   font-weight: 600;
   color: #f0f4fb;
   transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
-  cursor: pointer;
+  cursor: default;
 }
 
 .projectCard:hover {
@@ -112,6 +111,48 @@
 .projectCardDeleteMode {
   border-color: #ff7d7d;
   box-shadow: 0 0 0 2px rgba(255, 125, 125, 0.4);
+  cursor: pointer;
+}
+
+
+
+.cardSpacer {
+  width: 34px;
+  height: 28px;
+}
+
+.projectName {
+  flex: 1;
+  text-align: center;
+}
+
+.settingsButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px;
+  border-radius: 50%;
+  border: none;
+  background: transparent;
+  transition: transform 0.2s ease, background 0.2s ease;
+  cursor: pointer;
+}
+
+.settingsButton:hover {
+  transform: translateY(-2px);
+  background: rgba(58, 71, 96, 0.28);
+}
+
+.settingsButton:focus-visible {
+  background: rgba(58, 71, 96, 0.28);
+  outline: 2px solid #4a9eff;
+  outline-offset: 2px;
+}
+
+.settingsIcon {
+  width: 22px;
+  height: 22px;
+  display: block;
 }
 
 .emptyState {

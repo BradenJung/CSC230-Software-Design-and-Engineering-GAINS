@@ -95,6 +95,23 @@ export default function Project() {
     setDeleteMode(false);
   }
 
+  function handleCardKeyDown(event, id) {
+    if (!deleteMode) {
+      return;
+    }
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      handleProjectClick(id);
+    }
+  }
+
+  function handleSettingsClick(event) {
+    event.stopPropagation();
+    if (deleteMode) {
+      return;
+    }
+  }
+
   return (
     <div className={layoutStyles.home}>
       <Header />
@@ -142,14 +159,31 @@ export default function Project() {
           ) : (
             <div className={projectStyles.projectsGrid}>
               {projects.map((project) => (
-                <button
+                <div
                   key={project.id}
-                  type="button"
-                  onClick={() => handleProjectClick(project.id)}
                   className={cardClassName}
+                  role={deleteMode ? "button" : "group"}
+                  tabIndex={deleteMode ? 0 : -1}
+                  onClick={() => handleProjectClick(project.id)}
+                  onKeyDown={(event) => handleCardKeyDown(event, project.id)}
                 >
-                  {project.name}
-                </button>
+                  <span className={projectStyles.cardSpacer} aria-hidden="true" />
+                  <div className={projectStyles.projectName}>{project.name}</div>
+                  <button
+                    type="button"
+                    className={projectStyles.settingsButton}
+                    onClick={handleSettingsClick}
+                    aria-label={`Settings for ${project.name}`}
+                  >
+                    <img
+                      src="/settings.svg"
+                      alt=""
+                      aria-hidden="true"
+                      className={projectStyles.settingsIcon}
+                      draggable={false}
+                    />
+                  </button>
+                </div>
               ))}
             </div>
           )}
