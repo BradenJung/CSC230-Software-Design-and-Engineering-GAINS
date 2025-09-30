@@ -1,10 +1,88 @@
 import Head from "next/head";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import Header from "../components/header";
 import styles from "../styles/Home.module.css";
 
 export default function linear() {
   const [selectedTool, setSelectedTool] = useState("linear-regression");
+  const [importedRows, setImportedRows] = useState([]);
+  const fileInputRef = useRef(null);
+
+  function handleTriggerImport(e) {
+    e.preventDefault();
+    if (fileInputRef.current) {
+      fileInputRef.current.click();
+    }
+  }
+
+  function parseCsv(text) {
+    // Simple CSV parser supporting quoted fields and commas
+    const rows = [];
+    let current = '';
+    let inQuotes = false;
+    let row = [];
+    for (let i = 0; i < text.length; i++) {
+      const char = text[i];
+      const next = text[i + 1];
+      if (char === '"') {
+        if (inQuotes && next === '"') {
+          current += '"';
+          i++;
+        } else {
+          inQuotes = !inQuotes;
+        }
+      } else if (char === ',' && !inQuotes) {
+        row.push(current.trim());
+        current = '';
+      } else if ((char === '\n' || char === '\r') && !inQuotes) {
+        if (current.length > 0 || row.length > 0) {
+          row.push(current.trim());
+          rows.push(row);
+          row = [];
+          current = '';
+        }
+        // swallow \r\n pairs
+        if (char === '\r' && next === '\n') i++;
+      } else {
+        current += char;
+      }
+    }
+    if (current.length > 0 || row.length > 0) {
+      row.push(current.trim());
+      rows.push(row);
+    }
+    // Remove empty trailing rows
+    const cleaned = rows.filter(r => r.some(c => c !== ''));
+    if (cleaned.length === 0) return [];
+    const headers = cleaned[0].map(h => (h || `col_${Math.random().toString(36).slice(2, 6)}`));
+    const data = cleaned.slice(1).map(r => {
+      const obj = {};
+      headers.forEach((h, idx) => {
+        obj[h] = r[idx] ?? '';
+      });
+      return obj;
+    });
+    return data;
+  }
+
+  function handleFileChange(event) {
+    const file = event.target.files && event.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        const text = String(reader.result || '');
+        const rows = parseCsv(text);
+        setImportedRows(rows);
+      } catch (err) {
+        console.error('Failed to parse CSV', err);
+        setImportedRows([]);
+      }
+    };
+    reader.readAsText(file);
+    // Reset input so selecting the same file again retriggers change
+    event.target.value = '';
+  }
 
   const tools = [
     {
@@ -178,10 +256,17 @@ points(df$time, df$value, col = "red", pch = 16)`,
           <div className={styles.navLinks}>
             <a href="#" className={styles.navLink}>Project</a>
             <a href="#" className={styles.navLink}>Edit</a>
-            <a href="#" className={styles.navLink}>Import</a>
+            <a href="#" className={styles.navLink} onClick={handleTriggerImport}>Import</a>
             <a href="#" className={styles.navLink}>Export</a>
           </div>
         </nav>
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept=".csv,text/csv"
+          style={{ display: 'none' }}
+          onChange={handleFileChange}
+        />
 
         <div className={styles.mainContent}>
           {/* Left Panel - Tool Selection */}
@@ -240,29 +325,69 @@ points(df$time, df$value, col = "red", pch = 16)`,
               </div>
             </div>
 
-            {/* Data Table */}
-            <div className={styles.dataTable}>
-              <table>
-                <thead>
-                  <tr>
-                    {currentTool?.sampleData && currentTool.sampleData.length > 0 && 
-                      Object.keys(currentTool.sampleData[0]).map((key) => (
-                        <th key={key}>{key.toUpperCase()}</th>
-                      ))
-                    }
-                  </tr>
-                </thead>
-                <tbody>
-                  {currentTool?.sampleData?.map((row, index) => (
-                    <tr key={index}>
-                      {Object.values(row).map((value, i) => (
-                        <td key={i}>{value}</td>
+            {/* Data Table / Placeholder */}
+            {importedRows.length === 0 ? (
+              <div className={styles.tablePlaceholder}>
+                <div className={styles.placeholderHeader}>
+                  <h3>Data table is empty</h3>
+                  <p>Import a CSV file to populate the table. Click Import above.</p>
+                </div>
+                <div className={styles.placeholderContent}>
+                  <div className={styles.placeholderIllustration}>
+                    <div className={styles.placeholderGrid}>
+                      <span />
+                      <span />
+                      <span />
+                      <span />
+                      <span />
+                      <span />
+                    </div>
+                  </div>
+                  <div className={styles.tableFormats}>
+                    <h4>Supported table formats</h4>
+                    <ul>
+                      <li>
+                        <strong>Tidy data</strong>: one row per observation; one column per variable; first row contains headers.
+                      </li>
+                      <li>
+                        <strong>Linear regression</strong>: numeric columns for predictors and one numeric response column (e.g., y, x1, x2, ...).
+                      </li>
+                      <li>
+                        <strong>Bar chart</strong>: category column and numeric value column (e.g., category, value).
+                      </li>
+                      <li>
+                        <strong>Line chart</strong>: time/index column and numeric value column (e.g., time, value).
+                      </li>
+                      <li>
+                        <strong>Dot plot / scatter</strong>: two numeric columns (e.g., x, y); optional category for groups.
+                      </li>
+                    </ul>
+                    <p>CSV must be UTF-8 encoded. Quoted cells and commas inside quotes are supported.</p>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className={styles.dataTable}>
+                <table>
+                  <thead>
+                    <tr>
+                      {Object.keys(importedRows[0] || {}).map((key) => (
+                        <th key={key}>{String(key).toUpperCase()}</th>
                       ))}
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                  </thead>
+                  <tbody>
+                    {importedRows.map((row, index) => (
+                      <tr key={index}>
+                        {Object.values(row).map((value, i) => (
+                          <td key={i}>{String(value)}</td>
+                        ))}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </div>
 
           {/* Right Panel - Code and Arguments */}
