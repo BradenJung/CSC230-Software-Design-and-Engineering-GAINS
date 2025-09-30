@@ -5,12 +5,20 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="fdd64d90-b837-42c0-8588-e0793efd1f71" name="Changes" comment="">
+      <change afterPath="$PROJECT_DIR$/server/routes/express.js" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
     <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="FileTemplateManagerImpl">
+    <option name="RECENT_TEMPLATES">
+      <list>
+        <option value="JavaScript File" />
+      </list>
+    </option>
   </component>
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
@@ -43,6 +51,12 @@
     &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
   }
 }</component>
+  <component name="RecentsManager">
+    <key name="MoveFile.RECENT_KEYS">
+      <recent name="C:\Users\kevin\Documents\GitHub\CSC230-Software-Design-and-Engineering-GAINS\server\routes" />
+      <recent name="C:\Users\kevin\Documents\GitHub\CSC230-Software-Design-and-Engineering-GAINS\server" />
+    </key>
+  </component>
   <component name="SharedIndexes">
     <attachedChunks>
       <set>
@@ -64,6 +78,7 @@
       <workItem from="1758629047982" duration="113000" />
       <workItem from="1758629217408" duration="1212000" />
       <workItem from="1758803251497" duration="989000" />
+      <workItem from="1759235861894" duration="1814000" />
     </task>
     <servers />
   </component>
