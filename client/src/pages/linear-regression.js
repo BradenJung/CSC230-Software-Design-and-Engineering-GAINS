@@ -254,7 +254,6 @@ points(df$time, df$value, col = "red", pch = 16)`,
         {/* Top Navigation */}
         <nav className={styles.navbar}>
           <div className={styles.navLinks}>
-            <a href="#" className={styles.navLink}>Project</a>
             <a href="#" className={styles.navLink}>Edit</a>
             <a href="#" className={styles.navLink} onClick={handleTriggerImport}>Import</a>
             <a href="#" className={styles.navLink}>Export</a>
