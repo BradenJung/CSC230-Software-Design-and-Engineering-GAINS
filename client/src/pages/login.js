@@ -36,78 +36,80 @@ export default function Login() {
         <title>Sign in · GAINS Toolkit</title>
       </Head>
 
-      <Header />
+      <div className={styles.home}>
+        <Header />
 
-      <div className={styles.dashboard}>
-        {/* Global header already renders navigation; keep only the auth layout here */}
-        <section className={styles.authLayout}>
-          <aside className={styles.authIntro}>
-            <h1>Welcome back</h1>
-            <p>Access personalized analytics, saved workspaces, and collaborative tools.</p>
-            <ul className={styles.authBenefits}>
-              <li>Continue where you left off</li>
-              <li>Share insights with teammates</li>
-              <li>Download R-ready code snippets</li>
-            </ul>
-          </aside>
+        <main className={styles.authMain}>
+          {/* Global header already renders navigation; keep only the auth layout here */}
+          <section className={styles.authLayout}>
+            <aside className={styles.authIntro}>
+              <h1>Welcome back</h1>
+              <p>Access personalized analytics, saved workspaces, and collaborative tools.</p>
+              <ul className={styles.authBenefits}>
+                <li>Continue where you left off</li>
+                <li>Share insights with teammates</li>
+                <li>Download R-ready code snippets</li>
+              </ul>
+            </aside>
 
-          <div className={styles.authCard}>
-            <form onSubmit={handleSubmit} className={styles.authForm}>
-              <div className={styles.inputGroup}>
-                <label htmlFor="email" className={styles.inputLabel}>
-                  Email
-                </label>
-                <input
-                  id="email"
-                  name="email"
-                  type="email"
-                  autoComplete="email"
-                  placeholder="you@example.com"
-                  value={formState.email}
-                  onChange={handleChange}
-                  className={styles.inputField}
-                  required
-                />
+            <div className={styles.authCard}>
+              <form onSubmit={handleSubmit} className={styles.authForm}>
+                <div className={styles.inputGroup}>
+                  <label htmlFor="email" className={styles.inputLabel}>
+                    Email
+                  </label>
+                  <input
+                    id="email"
+                    name="email"
+                    type="email"
+                    autoComplete="email"
+                    placeholder="you@example.com"
+                    value={formState.email}
+                    onChange={handleChange}
+                    className={styles.inputField}
+                    required
+                  />
+                </div>
+
+                <div className={styles.inputGroup}>
+                  <label htmlFor="password" className={styles.inputLabel}>
+                    Password
+                  </label>
+                  <input
+                    id="password"
+                    name="password"
+                    type="password"
+                    autoComplete="current-password"
+                    placeholder="••••••••"
+                    value={formState.password}
+                    onChange={handleChange}
+                    className={styles.inputField}
+                    required
+                  />
+                </div>
+
+                <button type="submit" className={styles.submitButton}>
+                  Sign in
+                </button>
+              </form>
+
+              {status && (
+                <p
+                  className={`${styles.statusMessage} ${
+                    status.type === "success" ? styles.statusSuccess : styles.statusError
+                  }`}
+                >
+                  {status.message}
+                </p>
+              )}
+
+              <div className={styles.supportLinks}>
+                <Link href="/signup">Need an account?</Link>
+                <Link href="/linear-regression">Preview the tools</Link>
               </div>
-
-              <div className={styles.inputGroup}>
-                <label htmlFor="password" className={styles.inputLabel}>
-                  Password
-                </label>
-                <input
-                  id="password"
-                  name="password"
-                  type="password"
-                  autoComplete="current-password"
-                  placeholder="••••••••"
-                  value={formState.password}
-                  onChange={handleChange}
-                  className={styles.inputField}
-                  required
-                />
-              </div>
-
-              <button type="submit" className={styles.submitButton}>
-                Sign in
-              </button>
-            </form>
-
-            {status && (
-              <p
-                className={`${styles.statusMessage} ${
-                  status.type === "success" ? styles.statusSuccess : styles.statusError
-                }`}
-              >
-                {status.message}
-              </p>
-            )}
-
-            <div className={styles.supportLinks}>
-              <Link href="/signup">Need an account?</Link>
-              <Link href="/linear-regression">Preview the tools</Link>
             </div>
-          </div>
-        </section>
+          </section>
+        </main>
       </div>
     </>
   );

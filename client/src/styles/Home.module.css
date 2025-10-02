@@ -200,14 +200,76 @@
 }
 
 /* Auth experience mirrors the analytics dashboard chrome */
+.authMain {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 48px clamp(24px, 6vw, 72px);
+}
+
+.pageMain {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+  padding: 48px clamp(24px, 6vw, 72px) 72px;
+}
+
+.pageCard {
+  background: linear-gradient(135deg, #2d2d2d 0%, #000005 100%);
+  border: 1px solid #191d27;
+  border-radius: 16px;
+  box-shadow: 0 20px 48px rgba(0, 0, 0, 0.35);
+  padding: clamp(28px, 4vw, 44px);
+  max-width: 880px;
+  width: 100%;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.pageCard h1 {
+  margin: 0;
+  font-size: clamp(28px, 4vw, 40px);
+  font-weight: 600;
+  color: #f4f7fc;
+}
+
+.pageCard p {
+  margin: 0;
+  color: #c5cee2;
+  line-height: 1.6;
+}
+
+.pageCard ul {
+  margin: 0;
+  padding-left: 18px;
+  color: #d0d8ed;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 14px;
+}
+
+.pageCard a {
+  color: #73b2ff;
+  text-decoration: none;
+}
+
+.pageCard a:hover {
+  text-decoration: underline;
+}
+
 .authLayout {
   display: grid;
   grid-template-columns: minmax(320px, 1fr) 420px;
   gap: 48px;
   padding: 48px 64px;
+  width: 100%;
   max-width: 1100px;
   margin: 0 auto;
-  height: calc(100vh - 60px);
   align-items: center;
 }
 
@@ -361,7 +423,6 @@
   .authLayout {
     grid-template-columns: 1fr;
     padding: 36px 28px;
-    height: auto;
     gap: 32px;
   }
 
@@ -371,6 +432,14 @@
 
   .authCard {
     padding: 32px;
+  }
+
+  .authMain {
+    padding: 36px clamp(20px, 7vw, 56px);
+  }
+
+  .pageMain {
+    padding: 36px clamp(20px, 7vw, 56px) 64px;
   }
 }
 
@@ -385,6 +454,19 @@
 
   .authCard {
     padding: 28px;
+  }
+
+  .authMain {
+    padding: 24px clamp(16px, 8vw, 36px);
+  }
+
+  .pageMain {
+    padding: 28px clamp(16px, 8vw, 32px) 48px;
+    gap: 24px;
+  }
+
+  .pageCard {
+    padding: clamp(24px, 6vw, 32px);
   }
 }
 
