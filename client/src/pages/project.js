@@ -78,9 +78,8 @@ export default function Project() {
   const [deleteMode, setDeleteMode] = useState(false);
   // Set once localStorage has been read on the client
   const [hydrated, setHydrated] = useState(false);
-  // The project currently being edited in the modal
-  const [settingsProject, setSettingsProject] = useState(null);
   const [activeAccount, setActiveAccount] = useState(null);
+  const [expandedProjectId, setExpandedProjectId] = useState(null);
 
   useEffect(() => {
     if (typeof window === "undefined") {
@@ -136,7 +135,6 @@ export default function Project() {
     }
 
     setDeleteMode(false);
-    setSettingsProject(null);
     setHydrated(true);
   }, [activeAccount]);
 
@@ -219,19 +217,16 @@ export default function Project() {
     }
   }
 
-  function handleSettingsClick(event, project) {
+  function handleSettingsClick(event, projectId) {
     event.stopPropagation();
-    if (deleteMode) {
-      return;
-    }
-    // Open the settings modal for the selected project
-    setSettingsProject(project);
+    setExpandedProjectId((prev) => (prev === projectId ? null : projectId));
   }
 
-  function handleCloseSettings() {
-    // Close the modal and clear the selected project
-    setSettingsProject(null);
-  }
+  useEffect(() => {
+    if (deleteMode) {
+      setExpandedProjectId(null);
+    }
+  }, [deleteMode]);
 
   return (
     <div className={layoutStyles.home}>
@@ -282,63 +277,58 @@ export default function Project() {
               {projects.map((project) => (
                 <div
                   key={project.id}
-                  className={cardClassName}
+                  className={
+                    expandedProjectId === project.id
+                      ? `${cardClassName} ${projectStyles.projectCardExpanded}`
+                      : cardClassName
+                  }
                   role={deleteMode ? "button" : "group"}
                   tabIndex={deleteMode ? 0 : -1}
                   onClick={() => handleProjectClick(project.id)}
                   onKeyDown={(event) => handleCardKeyDown(event, project.id)}
                 >
-                  <span className={projectStyles.cardSpacer} aria-hidden="true" />
-                  <div className={projectStyles.projectName}>{project.name}</div>
-                  <button
-                    type="button"
-                    className={projectStyles.settingsButton}
-                    onClick={(event) => handleSettingsClick(event, project)}
-                    aria-label={`Settings for ${project.name}`}
-                  >
-                    <img
-                      src="/settings.svg"
-                      alt=""
-                      aria-hidden="true"
-                      className={projectStyles.settingsIcon}
-                      draggable={false}
-                    />
-                  </button>
+                  <div className={projectStyles.cardHeader}>
+                    <span className={projectStyles.cardSpacer} aria-hidden="true" />
+                    <div className={projectStyles.projectName}>{project.name}</div>
+                    <button
+                      type="button"
+                      className={projectStyles.settingsButton}
+                      onClick={(event) => handleSettingsClick(event, project.id)}
+                      aria-label={`Settings for ${project.name}`}
+                    >
+                      <img
+                        src="/settings.svg"
+                        alt=""
+                        aria-hidden="true"
+                        className={projectStyles.settingsIcon}
+                        draggable={false}
+                      />
+                    </button>
+                  </div>
+                  {expandedProjectId === project.id && (
+                    <>
+                      <p className={projectStyles.projectSettingsLabel}>Settings</p>
+                      <div className={projectStyles.projectActions}>
+                        <button
+                          type="button"
+                          className={`${layoutStyles.primaryButton} ${projectStyles.projectActionButton}`}
+                        >
+                          Save
+                        </button>
+                        <button
+                          type="button"
+                          className={`${layoutStyles.secondaryButton} ${projectStyles.projectActionButton}`}
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    </>
+                  )}
                 </div>
               ))}
             </div>
           )}
         </section>
-        {settingsProject && (
-          <div
-            className={projectStyles.settingsOverlay}
-            role="presentation"
-            onClick={handleCloseSettings}
-          >
-            <div
-              className={projectStyles.settingsModal}
-              role="dialog"
-              aria-modal="true"
-              aria-labelledby="project-settings-title"
-              onClick={(event) => event.stopPropagation()}
-            >
-              <h2 id="project-settings-title" className={projectStyles.settingsModalTitle}>
-                Settings
-              </h2>
-              <p className={projectStyles.settingsModalCopy}>
-                Settings for {settingsProject.name}
-              </p>
-              {/* Basic placeholder content until the modal is expanded */}
-              <button
-                type="button"
-                className={projectStyles.closeSettingsButton}
-                onClick={handleCloseSettings}
-              >
-                Close
-              </button>
-            </div>
-          </div>
-        )}
       </main>
       <Footer />
     </div>

@@ -68,6 +68,7 @@
   gap: 24px;
   max-width: 1200px;
   width: 100%;
+  align-items: start;
 }
 
 @media (max-width: 1200px) {
@@ -95,11 +96,12 @@
   border-radius: 18px;
   padding: 18px 22px;
   display: flex;
-  align-items: center;
-  justify-content: space-between;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 16px;
   font-weight: 600;
   color: #f0f4fb;
-  transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+  transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease, min-height 0.2s ease;
   cursor: default;
 }
 
@@ -114,7 +116,15 @@
   cursor: pointer;
 }
 
+.projectCardExpanded {
+  min-height: 130px;
+}
 
+.cardHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
 
 .cardSpacer {
   width: 34px;
@@ -153,6 +163,26 @@
   width: 22px;
   height: 22px;
   display: block;
+}
+
+.projectActions {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  width: 100%;
+}
+
+.projectActionButton {
+  flex: 0 0 120px;
+  text-align: center;
+}
+
+.projectSettingsLabel {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 500;
+  color: #c2ccdf;
+  text-align: center;
 }
 
 .emptyState {
