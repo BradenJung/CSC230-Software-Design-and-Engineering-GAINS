@@ -52,6 +52,93 @@
   color: #4a9eff;
 }
 
+.accountContainer {
+  position: relative;
+}
+
+.accountButton {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  background: #1f1f1f;
+  color: #ffffff;
+  border: 1px solid #363636;
+  border-radius: 12px;
+  padding: 8px 14px;
+  cursor: pointer;
+  min-width: 160px;
+  transition: border 0.2s ease, background 0.2s ease;
+}
+
+.accountButton:hover,
+.accountButton:focus {
+  border-color: #4a9eff;
+  background: #2a2a2a;
+  outline: none;
+}
+
+.accountLabel {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: #9c9c9c;
+}
+
+.accountName {
+  font-size: 14px;
+  font-weight: 600;
+  color: #ffffff;
+}
+
+.accountDropdown {
+  position: absolute;
+  top: calc(100% + 10px);
+  right: 0;
+  background: #1a1a1a;
+  border: 1px solid #333;
+  border-radius: 12px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 220px;
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.4);
+  z-index: 10;
+}
+
+.accountDropdownText {
+  margin: 0;
+  font-size: 13px;
+  color: #c7c7c7;
+}
+
+.accountDropdownText strong {
+  color: #ffffff;
+}
+
+.signOutButton {
+  background: transparent;
+  color: #ff7b7b;
+  border: 1px solid #ff7b7b;
+  border-radius: 10px;
+  padding: 10px 14px;
+  font-weight: 600;
+  font-size: 13px;
+  cursor: pointer;
+  transition: background 0.2s ease, color 0.2s ease;
+  width: 100%;
+  text-align: center;
+}
+
+.signOutButton:hover,
+.signOutButton:focus {
+  background: #ff7b7b;
+  color: #1a1a1a;
+  outline: none;
+}
+
 /* Main Content Layout */
 .mainContent {
   display: grid;
