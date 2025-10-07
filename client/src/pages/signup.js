@@ -89,6 +89,7 @@ export default function Signup() {
 
     storage.setItem(ACCOUNTS_STORAGE_KEY, JSON.stringify(accounts));
     storage.setItem(ACTIVE_ACCOUNT_KEY, trimmedAccountName);
+    window.dispatchEvent(new CustomEvent("gains-auth-change", { detail: { accountName: trimmedAccountName } }));
 
     setStatus({
       type: "success",

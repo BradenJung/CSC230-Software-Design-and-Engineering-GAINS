@@ -72,6 +72,9 @@ export default function Login() {
     }
 
     storage.setItem(ACTIVE_ACCOUNT_KEY, existingAccount.accountName);
+    window.dispatchEvent(
+      new CustomEvent("gains-auth-change", { detail: { accountName: existingAccount.accountName } })
+    );
     setStatus({
       type: "success",
       message: `Welcome back, ${existingAccount.accountName}!`,
