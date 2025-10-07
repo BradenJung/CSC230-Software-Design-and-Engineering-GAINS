@@ -6,6 +6,9 @@ import projectStyles from "../styles/Project.module.css";
 
 // Persist projects in localStorage so we remember state between sessions
 const STORAGE_KEY = "gains-projects";
+const ACTIVE_ACCOUNT_KEY = "gains.activeAccount";
+const AUTH_CHANGE_EVENT = "gains-auth-change";
+const DEFAULT_ACCOUNT_KEY = "__guest__";
 const INITIAL_PROJECTS = [
   { id: 1, name: "Sample Project 1" },
   { id: 2, name: "Sample Project 2" },
@@ -13,52 +16,150 @@ const INITIAL_PROJECTS = [
   { id: 4, name: "Sample Project 4" }
 ];
 
+const createDefaultProjectsState = () => ({
+  projects: INITIAL_PROJECTS.map((project) => ({ ...project })),
+  nextIndex: INITIAL_PROJECTS.length + 1
+});
+
+const normalizeAccountKey = (accountName) => {
+  if (!accountName || typeof accountName !== "string") {
+    return DEFAULT_ACCOUNT_KEY;
+  }
+  const normalized = accountName.trim().toLowerCase();
+  return normalized || DEFAULT_ACCOUNT_KEY;
+};
+
+const parseStoredProjects = (raw) => {
+  const base = { accounts: {} };
+  if (!raw) {
+    return base;
+  }
+
+  try {
+    const data = JSON.parse(raw);
+    if (data && typeof data === "object") {
+      if (Array.isArray(data.projects)) {
+        base.accounts[DEFAULT_ACCOUNT_KEY] = {
+          projects: data.projects,
+          nextIndex:
+            typeof data.nextIndex === "number"
+              ? data.nextIndex
+              : data.projects.length + 1
+        };
+        return base;
+      }
+
+      if (data.accounts && typeof data.accounts === "object") {
+        const normalizedAccounts = {};
+        Object.entries(data.accounts).forEach(([key, value]) => {
+          if (Array.isArray(value?.projects) && typeof value?.nextIndex === "number") {
+            normalizedAccounts[normalizeAccountKey(key)] = {
+              projects: value.projects,
+              nextIndex: value.nextIndex
+            };
+          }
+        });
+        return { accounts: normalizedAccounts };
+      }
+    }
+  } catch (error) {
+    console.error("Failed to parse project storage", error);
+  }
+
+  return base;
+};
+
 export default function Project() {
   // Track the list of projects and the next id we should assign
-  const [projects, setProjects] = useState(INITIAL_PROJECTS);
-  const [nextIndex, setNextIndex] = useState(() => INITIAL_PROJECTS.length + 1);
+  const defaultState = createDefaultProjectsState();
+  const [projects, setProjects] = useState(defaultState.projects);
+  const [nextIndex, setNextIndex] = useState(defaultState.nextIndex);
   // Delete-related UI state
   const [deleteMode, setDeleteMode] = useState(false);
   // Set once localStorage has been read on the client
   const [hydrated, setHydrated] = useState(false);
   // The project currently being edited in the modal
   const [settingsProject, setSettingsProject] = useState(null);
+  const [activeAccount, setActiveAccount] = useState(null);
 
   useEffect(() => {
     if (typeof window === "undefined") {
       return;
     }
-    // On first client render, hydrate from localStorage if possible
-    try {
-      const stored = window.localStorage.getItem(STORAGE_KEY);
-      if (stored) {
-        const parsed = JSON.parse(stored);
-        if (Array.isArray(parsed?.projects) && typeof parsed?.nextIndex === "number") {
-          setProjects(parsed.projects);
-          setNextIndex(parsed.nextIndex);
-        }
+
+    const syncAccount = () => {
+      const accountName = window.localStorage.getItem(ACTIVE_ACCOUNT_KEY);
+      setActiveAccount(accountName);
+    };
+
+    syncAccount();
+
+    const handleStorage = (event) => {
+      if (event.key === ACTIVE_ACCOUNT_KEY) {
+        setActiveAccount(event.newValue);
       }
-    } catch (err) {
-      console.error("Failed to read stored projects", err);
-    } finally {
-      setHydrated(true);
-    }
+    };
+
+    const handleAuthChange = (event) => {
+      if (event.detail && Object.prototype.hasOwnProperty.call(event.detail, "accountName")) {
+        setActiveAccount(event.detail.accountName);
+      } else {
+        syncAccount();
+      }
+    };
+
+    window.addEventListener("storage", handleStorage);
+    window.addEventListener(AUTH_CHANGE_EVENT, handleAuthChange);
+    return () => {
+      window.removeEventListener("storage", handleStorage);
+      window.removeEventListener(AUTH_CHANGE_EVENT, handleAuthChange);
+    };
   }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    setHydrated(false);
+    const snapshot = parseStoredProjects(window.localStorage.getItem(STORAGE_KEY));
+    const accountKey = normalizeAccountKey(activeAccount);
+    const accountState = snapshot.accounts[accountKey];
+
+    if (accountState) {
+      setProjects(accountState.projects);
+      setNextIndex(accountState.nextIndex);
+    } else {
+      const defaults = createDefaultProjectsState();
+      setProjects(defaults.projects);
+      setNextIndex(defaults.nextIndex);
+    }
+
+    setDeleteMode(false);
+    setSettingsProject(null);
+    setHydrated(true);
+  }, [activeAccount]);
 
   useEffect(() => {
     if (typeof window === "undefined" || !hydrated) {
       return;
     }
-    // Persist projects whenever they change
+    // Persist projects whenever they change for the active account
     try {
+      const snapshot = parseStoredProjects(window.localStorage.getItem(STORAGE_KEY));
+      const accountKey = normalizeAccountKey(activeAccount);
+      snapshot.accounts[accountKey] = {
+        projects,
+        nextIndex
+      };
       window.localStorage.setItem(
         STORAGE_KEY,
-        JSON.stringify({ projects, nextIndex })
+        JSON.stringify(snapshot)
       );
     } catch (err) {
       console.error("Failed to persist projects", err);
     }
-  }, [projects, nextIndex, hydrated]);
+  }, [projects, nextIndex, activeAccount, hydrated]);
 
   // Recompute the delete button styling when delete mode toggles
   const deleteButtonClassName = useMemo(() => {
