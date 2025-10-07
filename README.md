@@ -23,6 +23,12 @@ _(Backend services under `server/` are placeholders right now. Once implemented,
 - **Backend Scaffold**: Node.js project structured with controllers/services/middleware for future Express (or similar) implementation.
 - **Tooling**: npm scripts (`npm run dev`, `npm run build`, `npm run start`) provided by `create-next-app`.
 
+## Frontend Highlights
+
+- Auth pages now sit inside the same gradient chrome as the homepage, so login and signup screens feel consistent with the rest of the toolkit.
+- The Projects dashboard persists sample projects to `localStorage` and now surfaces a stubbed settings modal for future project-level configuration work.
+- Bar and Line Chart routes were restyled with shared layout helpers and informative copy to explain what each visualization module will offer once data hooks are live.
+
 ## Directory Guide
 
 ```
