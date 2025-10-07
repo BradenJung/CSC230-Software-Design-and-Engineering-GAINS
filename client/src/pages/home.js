@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import Header from "../components/header";
 import styles from "../styles/Home.module.css";
@@ -36,6 +37,29 @@ const previewChecklist = [
 ];
 
 export default function Home() {
+  const [backendMessage, setBackendMessage] = useState(null);
+  const [backendError, setBackendError] = useState(null);
+
+  useEffect(() => {
+    async function fetchBackendMessage() {
+      try {
+        const response = await fetch("http://localhost:3000/api/welcome");
+        if (!response.ok) {
+          throw new Error(`Request failed with status ${response.status}`);
+        }
+        const data = await response.json();
+        setBackendMessage(data);
+        setBackendError(null);
+      } catch (error) {
+        console.error("Backend fetch failed", error);
+        setBackendMessage(null);
+        setBackendError("Unable to reach backend");
+      }
+    }
+
+    fetchBackendMessage();
+  }, []);
+
   return (
     <div className={styles.home}>
       <Header />
@@ -43,7 +67,18 @@ export default function Home() {
         <section className={styles.heroSection}>
           <div className={styles.heroCopy}>
             <p className={styles.heroEyebrow}>CSC 230 Software Design</p>
-            
+
+            {backendMessage && (
+              <div className={styles.backendBanner}>
+                <p className={styles.backendBannerTitle}>{backendMessage.title}</p>
+                <p className={styles.backendBannerBody}>{backendMessage.body}</p>
+              </div>
+            )}
+
+            {backendError && (
+              <div className={styles.backendBannerError}>{backendError}</div>
+            )}
+
             <h1 className={styles.heroTitle}>
               Prototype, analyze, and present data stories in minutes.
             </h1>
@@ -96,7 +131,6 @@ export default function Home() {
         <section className={styles.featuresSection}>
           <div className={styles.sectionHeaderRow}>
             <h2 className={styles.sectionTitle}>Tools that make analysis approachable</h2>
-            
           </div>
           <div className={styles.metricsGrid}>
             {metrics.map(({ value, label }) => (
@@ -110,7 +144,7 @@ export default function Home() {
 
         <section className={styles.featuresSection}>
           <div className={styles.sectionHeaderRow}>
-          <h2 className={styles.sectionTitle}>Built for fast classroom experimentation</h2>
+            <h2 className={styles.sectionTitle}>Built for fast classroom experimentation</h2>
             <p className={styles.sectionSubtitle}>
               Mix and match visualizations, run regressions, and document findings without leaving the
               workspace.
