@@ -1,59 +1,77 @@
 # GAINS Toolkit
 
-A statistics-focused learning platform combining a React/Next.js client with a Node.js backend scaffold. The current milestone delivers the front-end experience for showcasing analytics tools and onboarding users, while the server-side structure is ready for future implementation.
+## Overview
+- Frontend: Next.js 15 + React 19 client that demonstrates the GAINS analytics experience with sample data.
+- Backend: Lightweight Express server that exposes placeholder routes so the client can simulate authentication and API calls.
+- Storage model: All account and project data lives in browser `localStorage`. Nothing is persisted on the server, so switching browsers, using private mode, or clearing storage resets the app to the default guest projects.
 
-## Getting Started
+## Tech Stack
+- Next.js (Pages Router) with CSS Modules for UI composition.
+- Express 4 with CORS enabled for local development.
+- Node.js/npm tooling and a helper shell script for combined startup.
 
-1. **Install dependencies**
-   ```bash
-   cd client
-   npm install
-   ```
-2. **Run the development server**
-   ```bash
-   npm run dev
-   ```
-3. **Open the app** at [http://localhost:3000](http://localhost:3000) to explore the GAINS Toolkit pages.
+## Local Account Storage
+- Active account key: `gains.activeAccount` stores the selected account name. Changing it fires a `gains-auth-change` event to keep multiple tabs in sync.
+- Project payload key: `gains-projects` contains a JSON object keyed by normalized account names (trimmed, lowercase) with their project lists and next id counters.
+- Guest fallback: When no account is present, the UI falls back to a `__guest__` bucket populated with sample projects.
+- Since both keys live in local browser storage, the data is temporary—clearing storage or logging in from another browser resets everything.
 
-_(Backend services under `server/` are placeholders right now. Once implemented, start them separately and update the client to call the live APIs.)_
-
-## Stack Overview
-
-- **Frontend**: Next.js 15 (Pages Router) with React 19 and CSS Modules for styling.
-- **Backend Scaffold**: Node.js project structured with controllers/services/middleware for future Express (or similar) implementation.
-- **Tooling**: npm scripts (`npm run dev`, `npm run build`, `npm run start`) provided by `create-next-app`.
-
-## Frontend Highlights
-
-- Auth pages now sit inside the same gradient chrome as the homepage, so login and signup screens feel consistent with the rest of the toolkit.
-- The Projects dashboard persists sample projects to `localStorage` and now surfaces a stubbed settings modal for future project-level configuration work.
-- Bar and Line Chart routes were restyled with shared layout helpers and informative copy to explain what each visualization module will offer once data hooks are live.
-
-## Account & Storage Model
-
-- **Where data lives**: The client uses browser `localStorage` only. No server-side persistence exists yet, so all account and project data disappears when the browser storage is cleared or the user switches devices/browsers.
-- **Active account tracking**: The key `gains.activeAccount` stores the current account name. Changing this value (via the auth screens or manually in DevTools) triggers a custom `gains-auth-change` event so all tabs update their UI.
-- **Project snapshots per account**: Projects are saved under the `gains-projects` entry as a JSON payload. Each account name is normalized (trimmed, lowercased) to keep its own list of projects and the next project id counter.
-- **Guest fallback**: If no account is selected, a `__guest__` bucket provides default sample projects. Signing out removes the active account key, returning the UI to this guest view.
-- **Testing tip**: To simulate multiple accounts locally, open DevTools → Application → Local Storage, duplicate `gains.activeAccount` with a different value, and observe that the Projects page swaps between those stored project lists.
-
-## Directory Guide
-
+## Project Structure
 ```
 .
-├── Benchmark 1/              # Project documentation PDFs (requirements, design, collaboration)
-├── client/                   # Next.js front end
-│   ├── package.json          # Front-end dependencies and scripts
-│   ├── public/               # Static assets and icons
+├── Benchmark 1/                # Project documentation PDFs and planning artifacts
+├── client/                     # Next.js frontend
+│   ├── package.json            # Client dependencies and scripts
+│   ├── public/                 # Static assets
 │   └── src/
-│       ├── components/       # Reusable UI (e.g., global Header)
-│       ├── pages/            # Routes: home, auth, analytics tools, API stubs
-│       └── styles/           # CSS Modules and global theme
-└── server/                   # Node backend skeleton
-    ├── api/                  # Route handlers (auth, users) – empty placeholders
-    ├── config/               # Environment & database setup stubs
-    ├── controllers/          # Intended Express controllers
-    ├── middleware/           # Auth/error middleware placeholders
-    ├── models/               # Data models (e.g., User)
-    └── services/             # Business logic layer stubs
+│       ├── components/         # Shared UI (header, footer, cards)
+│       ├── pages/              # Route definitions (home, auth, analytics, projects)
+│       └── styles/             # CSS Modules and global styles
+├── server/                     # Express backend scaffold
+│   ├── index.js                # Entry point with sample routes
+│   ├── package.json            # Server dependencies and scripts
+│   └── ...                     # Placeholder folders for future controllers/services/models
+└── start-services.sh           # Convenience script that runs both client and server together
 ```
+
+## Prerequisites
+- Node.js 18+ (or any version supported by both Next.js 15 and Express 4).
+- npm (bundled with Node.js).
+- macOS, Linux, or WSL terminal capable of running shell scripts.
+
+## Installation
+```bash
+# From the repository root
+cd client
+npm install
+
+cd ../server
+npm install
+```
+
+## Running the Frontend and Backend Separately
+```bash
+# Terminal 1 – start the backend (defaults to http://localhost:3000)
+cd server
+npm start
+
+# Terminal 2 – start the Next.js dev server (runs on http://localhost:3001)
+cd client
+npm run dev
+```
+Set `FRONTEND_ORIGIN=http://localhost:3001` when starting the backend if you need to customize ports.
+
+## Running Both Services via Script
+```bash
+# Make sure the script is executable
+chmod +x start-services.sh
+
+# Launch backend and frontend together
+./start-services.sh
+```
+The script installs dependencies if needed, starts the Express server, and launches the Next.js dev server. Press `Ctrl+C` once to stop both processes.
+
+## Development Tips
+- Inspect `localStorage` in your browser developer tools to watch account keys update (`gains.activeAccount`, `gains-projects`).
+- To test multiple accounts, manually add a new value to `gains.activeAccount`; the Projects page will load the corresponding project list or create a fresh entry.
+- The backend currently logs auth events and returns canned responses—extend `server/` files to implement real persistence when ready.
