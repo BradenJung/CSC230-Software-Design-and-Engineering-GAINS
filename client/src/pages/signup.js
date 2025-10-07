@@ -5,26 +5,45 @@ import Header from "../components/header";
 import styles from "../styles/Home.module.css";
 
 const initialState = {
-  name: "",
-  email: "",
+  accountName: "",
   password: "",
   confirmPassword: "",
 };
 
+const ACCOUNTS_STORAGE_KEY = "gains.accounts";
+const ACTIVE_ACCOUNT_KEY = "gains.activeAccount";
+
+const notifyBackend = async (path, payload) => {
+  try {
+    const response = await fetch(`http://localhost:3000${path}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+
+    if (!response.ok) {
+      console.warn(`Backend ${path} responded with status ${response.status}`);
+    }
+  } catch (error) {
+    console.warn(`Unable to reach backend endpoint ${path}`, error);
+  }
+};
+
 export default function Signup() {
   const [formState, setFormState] = useState(initialState);
-  // Provide temporary messaging until the signup endpoint is live
+  // Provide inline status messaging for the auth flow
   const [status, setStatus] = useState(null);
 
   const handleChange = (event) => {
     const { name, value } = event.target;
     setFormState((prev) => ({ ...prev, [name]: value }));
+    setStatus(null);
   };
 
   const handleSubmit = (event) => {
     event.preventDefault();
 
-    if (!formState.name || !formState.email || !formState.password || !formState.confirmPassword) {
+    if (!formState.accountName || !formState.password || !formState.confirmPassword) {
       setStatus({ type: "error", message: "Please fill out every field." });
       return;
     }
@@ -34,11 +53,49 @@ export default function Signup() {
       return;
     }
 
-    // Placeholder success message so backend integration can slot in later
+    if (typeof window === "undefined") {
+      setStatus({
+        type: "error",
+        message: "Local storage is not available in this environment.",
+      });
+      return;
+    }
+
+    const storage = window.localStorage;
+    let accounts = {};
+
+    try {
+      const storedAccounts = storage.getItem(ACCOUNTS_STORAGE_KEY);
+      accounts = storedAccounts ? JSON.parse(storedAccounts) : {};
+    } catch (error) {
+      console.warn("Unable to parse stored account data", error);
+      setStatus({ type: "error", message: "Stored account data is corrupted." });
+      return;
+    }
+
+    const trimmedAccountName = formState.accountName.trim();
+    const normalizedAccountName = trimmedAccountName.toLowerCase();
+
+    if (accounts[normalizedAccountName]) {
+      setStatus({ type: "error", message: "That account name is already taken." });
+      return;
+    }
+
+    accounts[normalizedAccountName] = {
+      accountName: trimmedAccountName,
+      password: formState.password,
+      createdAt: new Date().toISOString(),
+    };
+
+    storage.setItem(ACCOUNTS_STORAGE_KEY, JSON.stringify(accounts));
+    storage.setItem(ACTIVE_ACCOUNT_KEY, trimmedAccountName);
+
     setStatus({
       type: "success",
-      message: "Signup submitted. Connect this form to the backend to finalize onboarding.",
+      message: "Account created. You can now sign in with your credentials.",
     });
+    setFormState(initialState);
+    notifyBackend("/api/auth/signup", { accountName: trimmedAccountName });
   };
 
   return (
@@ -65,32 +122,16 @@ export default function Signup() {
             <div className={styles.authCard}>
               <form onSubmit={handleSubmit} className={styles.authForm}>
                 <div className={styles.inputGroup}>
-                  <label htmlFor="name" className={styles.inputLabel}>
-                    Full name
+                  <label htmlFor="accountName" className={styles.inputLabel}>
+                    Account name
                   </label>
                   <input
-                    id="name"
-                    name="name"
+                    id="accountName"
+                    name="accountName"
                     type="text"
-                    placeholder="Jordan Gaines"
-                    value={formState.name}
-                    onChange={handleChange}
-                    className={styles.inputField}
-                    required
-                  />
-                </div>
-
-                <div className={styles.inputGroup}>
-                  <label htmlFor="email" className={styles.inputLabel}>
-                    Email
-                  </label>
-                  <input
-                    id="email"
-                    name="email"
-                    type="email"
-                    autoComplete="email"
-                    placeholder="you@example.com"
-                    value={formState.email}
+                    autoComplete="username"
+                    placeholder="your-account-name"
+                    value={formState.accountName}
                     onChange={handleChange}
                     className={styles.inputField}
                     required

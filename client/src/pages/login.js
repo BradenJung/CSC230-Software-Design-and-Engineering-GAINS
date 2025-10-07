@@ -4,30 +4,80 @@ import Link from "next/link";
 import Header from "../components/header";
 import styles from "../styles/Home.module.css";
 
-const initialState = { email: "", password: "" };
+const ACCOUNTS_STORAGE_KEY = "gains.accounts";
+const ACTIVE_ACCOUNT_KEY = "gains.activeAccount";
+
+const initialState = { accountName: "", password: "" };
+
+const notifyBackend = async (path, payload) => {
+  try {
+    const response = await fetch(`http://localhost:3000${path}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+
+    if (!response.ok) {
+      console.warn(`Backend ${path} responded with status ${response.status}`);
+    }
+  } catch (error) {
+    console.warn(`Unable to reach backend endpoint ${path}`, error);
+  }
+};
 
 export default function Login() {
   const [formState, setFormState] = useState(initialState);
-  // Surface lightweight feedback until backend wiring is complete
+  // Provide inline status messaging for the auth flow
   const [status, setStatus] = useState(null);
 
   const handleChange = (event) => {
     const { name, value } = event.target;
     setFormState((prev) => ({ ...prev, [name]: value }));
+    setStatus(null);
   };
 
   const handleSubmit = (event) => {
     event.preventDefault();
-    if (!formState.email || !formState.password) {
-      setStatus({ type: "error", message: "Please enter your email and password." });
+    if (!formState.accountName || !formState.password) {
+      setStatus({ type: "error", message: "Please enter your account name and password." });
       return;
     }
 
-    // Placeholder success message; swap once API integration is implemented
+    if (typeof window === "undefined") {
+      setStatus({
+        type: "error",
+        message: "Local storage is not available in this environment.",
+      });
+      return;
+    }
+
+    const storage = window.localStorage;
+    let accounts = {};
+
+    try {
+      const storedAccounts = storage.getItem(ACCOUNTS_STORAGE_KEY);
+      accounts = storedAccounts ? JSON.parse(storedAccounts) : {};
+    } catch (error) {
+      console.warn("Unable to parse stored account data", error);
+      setStatus({ type: "error", message: "Stored account data is corrupted." });
+      return;
+    }
+
+    const normalizedAccountName = formState.accountName.trim().toLowerCase();
+    const existingAccount = accounts[normalizedAccountName];
+
+    if (!existingAccount || existingAccount.password !== formState.password) {
+      setStatus({ type: "error", message: "Account name or password is incorrect." });
+      return;
+    }
+
+    storage.setItem(ACTIVE_ACCOUNT_KEY, existingAccount.accountName);
     setStatus({
       type: "success",
-      message: "Form submitted. Your team can hook this into the backend when ready.",
+      message: `Welcome back, ${existingAccount.accountName}!`,
     });
+    setFormState(initialState);
+    notifyBackend("/api/auth/login", { accountName: existingAccount.accountName });
   };
 
   return (
@@ -55,16 +105,16 @@ export default function Login() {
             <div className={styles.authCard}>
               <form onSubmit={handleSubmit} className={styles.authForm}>
                 <div className={styles.inputGroup}>
-                  <label htmlFor="email" className={styles.inputLabel}>
-                    Email
+                  <label htmlFor="accountName" className={styles.inputLabel}>
+                    Account name
                   </label>
                   <input
-                    id="email"
-                    name="email"
-                    type="email"
-                    autoComplete="email"
-                    placeholder="you@example.com"
-                    value={formState.email}
+                    id="accountName"
+                    name="accountName"
+                    type="text"
+                    autoComplete="username"
+                    placeholder="your-account-name"
+                    value={formState.accountName}
                     onChange={handleChange}
                     className={styles.inputField}
                     required
