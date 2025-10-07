@@ -29,6 +29,14 @@ _(Backend services under `server/` are placeholders right now. Once implemented,
 - The Projects dashboard persists sample projects to `localStorage` and now surfaces a stubbed settings modal for future project-level configuration work.
 - Bar and Line Chart routes were restyled with shared layout helpers and informative copy to explain what each visualization module will offer once data hooks are live.
 
+## Account & Storage Model
+
+- **Where data lives**: The client uses browser `localStorage` only. No server-side persistence exists yet, so all account and project data disappears when the browser storage is cleared or the user switches devices/browsers.
+- **Active account tracking**: The key `gains.activeAccount` stores the current account name. Changing this value (via the auth screens or manually in DevTools) triggers a custom `gains-auth-change` event so all tabs update their UI.
+- **Project snapshots per account**: Projects are saved under the `gains-projects` entry as a JSON payload. Each account name is normalized (trimmed, lowercased) to keep its own list of projects and the next project id counter.
+- **Guest fallback**: If no account is selected, a `__guest__` bucket provides default sample projects. Signing out removes the active account key, returning the UI to this guest view.
+- **Testing tip**: To simulate multiple accounts locally, open DevTools → Application → Local Storage, duplicate `gains.activeAccount` with a different value, and observe that the Projects page swaps between those stored project lists.
+
 ## Directory Guide
 
 ```
