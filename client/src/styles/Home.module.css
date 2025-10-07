@@ -1615,3 +1615,31 @@
   line-height: 1.6;
   padding-top: 8px;
 }
+.backendBanner {
+  margin: 12px 0;
+  padding: 12px 16px;
+  border-radius: 8px;
+  background: rgba(74, 158, 255, 0.12);
+  border: 1px solid rgba(74, 158, 255, 0.4);
+  color: #dfeaff;
+}
+
+.backendBannerTitle {
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.backendBannerBody {
+  font-size: 14px;
+  color: #bcd7ff;
+}
+
+.backendBannerError {
+  margin: 12px 0;
+  padding: 12px 16px;
+  border-radius: 8px;
+  background: rgba(255, 102, 102, 0.15);
+  border: 1px solid rgba(255, 102, 102, 0.4);
+  color: #ffb3b3;
+  font-size: 14px;
+}
