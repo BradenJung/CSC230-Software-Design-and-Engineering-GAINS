@@ -16,11 +16,13 @@ const INITIAL_PROJECTS = [
   { id: 4, name: "Sample Project 4" }
 ];
 
+// Build the default state object used before localStorage synchronizes
 const createDefaultProjectsState = () => ({
   projects: INITIAL_PROJECTS.map((project) => ({ ...project })),
   nextIndex: INITIAL_PROJECTS.length + 1
 });
 
+// Translate any provided account identifier into the normalized storage key
 const normalizeAccountKey = (accountName) => {
   if (!accountName || typeof accountName !== "string") {
     return DEFAULT_ACCOUNT_KEY;
@@ -29,6 +31,7 @@ const normalizeAccountKey = (accountName) => {
   return normalized || DEFAULT_ACCOUNT_KEY;
 };
 
+// Read the serialized storage payload and coerce it into the expected structure
 const parseStoredProjects = (raw) => {
   const base = { accounts: {} };
   if (!raw) {
@@ -81,6 +84,7 @@ export default function Project() {
   const [activeAccount, setActiveAccount] = useState(null);
   const [expandedProjectId, setExpandedProjectId] = useState(null);
 
+  // Keep the active account in sync with localStorage and custom auth events
   useEffect(() => {
     if (typeof window === "undefined") {
       return;
@@ -115,6 +119,7 @@ export default function Project() {
     };
   }, []);
 
+  // Load the project list for the active account once the client has storage access
   useEffect(() => {
     if (typeof window === "undefined") {
       return;
@@ -138,6 +143,7 @@ export default function Project() {
     setHydrated(true);
   }, [activeAccount]);
 
+  // Persist the current account's projects whenever the list or active account changes
   useEffect(() => {
     if (typeof window === "undefined" || !hydrated) {
       return;
@@ -172,6 +178,7 @@ export default function Project() {
       : projectStyles.projectCard;
   }, [deleteMode]);
 
+  // Add a new project shell with an auto-incrementing label
   function handleCreateProject() {
     // Create a new project with an incrementing label and id
     setProjects((prev) => {
@@ -182,6 +189,7 @@ export default function Project() {
     setNextIndex((prev) => prev + 1);
   }
 
+  // Toggle deletion mode to enable the tap-to-remove UX
   function handleToggleDeleteMode() {
     if (projects.length === 0 && !deleteMode) {
       return;
@@ -190,6 +198,7 @@ export default function Project() {
     setDeleteMode((prev) => !prev);
   }
 
+  // Remove a project when the user clicks it while in delete mode
   function handleProjectClick(id) {
     if (!deleteMode) {
       return;

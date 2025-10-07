@@ -12,6 +12,7 @@ export default function Header() {
   const [activeAccount, setActiveAccount] = useState(null);
   const [menuOpen, setMenuOpen] = useState(false);
 
+  // Mirror the current account stored in localStorage and custom auth events
   useEffect(() => {
     if (typeof window === "undefined") {
       return;
@@ -47,12 +48,14 @@ export default function Header() {
     };
   }, []);
 
+  // Collapse the account menu when the user signs out
   useEffect(() => {
     if (!activeAccount) {
       setMenuOpen(false);
     }
   }, [activeAccount]);
 
+  // Listen for outside clicks so the account menu closes when focus leaves
   useEffect(() => {
     if (!menuOpen) {
       return;
@@ -72,10 +75,12 @@ export default function Header() {
     return () => document.removeEventListener("mousedown", handleClickAway);
   }, [menuOpen]);
 
+  // Toggle the visibility of the account dropdown
   const handleToggleMenu = () => {
     setMenuOpen((prev) => !prev);
   };
 
+  // Clear auth state, notify listeners, and route the user back to login
   const handleSignOut = () => {
     if (typeof window !== "undefined") {
       window.localStorage.removeItem(ACTIVE_ACCOUNT_KEY);
