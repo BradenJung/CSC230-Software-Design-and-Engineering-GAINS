@@ -1,73 +1,36 @@
 import Head from "next/head";
-import { useRef, useState } from "react";
+import { useRef } from "react";
 import Header from "../components/header";
+import { EditableDataTable } from "../components/EditableDataTable";
+import { useLinearRegression } from "../logic/useLinearRegression";
 import styles from "../styles/Home.module.css";
 
 export default function linear() {
-  const [selectedTool, setSelectedTool] = useState("linear-regression");
-  const [importedRows, setImportedRows] = useState([]);
-  const [isRightPanelVisible, setIsRightPanelVisible] = useState(true);
   const fileInputRef = useRef(null);
+  
+  const {
+    selectedTool,
+    importedRows,
+    responseColumn,
+    predictorColumns,
+    isRightPanelVisible,
+    generatedRCode,
+    generatedArguments,
+    availableColumns,
+    validation,
+    setSelectedTool,
+    handleFileImport,
+    updateDataValue,
+    updateResponseColumn,
+    updatePredictorColumns,
+    toggleRightPanel
+  } = useLinearRegression();
 
   function handleTriggerImport(e) {
     e.preventDefault();
     if (fileInputRef.current) {
       fileInputRef.current.click();
     }
-  }
-
-  function handleEditToggle() {
-    setIsRightPanelVisible(!isRightPanelVisible);
-  }
-
-  function parseCsv(text) {
-    // Simple CSV parser supporting quoted fields and commas
-    const rows = [];
-    let current = '';
-    let inQuotes = false;
-    let row = [];
-    for (let i = 0; i < text.length; i++) {
-      const char = text[i];
-      const next = text[i + 1];
-      if (char === '"') {
-        if (inQuotes && next === '"') {
-          current += '"';
-          i++;
-        } else {
-          inQuotes = !inQuotes;
-        }
-      } else if (char === ',' && !inQuotes) {
-        row.push(current.trim());
-        current = '';
-      } else if ((char === '\n' || char === '\r') && !inQuotes) {
-        if (current.length > 0 || row.length > 0) {
-          row.push(current.trim());
-          rows.push(row);
-          row = [];
-          current = '';
-        }
-        // swallow \r\n pairs
-        if (char === '\r' && next === '\n') i++;
-      } else {
-        current += char;
-      }
-    }
-    if (current.length > 0 || row.length > 0) {
-      row.push(current.trim());
-      rows.push(row);
-    }
-    // Remove empty trailing rows
-    const cleaned = rows.filter(r => r.some(c => c !== ''));
-    if (cleaned.length === 0) return [];
-    const headers = cleaned[0].map(h => (h || `col_${Math.random().toString(36).slice(2, 6)}`));
-    const data = cleaned.slice(1).map(r => {
-      const obj = {};
-      headers.forEach((h, idx) => {
-        obj[h] = r[idx] ?? '';
-      });
-      return obj;
-    });
-    return data;
   }
 
   function handleFileChange(event) {
@@ -77,16 +40,22 @@ export default function linear() {
     reader.onload = () => {
       try {
         const text = String(reader.result || '');
-        const rows = parseCsv(text);
-        setImportedRows(rows);
+        handleFileImport(text);
       } catch (err) {
         console.error('Failed to parse CSV', err);
-        setImportedRows([]);
       }
     };
     reader.readAsText(file);
     // Reset input so selecting the same file again retriggers change
     event.target.value = '';
+  }
+
+  function handleColumnSelectionChange(type, columnName, isSelected = true) {
+    if (type === 'response') {
+      updateResponseColumn(columnName);
+    } else if (type === 'predictor') {
+      updatePredictorColumns(columnName, isSelected);
+    }
   }
 
   const tools = [
@@ -253,7 +222,7 @@ points(df$time, df$value, col = "red", pch = 16)`,
         <link rel="icon" href="/favicon.ico" />
       </Head>
 
-      <Header onImportClick={handleTriggerImport} onEditClick={handleEditToggle} isRightPanelVisible={isRightPanelVisible} />
+      <Header onImportClick={handleTriggerImport} onEditClick={toggleRightPanel} isRightPanelVisible={isRightPanelVisible} />
 
       <div className={styles.dashboard}>
         <input
@@ -322,66 +291,35 @@ points(df$time, df$value, col = "red", pch = 16)`,
             </div>
 
             {/* Data Table / Placeholder */}
-            {importedRows.length === 0 ? (
-              <div className={styles.tablePlaceholder}>
-                <div className={styles.placeholderHeader}>
-                  <h3>Data table is empty</h3>
-                  <p>Import a CSV file to populate the table. Click Import above.</p>
-                </div>
-                <div className={styles.placeholderContent}>
-                  <div className={styles.placeholderIllustration}>
-                    <div className={styles.placeholderGrid}>
-                      <span />
-                      <span />
-                      <span />
-                      <span />
-                      <span />
-                      <span />
-                    </div>
-                  </div>
-                  <div className={styles.tableFormats}>
-                    <h4>Supported table formats</h4>
-                    <ul>
-                      <li>
-                        <strong>Tidy data</strong>: one row per observation; one column per variable; first row contains headers.
-                      </li>
-                      <li>
-                        <strong>Linear regression</strong>: numeric columns for predictors and one numeric response column (e.g., y, x1, x2, ...).
-                      </li>
-                      <li>
-                        <strong>Bar chart</strong>: category column and numeric value column (e.g., category, value).
-                      </li>
-                      <li>
-                        <strong>Line chart</strong>: time/index column and numeric value column (e.g., time, value).
-                      </li>
-                      <li>
-                        <strong>Dot plot / scatter</strong>: two numeric columns (e.g., x, y); optional category for groups.
-                      </li>
-                    </ul>
-                    <p>CSV must be UTF-8 encoded. Quoted cells and commas inside quotes are supported.</p>
-                  </div>
-                </div>
+            <EditableDataTable
+              data={importedRows}
+              onDataUpdate={updateDataValue}
+              responseColumn={responseColumn}
+              predictorColumns={predictorColumns}
+              onColumnSelectionChange={handleColumnSelectionChange}
+            />
+
+            {/* Validation Messages */}
+            {!validation.isValid && (
+              <div className={styles.validationErrors}>
+                <h4>Data Validation Issues:</h4>
+                <ul>
+                  {validation.errors.map((error, index) => (
+                    <li key={index}>{error}</li>
+                  ))}
+                </ul>
               </div>
-            ) : (
-              <div className={styles.dataTable}>
-                <table>
-                  <thead>
-                    <tr>
-                      {Object.keys(importedRows[0] || {}).map((key) => (
-                        <th key={key}>{String(key).toUpperCase()}</th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {importedRows.map((row, index) => (
-                      <tr key={index}>
-                        {Object.values(row).map((value, i) => (
-                          <td key={i}>{String(value)}</td>
-                        ))}
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+            )}
+
+            {/* Column Selection Info */}
+            {importedRows.length > 0 && (
+              <div className={styles.columnSelectionInfo}>
+                <h4>Column Selection:</h4>
+                <p><strong>Response Variable:</strong> {responseColumn || 'None selected'}</p>
+                <p><strong>Predictor Variables:</strong> {predictorColumns.length > 0 ? predictorColumns.join(', ') : 'None selected'}</p>
+                <p className={styles.columnSelectionHint}>
+                  Click on column headers to select response and predictor variables. The R code will update automatically.
+                </p>
               </div>
             )}
           </div>
@@ -402,16 +340,19 @@ points(df$time, df$value, col = "red", pch = 16)`,
                 <span className={styles.expandIcon}>+</span>
               </div>
               <div className={styles.codeBlock}>
-                <pre><code>{currentTool?.rCode}</code></pre>
+                <pre><code>{generatedRCode}</code></pre>
               </div>
               <p className={styles.codeDescription}>
-                {currentTool?.codeDescription}
+                {importedRows.length > 0 && responseColumn && predictorColumns.length > 0 
+                  ? `Generated R code for linear regression using ${responseColumn} as response variable and ${predictorColumns.join(', ')} as predictors.`
+                  : "Default R code for linear regression. Import data and select variables to generate custom code."
+                }
               </p>
             </div>
 
             <div className={styles.argumentsSection}>
               <h3>Arguments</h3>
-              {currentTool?.arguments?.map((arg, index) => (
+              {generatedArguments?.map((arg, index) => (
                 <div key={index} className={styles.argumentGroup}>
                   <label>{arg.name}</label>
                   {arg.type === "data" ? (

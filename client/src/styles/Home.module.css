@@ -36,6 +36,14 @@
   font-weight: 500;
   padding: 8px 0;
   transition: color 0.2s;
+  font-family: inherit;
+}
+
+.navLink button {
+  font-family: inherit;
+  font-size: inherit;
+  font-weight: inherit;
+  color: inherit;
 }
 
 .navLink:hover {
@@ -609,6 +617,145 @@
 
 .dataTable tr:last-child td {
   border-bottom: none;
+}
+
+/* Editable Table Styles */
+.columnHeader {
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  position: relative;
+}
+
+.columnHeader:hover {
+  background: #444;
+}
+
+.columnHeaderContent {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  align-items: flex-start;
+}
+
+.columnBadge {
+  font-size: 10px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.responseColumn {
+  background: rgba(255, 69, 58, 0.2) !important;
+  border-left: 3px solid #ff453a;
+}
+
+.responseColumn .columnBadge {
+  background: #ff453a;
+  color: #ffffff;
+}
+
+.predictorColumn {
+  background: rgba(52, 199, 89, 0.2) !important;
+  border-left: 3px solid #34c759;
+}
+
+.predictorColumn .columnBadge {
+  background: #34c759;
+  color: #ffffff;
+}
+
+.editableCell {
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.editableCell:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.editingCell {
+  padding: 0;
+}
+
+.cellInput {
+  width: 100%;
+  background: #1a1a1a;
+  border: 2px solid #4a9eff;
+  color: #ffffff;
+  padding: 8px 12px;
+  font-size: 14px;
+  border-radius: 4px;
+  outline: none;
+}
+
+.cellInput:focus {
+  border-color: #5da8ff;
+  box-shadow: 0 0 0 2px rgba(74, 158, 255, 0.2);
+}
+
+.cellValue {
+  display: block;
+  min-height: 20px;
+}
+
+/* Validation and Column Selection Styles */
+.validationErrors {
+  background: rgba(255, 69, 58, 0.1);
+  border: 1px solid rgba(255, 69, 58, 0.3);
+  border-radius: 8px;
+  padding: 16px;
+  margin-top: 16px;
+}
+
+.validationErrors h4 {
+  color: #ff453a;
+  margin: 0 0 8px 0;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.validationErrors ul {
+  margin: 0;
+  padding-left: 20px;
+  color: #ff6b6b;
+  font-size: 13px;
+}
+
+.validationErrors li {
+  margin-bottom: 4px;
+}
+
+.columnSelectionInfo {
+  background: rgba(52, 199, 89, 0.1);
+  border: 1px solid rgba(52, 199, 89, 0.3);
+  border-radius: 8px;
+  padding: 16px;
+  margin-top: 16px;
+}
+
+.columnSelectionInfo h4 {
+  color: #34c759;
+  margin: 0 0 8px 0;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.columnSelectionInfo p {
+  margin: 4px 0;
+  font-size: 13px;
+  color: #ffffff;
+}
+
+.columnSelectionInfo strong {
+  color: #34c759;
+}
+
+.columnSelectionHint {
+  color: #aaa !important;
+  font-style: italic;
+  margin-top: 8px !important;
 }
 
 /* Empty state placeholder for data table */
