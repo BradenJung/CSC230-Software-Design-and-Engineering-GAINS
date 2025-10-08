@@ -6,7 +6,7 @@ import styles from "../styles/Home.module.css";
 const ACTIVE_ACCOUNT_KEY = "gains.activeAccount";
 const AUTH_CHANGE_EVENT = "gains-auth-change";
 
-export default function Header() {
+export default function Header({ onImportClick }) {
   const router = useRouter();
   const containerRef = useRef(null);
   const [activeAccount, setActiveAccount] = useState(null);
@@ -92,12 +92,22 @@ export default function Header() {
     router.push("/login");
   };
 
+  // Check if we're on the linear regression page
+  const isLinearRegressionPage = router.pathname === '/linear-regression';
+
   // Surface every routable page so teammates can reach each screen quickly
   const navItems = [
     { href: "/home", label: "Home" },
     { href: "/project", label: "My Projects" },
     { href: "/about", label: "About" },
     { href: "/faq", label: "FAQ" },
+  ];
+
+  // Tool-specific navigation items for linear regression page
+  const toolNavItems = [
+    { label: "Edit", onClick: () => {} },
+    { label: "Import", onClick: onImportClick },
+    { label: "Export", onClick: () => {} },
   ];
 
   const authButtons = [
@@ -107,15 +117,41 @@ export default function Header() {
 
   return (
     <nav className={styles.navbar}>
-      <div className={styles.navFlex}>
+      <div className={isLinearRegressionPage ? styles.navFlexThreeColumn : styles.navFlex}>
+        {/* Leading side - Home and My Projects for linear regression page, or full nav for other pages */}
         <div className={styles.navLinks}>
-          {navItems.map(({ href, label }) => (
-            <Link key={href} href={href} className={styles.navLink}>
-              {label}
-            </Link>
-          ))}
+          {isLinearRegressionPage ? (
+            <>
+              <Link href="/home" className={styles.navLink}>Home</Link>
+              <Link href="/project" className={styles.navLink}>My Projects</Link>
+            </>
+          ) : (
+            navItems.map(({ href, label }) => (
+              <Link key={href} href={href} className={styles.navLink}>
+                {label}
+              </Link>
+            ))
+          )}
         </div>
-        <div className={styles.navLinks}>
+
+        {/* Center - Tool navigation for linear regression page */}
+        {isLinearRegressionPage && (
+          <div className={styles.navLinks}>
+            {toolNavItems.map(({ label, onClick }) => (
+              <button
+                key={label}
+                onClick={onClick}
+                className={styles.navLink}
+                style={{ background: 'none', border: 'none', cursor: 'pointer' }}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+        )}
+
+        {/* Trailing side - Auth buttons or account menu */}
+        <div className={styles.navLinks} style={{ justifyContent: isLinearRegressionPage ? 'flex-end' : 'flex-start' }}>
           {activeAccount ? (
             <div className={styles.accountContainer} ref={containerRef}>
               <button
