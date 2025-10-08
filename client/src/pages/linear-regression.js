@@ -387,7 +387,8 @@ points(df$time, df$value, col = "red", pch = 16)`,
           </div>
 
           {/* Right Panel - Code and Arguments */}
-          <div className={`${styles.rightPanel} ${!isRightPanelVisible ? styles.rightPanelHidden : ''}`}>
+          {isRightPanelVisible && (
+            <div className={styles.rightPanel}>
             <div className={styles.panelHeader}>
               <div className={styles.headerActions}>
                 <div className={styles.vrIcon}>VR</div>
@@ -428,7 +429,8 @@ points(df$time, df$value, col = "red", pch = 16)`,
                 </div>
               ))}
             </div>
-          </div>
+            </div>
+          )}
         </div>
       </div>
     </>

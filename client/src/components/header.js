@@ -105,7 +105,7 @@ export default function Header({ onImportClick, onEditClick, isRightPanelVisible
 
   // Tool-specific navigation items for linear regression page
   const toolNavItems = [
-    { label: isRightPanelVisible ? "Hide Panel" : "Show Panel", onClick: onEditClick },
+    { label: "Edit", onClick: onEditClick },
     { label: "Import", onClick: onImportClick },
     { label: "Export", onClick: () => {} },
   ];
@@ -151,8 +151,8 @@ export default function Header({ onImportClick, onEditClick, isRightPanelVisible
                   gap: '6px'
                 }}
               >
-                {label === "Hide Panel" && "👁️"}
-                {label === "Show Panel" && "👁️‍🗨️"}
+                {label === "Edit" && ""}
+                {label === "Edit" && ""}
                 {label}
               </button>
             ))}
