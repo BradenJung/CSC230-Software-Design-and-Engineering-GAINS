@@ -51,7 +51,7 @@ export default function Home() {
         setBackendMessage(data);
         setBackendError(null);
       } catch (error) {
-        console.error("Backend fetch failed", error);
+        //console.error("Backend fetch failed", error);
         setBackendMessage(null);
         setBackendError("Unable to reach backend");
       }

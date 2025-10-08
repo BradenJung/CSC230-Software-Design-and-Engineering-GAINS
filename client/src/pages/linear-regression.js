@@ -6,6 +6,7 @@ import styles from "../styles/Home.module.css";
 export default function linear() {
   const [selectedTool, setSelectedTool] = useState("linear-regression");
   const [importedRows, setImportedRows] = useState([]);
+  const [isRightPanelVisible, setIsRightPanelVisible] = useState(true);
   const fileInputRef = useRef(null);
 
   function handleTriggerImport(e) {
@@ -13,6 +14,10 @@ export default function linear() {
     if (fileInputRef.current) {
       fileInputRef.current.click();
     }
+  }
+
+  function handleEditToggle() {
+    setIsRightPanelVisible(!isRightPanelVisible);
   }
 
   function parseCsv(text) {
@@ -248,7 +253,7 @@ points(df$time, df$value, col = "red", pch = 16)`,
         <link rel="icon" href="/favicon.ico" />
       </Head>
 
-      <Header onImportClick={handleTriggerImport} />
+      <Header onImportClick={handleTriggerImport} onEditClick={handleEditToggle} isRightPanelVisible={isRightPanelVisible} />
 
       <div className={styles.dashboard}>
         <input
@@ -259,7 +264,7 @@ points(df$time, df$value, col = "red", pch = 16)`,
           onChange={handleFileChange}
         />
 
-        <div className={styles.mainContent}>
+        <div className={isRightPanelVisible ? styles.mainContent : styles.mainContentNoRightPanel}>
           {/* Left Panel - Tool Selection */}
           <div className={styles.leftPanel}>
             <div className={styles.panelHeader}>
@@ -382,7 +387,7 @@ points(df$time, df$value, col = "red", pch = 16)`,
           </div>
 
           {/* Right Panel - Code and Arguments */}
-          <div className={styles.rightPanel}>
+          <div className={`${styles.rightPanel} ${!isRightPanelVisible ? styles.rightPanelHidden : ''}`}>
             <div className={styles.panelHeader}>
               <div className={styles.headerActions}>
                 <div className={styles.vrIcon}>VR</div>

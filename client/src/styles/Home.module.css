@@ -152,6 +152,15 @@
   grid-template-columns: 300px 1fr 400px;
   height: calc(100vh - 60px);
   gap: 0;
+  transition: grid-template-columns 0.3s ease-in-out;
+}
+
+.mainContentNoRightPanel {
+  display: grid;
+  grid-template-columns: 300px 1fr;
+  height: calc(100vh - 60px);
+  gap: 0;
+  transition: grid-template-columns 0.3s ease-in-out;
 }
 
 /* Left Panel - Tool Selection */
@@ -670,6 +679,15 @@
   border-left: 1px solid #333;
   padding: 24px;
   overflow-y: auto;
+  transition: transform 0.3s ease-in-out, opacity 0.3s ease-in-out;
+  transform: translateX(0);
+  opacity: 1;
+}
+
+.rightPanelHidden {
+  transform: translateX(100%);
+  opacity: 0;
+  pointer-events: none;
 }
 
 .headerActions {

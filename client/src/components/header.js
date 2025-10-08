@@ -6,7 +6,7 @@ import styles from "../styles/Home.module.css";
 const ACTIVE_ACCOUNT_KEY = "gains.activeAccount";
 const AUTH_CHANGE_EVENT = "gains-auth-change";
 
-export default function Header({ onImportClick }) {
+export default function Header({ onImportClick, onEditClick, isRightPanelVisible }) {
   const router = useRouter();
   const containerRef = useRef(null);
   const [activeAccount, setActiveAccount] = useState(null);
@@ -105,7 +105,7 @@ export default function Header({ onImportClick }) {
 
   // Tool-specific navigation items for linear regression page
   const toolNavItems = [
-    { label: "Edit", onClick: () => {} },
+    { label: isRightPanelVisible ? "Hide Panel" : "Show Panel", onClick: onEditClick },
     { label: "Import", onClick: onImportClick },
     { label: "Export", onClick: () => {} },
   ];
@@ -142,8 +142,17 @@ export default function Header({ onImportClick }) {
                 key={label}
                 onClick={onClick}
                 className={styles.navLink}
-                style={{ background: 'none', border: 'none', cursor: 'pointer' }}
+                style={{ 
+                  background: 'none', 
+                  border: 'none', 
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px'
+                }}
               >
+                {label === "Hide Panel" && "👁️"}
+                {label === "Show Panel" && "👁️‍🗨️"}
                 {label}
               </button>
             ))}
