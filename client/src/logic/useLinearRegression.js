@@ -9,24 +9,74 @@ import { RCodeService } from './RCodeService';
 export const useLinearRegression = () => {
   const [selectedTool, setSelectedTool] = useState("linear-regression");
   const [importedRows, setImportedRows] = useState([]);
+  const [isRightPanelVisible, setIsRightPanelVisible] = useState(true);
+  
+  // Tool-specific selections
   const [responseColumn, setResponseColumn] = useState('');
   const [predictorColumns, setPredictorColumns] = useState([]);
-  const [isRightPanelVisible, setIsRightPanelVisible] = useState(true);
+  const [categoryColumn, setCategoryColumn] = useState('');
+  const [valueColumn, setValueColumn] = useState('');
+  const [timeColumn, setTimeColumn] = useState('');
 
   // Parse CSV data when imported
   const handleFileImport = useCallback((csvText) => {
     const parsedData = RCodeService.parseCsv(csvText);
     setImportedRows(parsedData);
     
-    // Auto-select columns if data is available
+    // Auto-select columns based on current tool
     if (parsedData.length > 0) {
       const columns = RCodeService.getColumnNames(parsedData);
       if (columns.length >= 2) {
-        setResponseColumn(columns[0]); // First column as response
-        setPredictorColumns(columns.slice(1)); // Rest as predictors
+        switch (selectedTool) {
+          case 'linear-regression':
+            setResponseColumn(columns[0]);
+            setPredictorColumns(columns.slice(1));
+            break;
+          case 'bar-chart':
+            setCategoryColumn(columns[0]);
+            setValueColumn(columns[1]);
+            break;
+          case 'line-chart':
+            setTimeColumn(columns[0]);
+            setValueColumn(columns[1]);
+            break;
+        }
       }
     }
-  }, []);
+  }, [selectedTool]);
+
+  // Handle tool switching
+  const handleToolChange = useCallback((toolId) => {
+    setSelectedTool(toolId);
+    
+    // Reset all column selections
+    setResponseColumn('');
+    setPredictorColumns([]);
+    setCategoryColumn('');
+    setValueColumn('');
+    setTimeColumn('');
+    
+    // Auto-select columns for new tool if data is available
+    if (importedRows.length > 0) {
+      const columns = RCodeService.getColumnNames(importedRows);
+      if (columns.length >= 2) {
+        switch (toolId) {
+          case 'linear-regression':
+            setResponseColumn(columns[0]);
+            setPredictorColumns(columns.slice(1));
+            break;
+          case 'bar-chart':
+            setCategoryColumn(columns[0]);
+            setValueColumn(columns[1]);
+            break;
+          case 'line-chart':
+            setTimeColumn(columns[0]);
+            setValueColumn(columns[1]);
+            break;
+        }
+      }
+    }
+  }, [importedRows]);
 
   // Update data value in the table
   const updateDataValue = useCallback((rowIndex, columnName, newValue) => {
@@ -34,50 +84,68 @@ export const useLinearRegression = () => {
     setImportedRows(updatedData);
   }, [importedRows]);
 
-  // Update response column selection
-  const updateResponseColumn = useCallback((columnName) => {
-    setResponseColumn(columnName);
-    // Remove from predictors if it was there
-    setPredictorColumns(prev => prev.filter(col => col !== columnName));
-  }, []);
-
-  // Update predictor columns selection
-  const updatePredictorColumns = useCallback((columnName, isSelected) => {
-    if (isSelected) {
-      setPredictorColumns(prev => [...prev, columnName]);
-    } else {
-      setPredictorColumns(prev => prev.filter(col => col !== columnName));
+  // Update column selections based on tool type
+  const updateColumnSelection = useCallback((type, columnName, isSelected = true) => {
+    switch (selectedTool) {
+      case 'linear-regression':
+        if (type === 'response') {
+          setResponseColumn(columnName);
+          setPredictorColumns(prev => prev.filter(col => col !== columnName));
+        } else if (type === 'predictor') {
+          if (isSelected) {
+            setPredictorColumns(prev => [...prev, columnName]);
+          } else {
+            setPredictorColumns(prev => prev.filter(col => col !== columnName));
+          }
+        }
+        break;
+      case 'bar-chart':
+        if (type === 'category') {
+          setCategoryColumn(columnName);
+        } else if (type === 'value') {
+          setValueColumn(columnName);
+        }
+        break;
+      case 'line-chart':
+        if (type === 'time') {
+          setTimeColumn(columnName);
+        } else if (type === 'value') {
+          setValueColumn(columnName);
+        }
+        break;
     }
-  }, []);
+  }, [selectedTool]);
+
+  // Get current selections based on tool type
+  const getCurrentSelections = useCallback(() => {
+    switch (selectedTool) {
+      case 'linear-regression':
+        return { responseColumn, predictorColumns };
+      case 'bar-chart':
+        return { categoryColumn, valueColumn };
+      case 'line-chart':
+        return { timeColumn, valueColumn };
+      default:
+        return { responseColumn, predictorColumns };
+    }
+  }, [selectedTool, responseColumn, predictorColumns, categoryColumn, valueColumn, timeColumn]);
 
   // Toggle right panel visibility
   const toggleRightPanel = useCallback(() => {
     setIsRightPanelVisible(prev => !prev);
   }, []);
 
-  // Generate R code based on current data and selections
+  // Generate R code based on current tool and data
   const generatedRCode = useMemo(() => {
-    if (importedRows.length > 0 && responseColumn && predictorColumns.length > 0) {
-      return RCodeService.generateLinearRegressionCode(
-        importedRows, 
-        responseColumn, 
-        predictorColumns
-      );
-    }
-    return RCodeService.getDefaultLinearRegressionCode();
-  }, [importedRows, responseColumn, predictorColumns]);
+    const selections = getCurrentSelections();
+    return RCodeService.generateCode(selectedTool, importedRows, selections);
+  }, [selectedTool, importedRows, getCurrentSelections]);
 
-  // Generate arguments based on current data and selections
+  // Generate arguments based on current tool and data
   const generatedArguments = useMemo(() => {
-    if (importedRows.length > 0 && responseColumn && predictorColumns.length > 0) {
-      return RCodeService.generateArguments(
-        importedRows, 
-        responseColumn, 
-        predictorColumns
-      );
-    }
-    return RCodeService.getDefaultArguments();
-  }, [importedRows, responseColumn, predictorColumns]);
+    const selections = getCurrentSelections();
+    return RCodeService.generateArguments(selectedTool, importedRows, selections);
+  }, [selectedTool, importedRows, getCurrentSelections]);
 
   // Get available columns
   const availableColumns = useMemo(() => {
@@ -95,6 +163,9 @@ export const useLinearRegression = () => {
     importedRows,
     responseColumn,
     predictorColumns,
+    categoryColumn,
+    valueColumn,
+    timeColumn,
     isRightPanelVisible,
     
     // Computed values
@@ -104,11 +175,10 @@ export const useLinearRegression = () => {
     validation,
     
     // Actions
-    setSelectedTool,
+    handleToolChange,
     handleFileImport,
     updateDataValue,
-    updateResponseColumn,
-    updatePredictorColumns,
+    updateColumnSelection,
     toggleRightPanel
   };
 };

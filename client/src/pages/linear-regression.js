@@ -13,16 +13,18 @@ export default function linear() {
     importedRows,
     responseColumn,
     predictorColumns,
+    categoryColumn,
+    valueColumn,
+    timeColumn,
     isRightPanelVisible,
     generatedRCode,
     generatedArguments,
     availableColumns,
     validation,
-    setSelectedTool,
+    handleToolChange,
     handleFileImport,
     updateDataValue,
-    updateResponseColumn,
-    updatePredictorColumns,
+    updateColumnSelection,
     toggleRightPanel
   } = useLinearRegression();
 
@@ -51,10 +53,32 @@ export default function linear() {
   }
 
   function handleColumnSelectionChange(type, columnName, isSelected = true) {
-    if (type === 'response') {
-      updateResponseColumn(columnName);
-    } else if (type === 'predictor') {
-      updatePredictorColumns(columnName, isSelected);
+    updateColumnSelection(type, columnName, isSelected);
+  }
+
+  function getCurrentSelectionsValid() {
+    switch (selectedTool) {
+      case 'linear-regression':
+        return responseColumn && predictorColumns.length > 0;
+      case 'bar-chart':
+        return categoryColumn && valueColumn;
+      case 'line-chart':
+        return timeColumn && valueColumn;
+      default:
+        return false;
+    }
+  }
+
+  function getCodeDescription() {
+    switch (selectedTool) {
+      case 'linear-regression':
+        return `Generated R code for linear regression using ${responseColumn} as response variable and ${predictorColumns.join(', ')} as predictors.`;
+      case 'bar-chart':
+        return `Generated R code for bar chart using ${categoryColumn} as categories and ${valueColumn} as values.`;
+      case 'line-chart':
+        return `Generated R code for line chart using ${timeColumn} as time points and ${valueColumn} as values.`;
+      default:
+        return 'Generated R code based on your data and selections.';
     }
   }
 
@@ -246,7 +270,7 @@ points(df$time, df$value, col = "red", pch = 16)`,
                 <div
                   key={tool.id}
                   className={`${styles.toolCard} ${selectedTool === tool.id ? styles.selected : ''}`}
-                  onClick={() => setSelectedTool(tool.id)}
+                  onClick={() => handleToolChange(tool.id)}
                 >
                   <div className={styles.toolIcon} style={{ color: tool.color }}>
                     {tool.icon}
@@ -294,8 +318,12 @@ points(df$time, df$value, col = "red", pch = 16)`,
             <EditableDataTable
               data={importedRows}
               onDataUpdate={updateDataValue}
+              selectedTool={selectedTool}
               responseColumn={responseColumn}
               predictorColumns={predictorColumns}
+              categoryColumn={categoryColumn}
+              valueColumn={valueColumn}
+              timeColumn={timeColumn}
               onColumnSelectionChange={handleColumnSelectionChange}
             />
 
@@ -315,10 +343,26 @@ points(df$time, df$value, col = "red", pch = 16)`,
             {importedRows.length > 0 && (
               <div className={styles.columnSelectionInfo}>
                 <h4>Column Selection:</h4>
-                <p><strong>Response Variable:</strong> {responseColumn || 'None selected'}</p>
-                <p><strong>Predictor Variables:</strong> {predictorColumns.length > 0 ? predictorColumns.join(', ') : 'None selected'}</p>
+                {selectedTool === 'linear-regression' && (
+                  <>
+                    <p><strong>Response Variable:</strong> {responseColumn || 'None selected'}</p>
+                    <p><strong>Predictor Variables:</strong> {predictorColumns.length > 0 ? predictorColumns.join(', ') : 'None selected'}</p>
+                  </>
+                )}
+                {selectedTool === 'bar-chart' && (
+                  <>
+                    <p><strong>Category Column:</strong> {categoryColumn || 'None selected'}</p>
+                    <p><strong>Value Column:</strong> {valueColumn || 'None selected'}</p>
+                  </>
+                )}
+                {selectedTool === 'line-chart' && (
+                  <>
+                    <p><strong>Time Column:</strong> {timeColumn || 'None selected'}</p>
+                    <p><strong>Value Column:</strong> {valueColumn || 'None selected'}</p>
+                  </>
+                )}
                 <p className={styles.columnSelectionHint}>
-                  Click on column headers to select response and predictor variables. The R code will update automatically.
+                  Click on column headers to select variables. The R code will update automatically.
                 </p>
               </div>
             )}
@@ -343,9 +387,9 @@ points(df$time, df$value, col = "red", pch = 16)`,
                 <pre><code>{generatedRCode}</code></pre>
               </div>
               <p className={styles.codeDescription}>
-                {importedRows.length > 0 && responseColumn && predictorColumns.length > 0 
-                  ? `Generated R code for linear regression using ${responseColumn} as response variable and ${predictorColumns.join(', ')} as predictors.`
-                  : "Default R code for linear regression. Import data and select variables to generate custom code."
+                {importedRows.length > 0 && getCurrentSelectionsValid() 
+                  ? getCodeDescription()
+                  : `Default R code for ${selectedTool.replace('-', ' ')}. Import data and select variables to generate custom code.`
                 }
               </p>
             </div>

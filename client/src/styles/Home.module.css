@@ -666,6 +666,36 @@
   color: #ffffff;
 }
 
+.categoryColumn {
+  background: rgba(255, 193, 7, 0.2) !important;
+  border-left: 3px solid #ffc107;
+}
+
+.categoryColumn .columnBadge {
+  background: #ffc107;
+  color: #000000;
+}
+
+.valueColumn {
+  background: rgba(111, 66, 193, 0.2) !important;
+  border-left: 3px solid #6f42c1;
+}
+
+.valueColumn .columnBadge {
+  background: #6f42c1;
+  color: #ffffff;
+}
+
+.timeColumn {
+  background: rgba(13, 202, 240, 0.2) !important;
+  border-left: 3px solid #0dcaf0;
+}
+
+.timeColumn .columnBadge {
+  background: #0dcaf0;
+  color: #000000;
+}
+
 .editableCell {
   cursor: pointer;
   transition: background-color 0.2s ease;

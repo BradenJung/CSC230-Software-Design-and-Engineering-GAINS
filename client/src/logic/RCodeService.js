@@ -66,6 +66,26 @@ export class RCodeService {
   }
 
   /**
+   * Generate R code based on tool type and data
+   * @param {string} toolId - Tool identifier (linear-regression, bar-chart, line-chart)
+   * @param {Array<Object>} data - Parsed CSV data
+   * @param {Object} selections - Tool-specific selections (responseColumn, predictorColumns, etc.)
+   * @returns {string} Generated R code
+   */
+  static generateCode(toolId, data, selections = {}) {
+    switch (toolId) {
+      case 'linear-regression':
+        return this.generateLinearRegressionCode(data, selections.responseColumn, selections.predictorColumns);
+      case 'bar-chart':
+        return this.generateBarChartCode(data, selections.categoryColumn, selections.valueColumn);
+      case 'line-chart':
+        return this.generateLineChartCode(data, selections.timeColumn, selections.valueColumn);
+      default:
+        return this.getDefaultCode(toolId);
+    }
+  }
+
+  /**
    * Generate R code for linear regression based on data
    * @param {Array<Object>} data - Parsed CSV data
    * @param {string} responseColumn - Name of the response variable column
@@ -134,6 +154,107 @@ plot(model)`;
   }
 
   /**
+   * Generate R code for bar chart based on data
+   * @param {Array<Object>} data - Parsed CSV data
+   * @param {string} categoryColumn - Name of the category column
+   * @param {string} valueColumn - Name of the value column
+   * @returns {string} Generated R code
+   */
+  static generateBarChartCode(data, categoryColumn, valueColumn) {
+    if (!data || data.length === 0) {
+      return this.getDefaultBarChartCode();
+    }
+
+    const categories = data.map(row => row[categoryColumn]).filter(val => val !== '');
+    const values = data.map(row => row[valueColumn]).filter(val => val !== '');
+
+    const rCode = `# Initialize data
+categories <- c(${categories.map(cat => `"${cat}"`).join(', ')})
+values <- c(${values.join(', ')})
+
+# Create data frame
+df <- data.frame(
+  category = categories,
+  value = values
+)
+
+# Create bar chart
+barplot(
+  height = df$value,
+  names.arg = df$category,
+  main = "Bar Chart",
+  xlab = "Categories",
+  ylab = "Values",
+  col = rainbow(length(categories)),
+  border = "black"
+)`;
+
+    return rCode;
+  }
+
+  /**
+   * Generate R code for line chart based on data
+   * @param {Array<Object>} data - Parsed CSV data
+   * @param {string} timeColumn - Name of the time/index column
+   * @param {string} valueColumn - Name of the value column
+   * @returns {string} Generated R code
+   */
+  static generateLineChartCode(data, timeColumn, valueColumn) {
+    if (!data || data.length === 0) {
+      return this.getDefaultLineChartCode();
+    }
+
+    const timePoints = data.map(row => row[timeColumn]).filter(val => val !== '');
+    const values = data.map(row => row[valueColumn]).filter(val => val !== '');
+
+    const rCode = `# Initialize data
+time_points <- c(${timePoints.join(', ')})
+values <- c(${values.join(', ')})
+
+# Create data frame
+df <- data.frame(
+  time = time_points,
+  value = values
+)
+
+# Create line chart
+plot(
+  x = df$time,
+  y = df$value,
+  type = "l",
+  main = "Line Chart",
+  xlab = "Time Points",
+  ylab = "Values",
+  col = "blue",
+  lwd = 2,
+  pch = 16
+)
+
+# Add points
+points(df$time, df$value, col = "red", pch = 16)`;
+
+    return rCode;
+  }
+
+  /**
+   * Get default code for a specific tool when no data is available
+   * @param {string} toolId - Tool identifier
+   * @returns {string} Default R code
+   */
+  static getDefaultCode(toolId) {
+    switch (toolId) {
+      case 'linear-regression':
+        return this.getDefaultLinearRegressionCode();
+      case 'bar-chart':
+        return this.getDefaultBarChartCode();
+      case 'line-chart':
+        return this.getDefaultLineChartCode();
+      default:
+        return this.getDefaultLinearRegressionCode();
+    }
+  }
+
+  /**
    * Get default linear regression code when no data is available
    * @returns {string} Default R code
    */
@@ -170,15 +291,94 @@ plot(model)`;
   }
 
   /**
-   * Generate arguments configuration based on data
+   * Get default bar chart code when no data is available
+   * @returns {string} Default R code
+   */
+  static getDefaultBarChartCode() {
+    return `# Initialize data
+categories <- c("A", "B", "C", "D", "E")
+values <- c(23, 45, 56, 78, 32)
+
+# Create data frame
+df <- data.frame(
+  category = categories,
+  value = values
+)
+
+# Create bar chart
+barplot(
+  height = df$value,
+  names.arg = df$category,
+  main = "Bar Chart Example",
+  xlab = "Categories",
+  ylab = "Values",
+  col = rainbow(length(categories)),
+  border = "black"
+)`;
+  }
+
+  /**
+   * Get default line chart code when no data is available
+   * @returns {string} Default R code
+   */
+  static getDefaultLineChartCode() {
+    return `# Initialize data
+time_points <- c(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)
+values <- c(12, 15, 18, 22, 25, 23, 28, 32, 30, 35)
+
+# Create data frame
+df <- data.frame(
+  time = time_points,
+  value = values
+)
+
+# Create line chart
+plot(
+  x = df$time,
+  y = df$value,
+  type = "l",
+  main = "Line Chart Example",
+  xlab = "Time Points",
+  ylab = "Values",
+  col = "blue",
+  lwd = 2,
+  pch = 16
+)
+
+# Add points
+points(df$time, df$value, col = "red", pch = 16)`;
+  }
+
+  /**
+   * Generate arguments configuration based on tool type and data
+   * @param {string} toolId - Tool identifier
+   * @param {Array<Object>} data - Parsed CSV data
+   * @param {Object} selections - Tool-specific selections
+   * @returns {Array<Object>} Arguments configuration
+   */
+  static generateArguments(toolId, data, selections = {}) {
+    switch (toolId) {
+      case 'linear-regression':
+        return this.generateLinearRegressionArguments(data, selections.responseColumn, selections.predictorColumns);
+      case 'bar-chart':
+        return this.generateBarChartArguments(data, selections.categoryColumn, selections.valueColumn);
+      case 'line-chart':
+        return this.generateLineChartArguments(data, selections.timeColumn, selections.valueColumn);
+      default:
+        return this.getDefaultArguments(toolId);
+    }
+  }
+
+  /**
+   * Generate arguments configuration for linear regression
    * @param {Array<Object>} data - Parsed CSV data
    * @param {string} responseColumn - Name of the response variable column
    * @param {Array<string>} predictorColumns - Names of predictor variable columns
    * @returns {Array<Object>} Arguments configuration
    */
-  static generateArguments(data, responseColumn, predictorColumns) {
+  static generateLinearRegressionArguments(data, responseColumn, predictorColumns) {
     if (!data || data.length === 0) {
-      return this.getDefaultArguments();
+      return this.getDefaultArguments('linear-regression');
     }
 
     const args = [];
@@ -212,22 +412,105 @@ plot(model)`;
   }
 
   /**
+   * Generate arguments configuration for bar chart
+   * @param {Array<Object>} data - Parsed CSV data
+   * @param {string} categoryColumn - Name of the category column
+   * @param {string} valueColumn - Name of the value column
+   * @returns {Array<Object>} Arguments configuration
+   */
+  static generateBarChartArguments(data, categoryColumn, valueColumn) {
+    if (!data || data.length === 0) {
+      return this.getDefaultArguments('bar-chart');
+    }
+
+    const categories = data.map(row => row[categoryColumn]).filter(val => val !== '');
+    const values = data.map(row => row[valueColumn]).filter(val => val !== '');
+
+    return [
+      { name: "Categories", value: categories.join(', '), readOnly: true },
+      { name: "Values", value: values.join(', '), readOnly: true },
+      { name: "Main Title", value: "Bar Chart", readOnly: false },
+      { name: "X-axis Label", value: "Categories", readOnly: false },
+      { name: "Y-axis Label", value: "Values", readOnly: false }
+    ];
+  }
+
+  /**
+   * Generate arguments configuration for line chart
+   * @param {Array<Object>} data - Parsed CSV data
+   * @param {string} timeColumn - Name of the time/index column
+   * @param {string} valueColumn - Name of the value column
+   * @returns {Array<Object>} Arguments configuration
+   */
+  static generateLineChartArguments(data, timeColumn, valueColumn) {
+    if (!data || data.length === 0) {
+      return this.getDefaultArguments('line-chart');
+    }
+
+    const timePoints = data.map(row => row[timeColumn]).filter(val => val !== '');
+    const values = data.map(row => row[valueColumn]).filter(val => val !== '');
+
+    return [
+      { name: "Time Points", value: timePoints.join(', '), readOnly: true },
+      { name: "Values", value: values.join(', '), readOnly: true },
+      { name: "Main Title", value: "Line Chart", readOnly: false },
+      { name: "X-axis Label", value: "Time Points", readOnly: false },
+      { name: "Y-axis Label", value: "Values", readOnly: false },
+      { name: "Line Color", value: "blue", readOnly: false }
+    ];
+  }
+
+  /**
    * Get default arguments when no data is available
+   * @param {string} toolId - Tool identifier
    * @returns {Array<Object>} Default arguments
    */
-  static getDefaultArguments() {
-    return [
-      { name: "Formula", value: "y ~ x1 + x2", readOnly: true },
-      { 
-        name: "df (Initialize data)", 
-        type: "data",
-        data: [
-          { label: "y:", value: "5, 7, 8, 6, 9" },
-          { label: "x1:", value: "1, 2, 3, 4, 5" },
-          { label: "x2:", value: "2, 3, 4, 5, 6" }
-        ]
-      }
-    ];
+  static getDefaultArguments(toolId) {
+    switch (toolId) {
+      case 'linear-regression':
+        return [
+          { name: "Formula", value: "y ~ x1 + x2", readOnly: true },
+          { 
+            name: "df (Initialize data)", 
+            type: "data",
+            data: [
+              { label: "y:", value: "5, 7, 8, 6, 9" },
+              { label: "x1:", value: "1, 2, 3, 4, 5" },
+              { label: "x2:", value: "2, 3, 4, 5, 6" }
+            ]
+          }
+        ];
+      case 'bar-chart':
+        return [
+          { name: "Categories", value: "A, B, C, D, E", readOnly: false },
+          { name: "Values", value: "23, 45, 56, 78, 32", readOnly: false },
+          { name: "Main Title", value: "Bar Chart Example", readOnly: false },
+          { name: "X-axis Label", value: "Categories", readOnly: false },
+          { name: "Y-axis Label", value: "Values", readOnly: false }
+        ];
+      case 'line-chart':
+        return [
+          { name: "Time Points", value: "1, 2, 3, 4, 5, 6, 7, 8, 9, 10", readOnly: false },
+          { name: "Values", value: "12, 15, 18, 22, 25, 23, 28, 32, 30, 35", readOnly: false },
+          { name: "Main Title", value: "Line Chart Example", readOnly: false },
+          { name: "X-axis Label", value: "Time Points", readOnly: false },
+          { name: "Y-axis Label", value: "Values", readOnly: false },
+          { name: "Line Color", value: "blue", readOnly: false }
+        ];
+      default:
+        return [
+          { name: "Formula", value: "y ~ x1 + x2", readOnly: true },
+          { 
+            name: "df (Initialize data)", 
+            type: "data",
+            data: [
+              { label: "y:", value: "5, 7, 8, 6, 9" },
+              { label: "x1:", value: "1, 2, 3, 4, 5" },
+              { label: "x2:", value: "2, 3, 4, 5, 6" }
+            ]
+          }
+        ];
+    }
   }
 
   /**

@@ -9,8 +9,12 @@ import styles from '../styles/Home.module.css';
 export const EditableDataTable = ({ 
   data, 
   onDataUpdate, 
+  selectedTool,
   responseColumn, 
-  predictorColumns, 
+  predictorColumns,
+  categoryColumn,
+  valueColumn,
+  timeColumn,
   onColumnSelectionChange 
 }) => {
   const [editingCell, setEditingCell] = useState(null);
@@ -89,25 +93,80 @@ export const EditableDataTable = ({
   };
 
   const handleColumnHeaderClick = (columnName) => {
-    if (responseColumn === columnName) {
-      // If it's currently the response column, deselect it
-      onColumnSelectionChange('response', null);
-    } else if (predictorColumns.includes(columnName)) {
-      // If it's currently a predictor, remove it
-      onColumnSelectionChange('predictor', columnName, false);
-    } else {
-      // If it's not selected, make it the response column
-      onColumnSelectionChange('response', columnName);
+    switch (selectedTool) {
+      case 'linear-regression':
+        if (responseColumn === columnName) {
+          onColumnSelectionChange('response', null);
+        } else if (predictorColumns.includes(columnName)) {
+          onColumnSelectionChange('predictor', columnName, false);
+        } else {
+          onColumnSelectionChange('response', columnName);
+        }
+        break;
+      case 'bar-chart':
+        if (categoryColumn === columnName) {
+          onColumnSelectionChange('category', null);
+        } else if (valueColumn === columnName) {
+          onColumnSelectionChange('value', null);
+        } else {
+          // Toggle between category and value
+          if (!categoryColumn) {
+            onColumnSelectionChange('category', columnName);
+          } else if (!valueColumn) {
+            onColumnSelectionChange('value', columnName);
+          } else {
+            // Replace category with new selection
+            onColumnSelectionChange('category', columnName);
+          }
+        }
+        break;
+      case 'line-chart':
+        if (timeColumn === columnName) {
+          onColumnSelectionChange('time', null);
+        } else if (valueColumn === columnName) {
+          onColumnSelectionChange('value', null);
+        } else {
+          // Toggle between time and value
+          if (!timeColumn) {
+            onColumnSelectionChange('time', columnName);
+          } else if (!valueColumn) {
+            onColumnSelectionChange('value', columnName);
+          } else {
+            // Replace time with new selection
+            onColumnSelectionChange('time', columnName);
+          }
+        }
+        break;
     }
   };
 
   const getColumnHeaderClass = (columnName) => {
     let className = styles.columnHeader;
-    if (responseColumn === columnName) {
-      className += ` ${styles.responseColumn}`;
-    } else if (predictorColumns.includes(columnName)) {
-      className += ` ${styles.predictorColumn}`;
+    
+    switch (selectedTool) {
+      case 'linear-regression':
+        if (responseColumn === columnName) {
+          className += ` ${styles.responseColumn}`;
+        } else if (predictorColumns.includes(columnName)) {
+          className += ` ${styles.predictorColumn}`;
+        }
+        break;
+      case 'bar-chart':
+        if (categoryColumn === columnName) {
+          className += ` ${styles.categoryColumn}`;
+        } else if (valueColumn === columnName) {
+          className += ` ${styles.valueColumn}`;
+        }
+        break;
+      case 'line-chart':
+        if (timeColumn === columnName) {
+          className += ` ${styles.timeColumn}`;
+        } else if (valueColumn === columnName) {
+          className += ` ${styles.valueColumn}`;
+        }
+        break;
     }
+    
     return className;
   };
 
@@ -125,11 +184,23 @@ export const EditableDataTable = ({
               >
                 <div className={styles.columnHeaderContent}>
                   <span>{String(columnName).toUpperCase()}</span>
-                  {responseColumn === columnName && (
+                  {selectedTool === 'linear-regression' && responseColumn === columnName && (
                     <span className={styles.columnBadge}>Response</span>
                   )}
-                  {predictorColumns.includes(columnName) && (
+                  {selectedTool === 'linear-regression' && predictorColumns.includes(columnName) && (
                     <span className={styles.columnBadge}>Predictor</span>
+                  )}
+                  {selectedTool === 'bar-chart' && categoryColumn === columnName && (
+                    <span className={styles.columnBadge}>Category</span>
+                  )}
+                  {selectedTool === 'bar-chart' && valueColumn === columnName && (
+                    <span className={styles.columnBadge}>Value</span>
+                  )}
+                  {selectedTool === 'line-chart' && timeColumn === columnName && (
+                    <span className={styles.columnBadge}>Time</span>
+                  )}
+                  {selectedTool === 'line-chart' && valueColumn === columnName && (
+                    <span className={styles.columnBadge}>Value</span>
                   )}
                 </div>
               </th>
