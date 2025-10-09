@@ -696,26 +696,6 @@
   color: #000000;
 }
 
-.xColumn {
-  background: rgba(123, 97, 255, 0.2) !important;
-  border-left: 3px solid #7b61ff;
-}
-
-.xColumn .columnBadge {
-  background: #7b61ff;
-  color: #ffffff;
-}
-
-.yColumn {
-  background: rgba(255, 97, 136, 0.2) !important;
-  border-left: 3px solid #ff6188;
-}
-
-.yColumn .columnBadge {
-  background: #ff6188;
-  color: #ffffff;
-}
-
 .editableCell {
   cursor: pointer;
   transition: background-color 0.2s ease;

@@ -15,8 +15,6 @@ export const EditableDataTable = ({
   categoryColumn,
   valueColumn,
   timeColumn,
-  xColumn,
-  yColumn,
   onColumnSelectionChange 
 }) => {
   const [editingCell, setEditingCell] = useState(null);
@@ -139,21 +137,6 @@ export const EditableDataTable = ({
           }
         }
         break;
-      case 'dot-plot':
-        if (xColumn === columnName) {
-          onColumnSelectionChange('x', null);
-        } else if (yColumn === columnName) {
-          onColumnSelectionChange('y', null);
-        } else {
-          if (!xColumn) {
-            onColumnSelectionChange('x', columnName);
-          } else if (!yColumn) {
-            onColumnSelectionChange('y', columnName);
-          } else {
-            onColumnSelectionChange('x', columnName);
-          }
-        }
-        break;
     }
   };
 
@@ -182,13 +165,6 @@ export const EditableDataTable = ({
           className += ` ${styles.valueColumn}`;
         }
         break;
-      case 'dot-plot':
-        if (xColumn === columnName) {
-          className += ` ${styles.xColumn}`;
-        } else if (yColumn === columnName) {
-          className += ` ${styles.yColumn}`;
-        }
-        break;
     }
     
     return className;
@@ -204,17 +180,7 @@ export const EditableDataTable = ({
                 key={columnName} 
                 className={getColumnHeaderClass(columnName)}
                 onClick={() => handleColumnHeaderClick(columnName)}
-                title={
-                  selectedTool === 'linear-regression'
-                    ? `Click to select as ${responseColumn === columnName ? 'response' : predictorColumns.includes(columnName) ? 'predictor' : 'response'} variable`
-                    : selectedTool === 'bar-chart'
-                      ? `Click to set ${!categoryColumn ? 'category' : !valueColumn ? 'value' : 'category'} column`
-                      : selectedTool === 'line-chart'
-                        ? `Click to set ${!timeColumn ? 'time' : !valueColumn ? 'value' : 'time'} column`
-                        : selectedTool === 'dot-plot'
-                          ? `Click to set ${!xColumn ? 'X' : !yColumn ? 'Y' : 'X'} column`
-                          : ''
-                }
+                title={`Click to select as ${responseColumn === columnName ? 'response' : predictorColumns.includes(columnName) ? 'predictor' : 'response'} variable`}
               >
                 <div className={styles.columnHeaderContent}>
                   <span>{String(columnName).toUpperCase()}</span>
@@ -235,12 +201,6 @@ export const EditableDataTable = ({
                   )}
                   {selectedTool === 'line-chart' && valueColumn === columnName && (
                     <span className={styles.columnBadge}>Value</span>
-                  )}
-                  {selectedTool === 'dot-plot' && xColumn === columnName && (
-                    <span className={styles.columnBadge}>X</span>
-                  )}
-                  {selectedTool === 'dot-plot' && yColumn === columnName && (
-                    <span className={styles.columnBadge}>Y</span>
                   )}
                 </div>
               </th>
