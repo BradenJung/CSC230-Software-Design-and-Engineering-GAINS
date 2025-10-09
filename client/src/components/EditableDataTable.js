@@ -15,6 +15,9 @@ export const EditableDataTable = ({
   categoryColumn,
   valueColumn,
   timeColumn,
+  // Axis props support dot-plot column highlighting
+  xColumn,
+  yColumn,
   onColumnSelectionChange 
 }) => {
   const [editingCell, setEditingCell] = useState(null);
@@ -137,6 +140,22 @@ export const EditableDataTable = ({
           }
         }
         break;
+      case 'dot-plot':
+        // Toggle mutually-exclusive axis roles for scatter-style charts
+        if (xColumn === columnName) {
+          onColumnSelectionChange('x', null);
+        } else if (yColumn === columnName) {
+          onColumnSelectionChange('y', null);
+        } else {
+          if (!xColumn) {
+            onColumnSelectionChange('x', columnName);
+          } else if (!yColumn) {
+            onColumnSelectionChange('y', columnName);
+          } else {
+            onColumnSelectionChange('x', columnName);
+          }
+        }
+        break;
     }
   };
 
@@ -165,9 +184,57 @@ export const EditableDataTable = ({
           className += ` ${styles.valueColumn}`;
         }
         break;
+      case 'dot-plot':
+        // Style x/y axis columns independently so users can distinguish roles
+        if (xColumn === columnName) {
+          className += ` ${styles.xColumn}`;
+        } else if (yColumn === columnName) {
+          className += ` ${styles.yColumn}`;
+        }
+        break;
     }
     
     return className;
+  };
+
+  const getColumnHeaderTitle = (columnName) => {
+    switch (selectedTool) {
+      case 'linear-regression':
+        if (responseColumn === columnName) {
+          return 'Click to deselect as response variable';
+        }
+        if (predictorColumns.includes(columnName)) {
+          return 'Click to deselect as predictor variable';
+        }
+        return 'Click to select as response variable';
+      case 'bar-chart':
+        if (categoryColumn === columnName) {
+          return 'Click to deselect as category column';
+        }
+        if (valueColumn === columnName) {
+          return 'Click to deselect as value column';
+        }
+        return 'Click to select as category or value column';
+      case 'line-chart':
+        if (timeColumn === columnName) {
+          return 'Click to deselect as time column';
+        }
+        if (valueColumn === columnName) {
+          return 'Click to deselect as value column';
+        }
+        return 'Click to select as time or value column';
+      case 'dot-plot':
+        // Clarify axis toggling in tooltips for accessibility cues
+        if (xColumn === columnName) {
+          return 'Click to deselect as X axis column';
+        }
+        if (yColumn === columnName) {
+          return 'Click to deselect as Y axis column';
+        }
+        return 'Click to select as X or Y axis column';
+      default:
+        return 'Click to toggle column selection';
+    }
   };
 
   return (
@@ -180,7 +247,7 @@ export const EditableDataTable = ({
                 key={columnName} 
                 className={getColumnHeaderClass(columnName)}
                 onClick={() => handleColumnHeaderClick(columnName)}
-                title={`Click to select as ${responseColumn === columnName ? 'response' : predictorColumns.includes(columnName) ? 'predictor' : 'response'} variable`}
+                title={getColumnHeaderTitle(columnName)}
               >
                 <div className={styles.columnHeaderContent}>
                   <span>{String(columnName).toUpperCase()}</span>
@@ -201,6 +268,12 @@ export const EditableDataTable = ({
                   )}
                   {selectedTool === 'line-chart' && valueColumn === columnName && (
                     <span className={styles.columnBadge}>Value</span>
+                  )}
+                  {selectedTool === 'dot-plot' && xColumn === columnName && (
+                    <span className={styles.columnBadge}>X</span>
+                  )}
+                  {selectedTool === 'dot-plot' && yColumn === columnName && (
+                    <span className={styles.columnBadge}>Y</span>
                   )}
                 </div>
               </th>

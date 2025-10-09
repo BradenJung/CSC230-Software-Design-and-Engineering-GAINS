@@ -730,6 +730,27 @@
   color: #000000;
 }
 
+/* Dot-plot axes */
+.xColumn {
+  background: rgba(25, 135, 84, 0.2) !important;
+  border-left: 3px solid #198754;
+}
+
+.xColumn .columnBadge {
+  background: #198754;
+  color: #ffffff;
+}
+
+.yColumn {
+  background: rgba(220, 53, 69, 0.2) !important;
+  border-left: 3px solid #dc3545;
+}
+
+.yColumn .columnBadge {
+  background: #dc3545;
+  color: #ffffff;
+}
+
 .editableCell {
   cursor: pointer;
   transition: background-color 0.2s ease;

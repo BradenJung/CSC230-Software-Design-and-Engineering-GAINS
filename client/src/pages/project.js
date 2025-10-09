@@ -15,15 +15,18 @@ const IMPORTED_CSV_DATA_KEY = "importedCsvData";
 const LAST_USED_R_TOOL_KEY = "lastUsedRTool";
 const DEFAULT_TOOL_ID = "linear-regression";
 // Map between our internal tool ids and the PascalCase values persisted in storage.
+// Keep storage mapper in sync with available dashboard tools
 const TOOL_ID_TO_STORAGE_VALUE = {
   "linear-regression": "LinearRegression",
   "line-chart": "LineChart",
-  "bar-chart": "BarChart"
+  "bar-chart": "BarChart",
+  "dot-plot": "DotPlot"
 };
 const TOOL_STORAGE_VALUE_TO_ID = {
   LinearRegression: "linear-regression",
   LineChart: "line-chart",
-  BarChart: "bar-chart"
+  BarChart: "bar-chart",
+  DotPlot: "dot-plot"
 };
 
 // Normalize persisted tool identifiers into the canonical kebab-case ids we use in code.

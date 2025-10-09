@@ -67,7 +67,7 @@ export class RCodeService {
 
   /**
    * Generate R code based on tool type and data
-   * @param {string} toolId - Tool identifier (linear-regression, bar-chart, line-chart)
+   * @param {string} toolId - Tool identifier (linear-regression, bar-chart, line-chart, dot-plot)
    * @param {Array<Object>} data - Parsed CSV data
    * @param {Object} selections - Tool-specific selections (responseColumn, predictorColumns, etc.)
    * @returns {string} Generated R code
@@ -80,6 +80,8 @@ export class RCodeService {
         return this.generateBarChartCode(data, selections.categoryColumn, selections.valueColumn);
       case 'line-chart':
         return this.generateLineChartCode(data, selections.timeColumn, selections.valueColumn);
+      case 'dot-plot':
+        return this.generateDotPlotCode(data, selections.xColumn, selections.yColumn);
       default:
         return this.getDefaultCode(toolId);
     }
@@ -237,6 +239,71 @@ points(df$time, df$value, col = "red", pch = 16)`;
   }
 
   /**
+   * Generate R code for dot plot (scatter plot) based on data
+   * @param {Array<Object>} data - Parsed CSV data
+   * @param {string} xColumn - Name of the x-axis column
+   * @param {string} yColumn - Name of the y-axis column
+   * @returns {string} Generated R code
+   */
+  static generateDotPlotCode(data, xColumn, yColumn) {
+    if (!data || data.length === 0) {
+      return this.getDefaultDotPlotCode();
+    }
+
+    // Preserve numeric literals while safely quoting strings for R
+    const formatValues = (values) =>
+      values
+        .map((value) => {
+          if (value === null || value === undefined || value === '') {
+            return 'NA';
+          }
+          const numericValue = Number(value);
+          if (!Number.isNaN(numericValue) && Number.isFinite(numericValue)) {
+            return `${numericValue}`;
+          }
+          const escaped = String(value).replace(/"/g, '\\"');
+          return `"${escaped}"`;
+        })
+        .join(', ');
+
+    const xValues = data.map(row => row[xColumn]).filter(val => val !== undefined && val !== null && val !== '');
+    const yValues = data.map(row => row[yColumn]).filter(val => val !== undefined && val !== null && val !== '');
+
+    if (!xValues.length || !yValues.length) {
+      return this.getDefaultDotPlotCode();
+    }
+
+    const formattedX = formatValues(xValues);
+    const formattedY = formatValues(yValues);
+
+    const rCode = `# Initialize data
+x_values <- c(${formattedX})
+y_values <- c(${formattedY})
+
+# Create data frame
+df <- data.frame(
+  x = x_values,
+  y = y_values
+)
+
+# Create dot plot / scatter plot
+plot(
+  x = df$x,
+  y = df$y,
+  main = "Dot Plot",
+  xlab = "${xColumn || 'X Values'}",
+  ylab = "${yColumn || 'Y Values'}",
+  pch = 19,
+  col = "darkgreen"
+)
+
+# Add grid for readability
+grid(col = "lightgray")`;
+
+    return rCode;
+  }
+
+  /**
    * Get default code for a specific tool when no data is available
    * @param {string} toolId - Tool identifier
    * @returns {string} Default R code
@@ -249,6 +316,8 @@ points(df$time, df$value, col = "red", pch = 16)`;
         return this.getDefaultBarChartCode();
       case 'line-chart':
         return this.getDefaultLineChartCode();
+      case 'dot-plot':
+        return this.getDefaultDotPlotCode();
       default:
         return this.getDefaultLinearRegressionCode();
     }
@@ -350,6 +419,36 @@ points(df$time, df$value, col = "red", pch = 16)`;
   }
 
   /**
+   * Get default dot plot code when no data is available
+   * @returns {string} Default R code
+   */
+  static getDefaultDotPlotCode() {
+    return `# Initialize data
+x_values <- c(1, 2, 3, 4, 5, 6)
+y_values <- c(2.5, 3.1, 4.8, 3.6, 5.2, 4.9)
+
+# Create data frame
+df <- data.frame(
+  x = x_values,
+  y = y_values
+)
+
+# Create dot plot / scatter plot
+plot(
+  x = df$x,
+  y = df$y,
+  main = "Dot Plot Example",
+  xlab = "X Values",
+  ylab = "Y Values",
+  pch = 19,
+  col = "darkgreen"
+)
+
+# Add grid for readability
+grid(col = "lightgray")`;
+  }
+
+  /**
    * Generate arguments configuration based on tool type and data
    * @param {string} toolId - Tool identifier
    * @param {Array<Object>} data - Parsed CSV data
@@ -364,6 +463,8 @@ points(df$time, df$value, col = "red", pch = 16)`;
         return this.generateBarChartArguments(data, selections.categoryColumn, selections.valueColumn);
       case 'line-chart':
         return this.generateLineChartArguments(data, selections.timeColumn, selections.valueColumn);
+      case 'dot-plot':
+        return this.generateDotPlotArguments(data, selections.xColumn, selections.yColumn);
       default:
         return this.getDefaultArguments(toolId);
     }
@@ -461,6 +562,33 @@ points(df$time, df$value, col = "red", pch = 16)`;
   }
 
   /**
+   * Generate arguments configuration for dot plot
+   * @param {Array<Object>} data - Parsed CSV data
+   * @param {string} xColumn - Name of the x-axis column
+   * @param {string} yColumn - Name of the y-axis column
+   * @returns {Array<Object>} Arguments configuration
+   */
+  static generateDotPlotArguments(data, xColumn, yColumn) {
+    if (!data || data.length === 0) {
+      return this.getDefaultArguments('dot-plot');
+    }
+
+    // Handoff raw string lists so the UI mirrors current data selections
+    const xValues = data.map(row => row[xColumn]).filter(val => val !== undefined && val !== null && val !== '');
+    const yValues = data.map(row => row[yColumn]).filter(val => val !== undefined && val !== null && val !== '');
+
+    return [
+      { name: "X Values", value: xValues.join(', '), readOnly: true },
+      { name: "Y Values", value: yValues.join(', '), readOnly: true },
+      { name: "Main Title", value: "Dot Plot", readOnly: false },
+      { name: "X-axis Label", value: xColumn || "X Values", readOnly: false },
+      { name: "Y-axis Label", value: yColumn || "Y Values", readOnly: false },
+      { name: "Point Color", value: "darkgreen", readOnly: false },
+      { name: "Point Size", value: "1.2", readOnly: false }
+    ];
+  }
+
+  /**
    * Get default arguments when no data is available
    * @param {string} toolId - Tool identifier
    * @returns {Array<Object>} Default arguments
@@ -496,6 +624,17 @@ points(df$time, df$value, col = "red", pch = 16)`;
           { name: "X-axis Label", value: "Time Points", readOnly: false },
           { name: "Y-axis Label", value: "Values", readOnly: false },
           { name: "Line Color", value: "blue", readOnly: false }
+        ];
+      case 'dot-plot':
+        // Dot-plot defaults mirror the standalone sample shown in the tool details
+        return [
+          { name: "X Values", value: "1, 2, 3, 4, 5, 6", readOnly: false },
+          { name: "Y Values", value: "2.5, 3.1, 4.8, 3.6, 5.2, 4.9", readOnly: false },
+          { name: "Main Title", value: "Dot Plot Example", readOnly: false },
+          { name: "X-axis Label", value: "X Values", readOnly: false },
+          { name: "Y-axis Label", value: "Y Values", readOnly: false },
+          { name: "Point Color", value: "darkgreen", readOnly: false },
+          { name: "Point Size", value: "1.2", readOnly: false }
         ];
       default:
         return [

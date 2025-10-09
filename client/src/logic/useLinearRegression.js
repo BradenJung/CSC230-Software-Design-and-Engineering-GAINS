@@ -16,6 +16,9 @@ export const useLinearRegression = ({
   const [categoryColumn, setCategoryColumn] = useState('');
   const [valueColumn, setValueColumn] = useState('');
   const [timeColumn, setTimeColumn] = useState('');
+  // Dot-plot axis choices
+  const [xColumn, setXColumn] = useState('');
+  const [yColumn, setYColumn] = useState('');
 
   // Reset dependent selections whenever the table rows or active tool change.
   const autoSelectColumns = useCallback((rows, tool = selectedTool) => {
@@ -25,6 +28,8 @@ export const useLinearRegression = ({
       setCategoryColumn('');
       setValueColumn('');
       setTimeColumn('');
+      setXColumn('');
+      setYColumn('');
       return;
     }
 
@@ -47,6 +52,12 @@ export const useLinearRegression = ({
       case 'line-chart': {
         setTimeColumn(columns[0] ?? '');
         setValueColumn(columns[1] ?? '');
+        break;
+      }
+      case 'dot-plot': {
+        // Favor the first two columns so dot-plot has immediate axes
+        setXColumn(columns[0] ?? '');
+        setYColumn(columns[1] ?? '');
         break;
       }
       default:
@@ -112,6 +123,8 @@ export const useLinearRegression = ({
     setCategoryColumn('');
     setValueColumn('');
     setTimeColumn('');
+    setXColumn('');
+    setYColumn('');
 
     // Auto-select columns for new tool if data is available
     if (importedRows.length > 0) {
@@ -155,6 +168,13 @@ export const useLinearRegression = ({
           setValueColumn(columnName);
         }
         break;
+      case 'dot-plot':
+        if (type === 'x') {
+          setXColumn(columnName);
+        } else if (type === 'y') {
+          setYColumn(columnName);
+        }
+        break;
       default:
         break;
     }
@@ -169,10 +189,12 @@ export const useLinearRegression = ({
         return { categoryColumn, valueColumn };
       case 'line-chart':
         return { timeColumn, valueColumn };
+      case 'dot-plot':
+        return { xColumn, yColumn };
       default:
         return { responseColumn, predictorColumns };
     }
-  }, [selectedTool, responseColumn, predictorColumns, categoryColumn, valueColumn, timeColumn]);
+  }, [selectedTool, responseColumn, predictorColumns, categoryColumn, valueColumn, timeColumn, xColumn, yColumn]);
 
   // Toggle right panel visibility
   const toggleRightPanel = useCallback(() => {
@@ -210,6 +232,8 @@ export const useLinearRegression = ({
     categoryColumn,
     valueColumn,
     timeColumn,
+    xColumn,
+    yColumn,
     isRightPanelVisible,
 
     // Computed values

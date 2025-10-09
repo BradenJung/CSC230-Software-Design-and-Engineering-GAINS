@@ -15,15 +15,19 @@ const IMPORTED_CSV_DATA_KEY = "importedCsvData";
 const LAST_USED_R_TOOL_KEY = "lastUsedRTool";
 const DEFAULT_TOOL_ID = "linear-regression";
 // Shared map allows us to round-trip tool ids between React state and stored PascalCase values.
+// Map internal ids to storage-safe PascalCase variants (dot plot included)
 const TOOL_ID_TO_STORAGE_VALUE = {
   "linear-regression": "LinearRegression",
   "line-chart": "LineChart",
-  "bar-chart": "BarChart"
+  "bar-chart": "BarChart",
+  "dot-plot": "DotPlot"
 };
+// Normalize stored values back into kebab-case ids
 const TOOL_STORAGE_VALUE_TO_ID = {
   LinearRegression: "linear-regression",
   LineChart: "line-chart",
-  BarChart: "bar-chart"
+  BarChart: "bar-chart",
+  DotPlot: "dot-plot"
 };
 
 // Normalize any persisted tool identifier, legacy or current, back into the canonical id.
@@ -269,6 +273,8 @@ export default function linear() {
     categoryColumn,
     valueColumn,
     timeColumn,
+    xColumn,
+    yColumn,
     isRightPanelVisible,
     generatedRCode,
     generatedArguments,
@@ -477,6 +483,8 @@ export default function linear() {
         return categoryColumn && valueColumn;
       case 'line-chart':
         return timeColumn && valueColumn;
+      case 'dot-plot':
+        return xColumn && yColumn;
       default:
         return false;
     }
@@ -490,6 +498,8 @@ export default function linear() {
         return `Generated R code for bar chart using ${categoryColumn} as categories and ${valueColumn} as values.`;
       case 'line-chart':
         return `Generated R code for line chart using ${timeColumn} as time points and ${valueColumn} as values.`;
+      case 'dot-plot':
+        return `Generated R code for dot plot using ${xColumn} on the x-axis and ${yColumn} on the y-axis.`;
       default:
         return 'Generated R code based on your data and selections.';
     }
@@ -644,6 +654,56 @@ points(df$time, df$value, col = "red", pch = 16)`,
         { name: "Y-axis Label", value: "Values", readOnly: false },
         { name: "Line Color", value: "blue", readOnly: false }
       ]
+    },
+    {
+      id: "dot-plot",
+      name: "Dot Plot",
+      description: "Visualize paired values with a scatter-style dot plot.",
+      icon: "⚫️",
+      color: "#6f42c1",
+      chartIcon: "⚫️",
+      rCode: `# Initialize data
+x_values <- c(1, 2, 3, 4, 5, 6)
+y_values <- c(2.5, 3.1, 4.8, 3.6, 5.2, 4.9)
+
+# Create data frame
+df <- data.frame(
+  x = x_values,
+  y = y_values
+)
+
+# Create dot plot / scatter plot
+plot(
+  x = df$x,
+  y = df$y,
+  main = "Dot Plot Example",
+  xlab = "X Values",
+  ylab = "Y Values",
+  pch = 19,
+  col = "darkgreen"
+)
+
+# Add grid for readability
+grid(col = "lightgray")`,
+      codeDescription: "Creates a dot plot using paired x and y numeric values.",
+      // Surface the same defaults shown inside RCodeService for easy copy/paste testing
+      sampleData: [
+        { x: 1, y: 2.5 },
+        { x: 2, y: 3.1 },
+        { x: 3, y: 4.8 },
+        { x: 4, y: 3.6 },
+        { x: 5, y: 5.2 },
+        { x: 6, y: 4.9 }
+      ],
+      arguments: [
+        { name: "X Values", value: "1, 2, 3, 4, 5, 6", readOnly: false },
+        { name: "Y Values", value: "2.5, 3.1, 4.8, 3.6, 5.2, 4.9", readOnly: false },
+        { name: "Main Title", value: "Dot Plot Example", readOnly: false },
+        { name: "X-axis Label", value: "X Values", readOnly: false },
+        { name: "Y-axis Label", value: "Y Values", readOnly: false },
+        { name: "Point Color", value: "darkgreen", readOnly: false },
+        { name: "Point Size", value: "1.2", readOnly: false }
+      ]
     }
   ];
 
@@ -743,6 +803,8 @@ points(df$time, df$value, col = "red", pch = 16)`,
               categoryColumn={categoryColumn}
               valueColumn={valueColumn}
               timeColumn={timeColumn}
+              xColumn={xColumn}
+              yColumn={yColumn}
               onColumnSelectionChange={handleColumnSelectionChange}
             />
 
@@ -778,6 +840,12 @@ points(df$time, df$value, col = "red", pch = 16)`,
                   <>
                     <p><strong>Time Column:</strong> {timeColumn || 'None selected'}</p>
                     <p><strong>Value Column:</strong> {valueColumn || 'None selected'}</p>
+                  </>
+                )}
+                {selectedTool === 'dot-plot' && (
+                  <>
+                    <p><strong>X Column:</strong> {xColumn || 'None selected'}</p>
+                    <p><strong>Y Column:</strong> {yColumn || 'None selected'}</p>
                   </>
                 )}
                 <p className={styles.columnSelectionHint}>
