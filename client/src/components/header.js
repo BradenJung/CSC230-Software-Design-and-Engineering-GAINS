@@ -6,7 +6,7 @@ import styles from "../styles/Home.module.css";
 const ACTIVE_ACCOUNT_KEY = "gains.activeAccount";
 const AUTH_CHANGE_EVENT = "gains-auth-change";
 
-export default function Header({ onImportClick, onEditClick, isRightPanelVisible }) {
+export default function Header({ onImportClick, onEditClick, isRightPanelVisible, currentProjectName }) {
   const router = useRouter();
   const containerRef = useRef(null);
   const [activeAccount, setActiveAccount] = useState(null);
@@ -136,26 +136,32 @@ export default function Header({ onImportClick, onEditClick, isRightPanelVisible
 
         {/* Center - Tool navigation for linear regression page */}
         {isLinearRegressionPage && (
-          <div className={styles.navLinks}>
-            {toolNavItems.map(({ label, onClick }) => (
-              <button
-                key={label}
-                onClick={onClick}
-                className={styles.navLink}
-                style={{ 
-                  background: 'none', 
-                  border: 'none', 
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '6px'
-                }}
-              >
-                {label === "Edit" && ""}
-                {label === "Edit" && ""}
-                {label}
-              </button>
-            ))}
+          <div className={styles.navCenter}>
+            <div className={styles.navLinks}>
+              {toolNavItems.map(({ label, onClick }) => (
+                <button
+                  key={label}
+                  onClick={onClick}
+                  className={styles.navLink}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px'
+                  }}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+            {currentProjectName && (
+              <div className={styles.currentProjectBadge} aria-live="polite">
+                <span className={styles.currentProjectLabel}>Project</span>
+                <span className={styles.currentProjectName}>{currentProjectName}</span>
+              </div>
+            )}
           </div>
         )}
 

@@ -29,6 +29,13 @@
   gap: 24px;
 }
 
+.navCenter {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
 .navLink {
   color: #ffffff;
   text-decoration: none;
@@ -48,6 +55,33 @@
 
 .navLink:hover {
   color: #4a9eff;
+}
+
+.currentProjectBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: #1f1f1f;
+  border: 1px solid #4a9eff;
+  border-radius: 999px;
+  padding: 4px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #ffffff;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
+}
+
+.currentProjectLabel {
+  text-transform: uppercase;
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  color: #8fbfff;
+}
+
+.currentProjectName {
+  font-size: 13px;
+  font-weight: 600;
+  color: #ffffff;
 }
 
 .navButton {

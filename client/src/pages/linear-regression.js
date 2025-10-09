@@ -1,12 +1,174 @@
 import Head from "next/head";
-import { useRef } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { useRouter } from "next/router";
 import Header from "../components/header";
 import { EditableDataTable } from "../components/EditableDataTable";
 import { useLinearRegression } from "../logic/useLinearRegression";
 import styles from "../styles/Home.module.css";
 
+const STORAGE_KEY = "gains-projects";
+const ACTIVE_ACCOUNT_KEY = "gains.activeAccount";
+const ACTIVE_PROJECTS_KEY = "gains.activeProjects";
+const DEFAULT_ACCOUNT_KEY = "__guest__";
+
+const normalizeAccountKey = (accountName) => {
+  if (!accountName || typeof accountName !== "string") {
+    return DEFAULT_ACCOUNT_KEY;
+  }
+  const normalized = accountName.trim().toLowerCase();
+  return normalized || DEFAULT_ACCOUNT_KEY;
+};
+
+const parseStoredProjects = (raw) => {
+  const base = { accounts: {} };
+  if (!raw) {
+    return base;
+  }
+
+  try {
+    const data = JSON.parse(raw);
+    if (data && typeof data === "object") {
+      if (Array.isArray(data.projects)) {
+        base.accounts[DEFAULT_ACCOUNT_KEY] = {
+          projects: data.projects,
+          nextIndex:
+            typeof data.nextIndex === "number"
+              ? data.nextIndex
+              : data.projects.length + 1
+        };
+        return base;
+      }
+
+      if (data.accounts && typeof data.accounts === "object") {
+        const normalizedAccounts = {};
+        Object.entries(data.accounts).forEach(([key, value]) => {
+          if (Array.isArray(value?.projects) && typeof value?.nextIndex === "number") {
+            normalizedAccounts[normalizeAccountKey(key)] = {
+              projects: value.projects,
+              nextIndex: value.nextIndex
+            };
+          }
+        });
+        return { accounts: normalizedAccounts };
+      }
+    }
+  } catch (error) {
+    console.error("Failed to parse project storage", error);
+  }
+
+  return base;
+};
+
+const parseActiveProjects = (raw) => {
+  if (!raw) {
+    return {};
+  }
+  try {
+    const data = JSON.parse(raw);
+    if (data && typeof data === "object") {
+      return data;
+    }
+  } catch (error) {
+    console.error("Failed to parse active project selection", error);
+  }
+  return {};
+};
+
+const parseProjectId = (value) => {
+  if (Array.isArray(value)) {
+    return parseProjectId(value[0]);
+  }
+  if (value === null || value === undefined) {
+    return null;
+  }
+  const numeric = Number(value);
+  if (Number.isNaN(numeric)) {
+    return null;
+  }
+  return numeric;
+};
+
 export default function linear() {
+  const router = useRouter();
   const fileInputRef = useRef(null);
+  const [currentProject, setCurrentProject] = useState(null);
+  const [projectHydrated, setProjectHydrated] = useState(false);
+
+  const syncActiveProjectSelection = (accountKey, projectId) => {
+    if (typeof window === "undefined") {
+      return;
+    }
+    try {
+      const raw = window.localStorage.getItem(ACTIVE_PROJECTS_KEY);
+      const snapshot = parseActiveProjects(raw);
+      if (snapshot[accountKey] !== projectId) {
+        snapshot[accountKey] = projectId;
+        window.localStorage.setItem(ACTIVE_PROJECTS_KEY, JSON.stringify(snapshot));
+      }
+    } catch (error) {
+      console.error("Failed to persist active project selection", error);
+    }
+  };
+
+  const hydrateProjectContext = useCallback(() => {
+    if (typeof window === "undefined" || !router.isReady) {
+      return;
+    }
+
+    try {
+      const storage = window.localStorage;
+      const storedAccount = storage.getItem(ACTIVE_ACCOUNT_KEY);
+      const normalizedAccount = normalizeAccountKey(storedAccount);
+
+      const projectsSnapshot = parseStoredProjects(storage.getItem(STORAGE_KEY));
+      const accountProjects = projectsSnapshot.accounts[normalizedAccount]?.projects ?? [];
+
+      const activeProjectsSnapshot = parseActiveProjects(storage.getItem(ACTIVE_PROJECTS_KEY));
+      const queryProjectId = parseProjectId(router.query.projectId);
+      const storedProjectId = parseProjectId(activeProjectsSnapshot[normalizedAccount]);
+
+      let resolvedProjectId = queryProjectId || storedProjectId;
+      let resolvedProject = accountProjects.find((project) => project.id === resolvedProjectId);
+
+      if (!resolvedProject && accountProjects.length > 0) {
+        [resolvedProject] = accountProjects;
+        resolvedProjectId = resolvedProject?.id ?? null;
+      }
+
+      if (resolvedProjectId && normalizedAccount) {
+        syncActiveProjectSelection(normalizedAccount, resolvedProjectId);
+      }
+
+      setCurrentProject(resolvedProject ?? null);
+      setProjectHydrated(true);
+    } catch (error) {
+      console.error("Failed to hydrate project context", error);
+      setProjectHydrated(true);
+    }
+  }, [router.isReady, router.query.projectId]);
+
+  useEffect(() => {
+    hydrateProjectContext();
+  }, [hydrateProjectContext]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+    const handleStorage = (event) => {
+      if (
+        event.key === STORAGE_KEY ||
+        event.key === ACTIVE_PROJECTS_KEY ||
+        event.key === ACTIVE_ACCOUNT_KEY
+      ) {
+        hydrateProjectContext();
+      }
+    };
+    window.addEventListener("storage", handleStorage);
+    return () => {
+      window.removeEventListener("storage", handleStorage);
+    };
+  }, [hydrateProjectContext]);
   
   const {
     selectedTool,
@@ -236,6 +398,7 @@ points(df$time, df$value, col = "red", pch = 16)`,
 
   // Get current tool configuration
   const currentTool = tools.find(tool => tool.id === selectedTool);
+  const currentProjectName = currentProject?.name || (projectHydrated ? "Untitled Project" : "");
 
   return (
     <>
@@ -246,7 +409,12 @@ points(df$time, df$value, col = "red", pch = 16)`,
         <link rel="icon" href="/favicon.ico" />
       </Head>
 
-      <Header onImportClick={handleTriggerImport} onEditClick={toggleRightPanel} isRightPanelVisible={isRightPanelVisible} />
+      <Header
+        onImportClick={handleTriggerImport}
+        onEditClick={toggleRightPanel}
+        isRightPanelVisible={isRightPanelVisible}
+        currentProjectName={projectHydrated ? currentProjectName : undefined}
+      />
 
       <div className={styles.dashboard}>
         <input

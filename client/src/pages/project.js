@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/router";
 import Header from "../components/header";
 import Footer from "../components/footer";
 import layoutStyles from "../styles/Home.module.css";
@@ -7,6 +8,7 @@ import projectStyles from "../styles/Project.module.css";
 // Persist projects in localStorage so we remember state between sessions
 const STORAGE_KEY = "gains-projects";
 const ACTIVE_ACCOUNT_KEY = "gains.activeAccount";
+const ACTIVE_PROJECTS_KEY = "gains.activeProjects";
 const AUTH_CHANGE_EVENT = "gains-auth-change";
 const DEFAULT_ACCOUNT_KEY = "__guest__";
 const INITIAL_PROJECTS = [
@@ -77,6 +79,7 @@ export default function Project() {
   const defaultState = createDefaultProjectsState();
   const [projects, setProjects] = useState(defaultState.projects);
   const [nextIndex, setNextIndex] = useState(defaultState.nextIndex);
+  const router = useRouter();
   // Delete-related UI state
   const [deleteMode, setDeleteMode] = useState(false);
   // Set once localStorage has been read on the client
@@ -199,13 +202,39 @@ export default function Project() {
   }
 
   // Remove a project when the user clicks it while in delete mode
-  function handleProjectClick(id) {
-    if (!deleteMode) {
+  function persistActiveProjectSelection(projectId) {
+    if (typeof window === "undefined") {
       return;
     }
-    // Remove the selected project and exit delete mode afterward
-    setProjects((prev) => prev.filter((project) => project.id !== id));
-    setDeleteMode(false);
+    try {
+      const accountKey = normalizeAccountKey(activeAccount);
+      const raw = window.localStorage.getItem(ACTIVE_PROJECTS_KEY);
+      const snapshot = raw ? JSON.parse(raw) : {};
+      snapshot[accountKey] = projectId;
+      window.localStorage.setItem(ACTIVE_PROJECTS_KEY, JSON.stringify(snapshot));
+    } catch (err) {
+      console.error("Failed to persist active project selection", err);
+    }
+  }
+
+  function navigateToProject(project) {
+    persistActiveProjectSelection(project.id);
+    router
+      .push({
+        pathname: "/linear-regression",
+        query: { projectId: project.id }
+      })
+      .catch((err) => console.error("Failed to navigate to project page", err));
+  }
+
+  function handleProjectCardClick(project) {
+    if (deleteMode) {
+      // Remove the selected project and exit delete mode afterward
+      setProjects((prev) => prev.filter((candidate) => candidate.id !== project.id));
+      setDeleteMode(false);
+      return;
+    }
+    navigateToProject(project);
   }
 
   function handleDeleteAll() {
@@ -216,13 +245,10 @@ export default function Project() {
     setDeleteMode(false);
   }
 
-  function handleCardKeyDown(event, id) {
-    if (!deleteMode) {
-      return;
-    }
+  function handleCardKeyDown(event, project) {
     if (event.key === "Enter" || event.key === " ") {
       event.preventDefault();
-      handleProjectClick(id);
+      handleProjectCardClick(project);
     }
   }
 
@@ -291,10 +317,10 @@ export default function Project() {
                       ? `${cardClassName} ${projectStyles.projectCardExpanded}`
                       : cardClassName
                   }
-                  role={deleteMode ? "button" : "group"}
-                  tabIndex={deleteMode ? 0 : -1}
-                  onClick={() => handleProjectClick(project.id)}
-                  onKeyDown={(event) => handleCardKeyDown(event, project.id)}
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => handleProjectCardClick(project)}
+                  onKeyDown={(event) => handleCardKeyDown(event, project)}
                 >
                   <div className={projectStyles.cardHeader}>
                     <span className={projectStyles.cardSpacer} aria-hidden="true" />
