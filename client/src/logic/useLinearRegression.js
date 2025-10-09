@@ -123,6 +123,7 @@ export const useLinearRegression = ({
   const updateDataValue = useCallback((rowIndex, columnName, newValue) => {
     const updatedData = RCodeService.updateDataValue(importedRows, rowIndex, columnName, newValue);
     setImportedRows(updatedData);
+    return updatedData;
   }, [importedRows]);
 
   // Update column selections based on tool type

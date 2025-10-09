@@ -352,6 +352,15 @@ export default function linear() {
     },
     [activeAccountKey, activeProjectId, currentProject, selectedTool]
   );
+  const handlePersistedDataUpdate = useCallback(
+    (rowIndex, columnName, newValue) => {
+      const updatedRows = updateDataValue(rowIndex, columnName, newValue);
+      if (Array.isArray(updatedRows)) {
+        persistImportedCsvData(updatedRows);
+      }
+    },
+    [persistImportedCsvData, updateDataValue]
+  );
   // Persist the currently selected tool whenever it changes for the active project.
   const persistSelectedTool = useCallback(
     (toolId) => {
@@ -727,7 +736,7 @@ points(df$time, df$value, col = "red", pch = 16)`,
             {/* Data Table / Placeholder */}
             <EditableDataTable
               data={importedRows}
-              onDataUpdate={updateDataValue}
+              onDataUpdate={handlePersistedDataUpdate}
               selectedTool={selectedTool}
               responseColumn={responseColumn}
               predictorColumns={predictorColumns}
