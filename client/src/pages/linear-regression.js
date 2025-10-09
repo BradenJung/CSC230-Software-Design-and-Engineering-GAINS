@@ -12,6 +12,37 @@ const ACTIVE_ACCOUNT_KEY = "gains.activeAccount";
 const ACTIVE_PROJECTS_KEY = "gains.activeProjects";
 const DEFAULT_ACCOUNT_KEY = "__guest__";
 const IMPORTED_CSV_DATA_KEY = "importedCsvData";
+const LAST_USED_R_TOOL_KEY = "lastUsedRTool";
+const DEFAULT_TOOL_ID = "linear-regression";
+// Shared map allows us to round-trip tool ids between React state and stored PascalCase values.
+const TOOL_ID_TO_STORAGE_VALUE = {
+  "linear-regression": "LinearRegression",
+  "line-chart": "LineChart",
+  "bar-chart": "BarChart"
+};
+const TOOL_STORAGE_VALUE_TO_ID = {
+  LinearRegression: "linear-regression",
+  LineChart: "line-chart",
+  BarChart: "bar-chart"
+};
+
+// Normalize any persisted tool identifier, legacy or current, back into the canonical id.
+const coerceToolId = (value) => {
+  if (typeof value !== "string") {
+    return null;
+  }
+  const trimmed = value.trim();
+  if (!trimmed) {
+    return null;
+  }
+  if (TOOL_ID_TO_STORAGE_VALUE[trimmed]) {
+    return trimmed;
+  }
+  if (TOOL_STORAGE_VALUE_TO_ID[trimmed]) {
+    return TOOL_STORAGE_VALUE_TO_ID[trimmed];
+  }
+  return null;
+};
 
 const normalizeAccountKey = (accountName) => {
   if (!accountName || typeof accountName !== "string") {
@@ -101,11 +132,17 @@ const withImportedCsvData = (project) => {
   const importedRows = Array.isArray(project.importedRows)
     ? project.importedRows
     : importedCsvData;
-  const selectedTool =
-    typeof project.selectedTool === "string" && project.selectedTool.trim()
-      ? project.selectedTool
-      : "linear-regression";
-  return { ...project, [IMPORTED_CSV_DATA_KEY]: importedCsvData, importedRows, selectedTool };
+  const normalizedToolId =
+    coerceToolId(project[LAST_USED_R_TOOL_KEY]) ||
+    coerceToolId(project.selectedTool) ||
+    DEFAULT_TOOL_ID;
+  return {
+    ...project,
+    [IMPORTED_CSV_DATA_KEY]: importedCsvData,
+    importedRows,
+    selectedTool: normalizedToolId,
+    [LAST_USED_R_TOOL_KEY]: TOOL_ID_TO_STORAGE_VALUE[normalizedToolId] || TOOL_ID_TO_STORAGE_VALUE[DEFAULT_TOOL_ID]
+  };
 };
 
 export default function linear() {
@@ -212,9 +249,13 @@ export default function linear() {
 
   const resolvedSelectedTool = useMemo(() => {
     if (!projectHydrated || !currentProject) {
-      return "linear-regression";
+      return DEFAULT_TOOL_ID;
     }
-    return currentProject.selectedTool || "linear-regression";
+    return (
+      coerceToolId(currentProject[LAST_USED_R_TOOL_KEY]) ||
+      coerceToolId(currentProject.selectedTool) ||
+      DEFAULT_TOOL_ID
+    );
   }, [projectHydrated, currentProject]);
 
   // Changing the version triggers the regression hook to rebuild its internal state.
@@ -243,6 +284,8 @@ export default function linear() {
     initialTool: resolvedSelectedTool,
     projectVersion
   });
+  // Tracks the most recent project/tool combo we wrote so we can avoid redundant storage churn.
+  const lastPersistedToolRef = useRef({ projectId: null, toolId: null });
 
   const persistImportedCsvData = useCallback(
     (rows) => {
@@ -256,6 +299,9 @@ export default function linear() {
         const normalizedAccount = normalizeAccountKey(activeAccountKey);
         const accountState = snapshot.accounts[normalizedAccount] || { projects: [], nextIndex: 1 };
         const safeRows = Array.isArray(rows) ? rows : [];
+        const normalizedToolId = coerceToolId(selectedTool) || DEFAULT_TOOL_ID;
+        const storageToolValue =
+          TOOL_ID_TO_STORAGE_VALUE[normalizedToolId] || TOOL_ID_TO_STORAGE_VALUE[DEFAULT_TOOL_ID];
 
         let projectExists = false;
         const updatedProjects = accountState.projects.map((project) => {
@@ -267,7 +313,8 @@ export default function linear() {
             ...project,
             [IMPORTED_CSV_DATA_KEY]: safeRows,
             importedRows: safeRows,
-            selectedTool
+            selectedTool: normalizedToolId,
+            [LAST_USED_R_TOOL_KEY]: storageToolValue
           });
         });
 
@@ -278,7 +325,8 @@ export default function linear() {
               name: currentProject?.name || `Project ${activeProjectId}`,
               [IMPORTED_CSV_DATA_KEY]: safeRows,
               importedRows: safeRows,
-              selectedTool
+              selectedTool: normalizedToolId,
+              [LAST_USED_R_TOOL_KEY]: storageToolValue
             })
           );
         }
@@ -294,12 +342,93 @@ export default function linear() {
         if (updatedProject) {
           setCurrentProject(withImportedCsvData(updatedProject));
         }
+        lastPersistedToolRef.current = {
+          projectId: activeProjectId,
+          toolId: normalizedToolId
+        };
       } catch (error) {
         console.error("Failed to persist imported CSV data", error);
       }
     },
     [activeAccountKey, activeProjectId, currentProject, selectedTool]
   );
+  // Persist the currently selected tool whenever it changes for the active project.
+  const persistSelectedTool = useCallback(
+    (toolId) => {
+      if (typeof window === "undefined" || activeProjectId === null) {
+        return;
+      }
+
+      const normalizedToolId = coerceToolId(toolId) || DEFAULT_TOOL_ID;
+      const lastPersisted = lastPersistedToolRef.current;
+      if (
+        lastPersisted.projectId === activeProjectId &&
+        lastPersisted.toolId === normalizedToolId
+      ) {
+        return;
+      }
+
+      try {
+        const storage = window.localStorage;
+        const snapshot = parseStoredProjects(storage.getItem(STORAGE_KEY));
+        const normalizedAccount = normalizeAccountKey(activeAccountKey);
+        const accountState = snapshot.accounts[normalizedAccount] || { projects: [], nextIndex: 1 };
+        let projectExists = false;
+
+        const updatedProjects = accountState.projects.map((project) => {
+          if (project.id !== activeProjectId) {
+            return project;
+          }
+          projectExists = true;
+          return withImportedCsvData({
+            ...project,
+            selectedTool: normalizedToolId,
+            [LAST_USED_R_TOOL_KEY]:
+              TOOL_ID_TO_STORAGE_VALUE[normalizedToolId] || TOOL_ID_TO_STORAGE_VALUE[DEFAULT_TOOL_ID]
+          });
+        });
+
+        if (!projectExists) {
+          const fallbackRows = Array.isArray(currentProject?.importedRows)
+            ? currentProject.importedRows
+            : Array.isArray(currentProject?.[IMPORTED_CSV_DATA_KEY])
+              ? currentProject[IMPORTED_CSV_DATA_KEY]
+              : [];
+          updatedProjects.push(
+            withImportedCsvData({
+              id: activeProjectId,
+              name: currentProject?.name || `Project ${activeProjectId}`,
+              [IMPORTED_CSV_DATA_KEY]: fallbackRows,
+              importedRows: fallbackRows,
+              selectedTool: normalizedToolId,
+              [LAST_USED_R_TOOL_KEY]:
+                TOOL_ID_TO_STORAGE_VALUE[normalizedToolId] || TOOL_ID_TO_STORAGE_VALUE[DEFAULT_TOOL_ID]
+            })
+          );
+        }
+
+        snapshot.accounts[normalizedAccount] = {
+          ...accountState,
+          projects: updatedProjects
+        };
+        storage.setItem(STORAGE_KEY, JSON.stringify(snapshot));
+        lastPersistedToolRef.current = {
+          projectId: activeProjectId,
+          toolId: normalizedToolId
+        };
+      } catch (error) {
+        console.error("Failed to persist selected R tool", error);
+      }
+    },
+    [activeAccountKey, activeProjectId, currentProject]
+  );
+
+  useEffect(() => {
+    if (!projectHydrated || activeProjectId === null) {
+      return;
+    }
+    persistSelectedTool(selectedTool);
+  }, [projectHydrated, activeProjectId, selectedTool, persistSelectedTool]);
 
   function handleTriggerImport(e) {
     e.preventDefault();

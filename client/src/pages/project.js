@@ -12,6 +12,37 @@ const ACTIVE_PROJECTS_KEY = "gains.activeProjects";
 const AUTH_CHANGE_EVENT = "gains-auth-change";
 const DEFAULT_ACCOUNT_KEY = "__guest__";
 const IMPORTED_CSV_DATA_KEY = "importedCsvData";
+const LAST_USED_R_TOOL_KEY = "lastUsedRTool";
+const DEFAULT_TOOL_ID = "linear-regression";
+// Map between our internal tool ids and the PascalCase values persisted in storage.
+const TOOL_ID_TO_STORAGE_VALUE = {
+  "linear-regression": "LinearRegression",
+  "line-chart": "LineChart",
+  "bar-chart": "BarChart"
+};
+const TOOL_STORAGE_VALUE_TO_ID = {
+  LinearRegression: "linear-regression",
+  LineChart: "line-chart",
+  BarChart: "bar-chart"
+};
+
+// Normalize persisted tool identifiers into the canonical kebab-case ids we use in code.
+const coerceToolId = (value) => {
+  if (typeof value !== "string") {
+    return null;
+  }
+  const trimmed = value.trim();
+  if (!trimmed) {
+    return null;
+  }
+  if (TOOL_ID_TO_STORAGE_VALUE[trimmed]) {
+    return trimmed;
+  }
+  if (TOOL_STORAGE_VALUE_TO_ID[trimmed]) {
+    return TOOL_STORAGE_VALUE_TO_ID[trimmed];
+  }
+  return null;
+};
 const INITIAL_PROJECTS = [
   { id: 1, name: "Sample Project 1" },
   { id: 2, name: "Sample Project 2" },
@@ -30,15 +61,16 @@ const withImportedCsvData = (project) => {
   const importedRows = Array.isArray(project.importedRows)
     ? project.importedRows
     : importedCsvData;
-  const selectedTool =
-    typeof project.selectedTool === "string" && project.selectedTool.trim()
-      ? project.selectedTool
-      : "linear-regression";
+  const normalizedToolId =
+    coerceToolId(project[LAST_USED_R_TOOL_KEY]) ||
+    coerceToolId(project.selectedTool) ||
+    DEFAULT_TOOL_ID;
   return {
     ...project,
     [IMPORTED_CSV_DATA_KEY]: importedCsvData,
     importedRows,
-    selectedTool
+    selectedTool: normalizedToolId,
+    [LAST_USED_R_TOOL_KEY]: TOOL_ID_TO_STORAGE_VALUE[normalizedToolId] || TOOL_ID_TO_STORAGE_VALUE[DEFAULT_TOOL_ID]
   };
 };
 
