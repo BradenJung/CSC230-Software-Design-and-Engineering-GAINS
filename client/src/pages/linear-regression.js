@@ -16,6 +16,8 @@ export default function linear() {
     categoryColumn,
     valueColumn,
     timeColumn,
+    xColumn,
+    yColumn,
     isRightPanelVisible,
     generatedRCode,
     generatedArguments,
@@ -186,30 +188,30 @@ barplot(
       color: "#44ffaa",
       chartIcon: "📈",
       rCode: `# Initialize data
-time_points <- c(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)
-values <- c(12, 15, 18, 22, 25, 23, 28, 32, 30, 35)
+ time_points <- c(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)
+ values <- c(12, 15, 18, 22, 25, 23, 28, 32, 30, 35)
 
-# Create data frame
-df <- data.frame(
-  time = time_points,
-  value = values
-)
+ # Create data frame
+ df <- data.frame(
+   time = time_points,
+   value = values
+ )
 
-# Create line chart
-plot(
-  x = df$time,
-  y = df$value,
-  type = "l",
-  main = "Line Chart Example",
-  xlab = "Time Points",
-  ylab = "Values",
-  col = "blue",
-  lwd = 2,
-  pch = 16
-)
+ # Create line chart
+ plot(
+   x = df$time,
+   y = df$value,
+   type = "l",
+   main = "Line Chart Example",
+   xlab = "Time Points",
+   ylab = "Values",
+   col = "blue",
+   lwd = 2,
+   pch = 16
+ )
 
-# Add points
-points(df$time, df$value, col = "red", pch = 16)`,
+ # Add points
+ points(df$time, df$value, col = "red", pch = 16)`,
       codeDescription: "Creates a line chart showing trends over time with data points.",
       sampleData: [
         { time: 1, value: 12 },
@@ -230,6 +232,46 @@ points(df$time, df$value, col = "red", pch = 16)`,
         { name: "X-axis Label", value: "Time Points", readOnly: false },
         { name: "Y-axis Label", value: "Values", readOnly: false },
         { name: "Line Color", value: "blue", readOnly: false }
+      ]
+    },
+    {
+      id: "dot-plot",
+      name: "Dot Plot",
+      description: "Visualize relationship between two numeric variables.",
+      icon: "⚫",
+      color: "#7b61ff",
+      chartIcon: "⚫",
+      rCode: `# Initialize data
+ x <- c(1, 2, 3, 4, 5)
+ y <- c(5, 7, 6, 9, 8)
+
+ # Create data frame
+ df <- data.frame(x = x, y = y)
+
+ # Create dot plot (scatter plot)
+ plot(
+   x = df$x,
+   y = df$y,
+   main = "Dot Plot Example",
+   xlab = "x",
+   ylab = "y",
+   pch = 19,
+   col = "#4a9eff"
+ )`,
+      codeDescription: "Creates a dot plot (scatter) showing the relationship between x and y.",
+      sampleData: [
+        { x: 1, y: 5 },
+        { x: 2, y: 7 },
+        { x: 3, y: 6 },
+        { x: 4, y: 9 },
+        { x: 5, y: 8 }
+      ],
+      arguments: [
+        { name: "X", value: "1, 2, 3, 4, 5", readOnly: false },
+        { name: "Y", value: "5, 7, 6, 9, 8", readOnly: false },
+        { name: "Main Title", value: "Dot Plot Example", readOnly: false },
+        { name: "X-axis Label", value: "x", readOnly: false },
+        { name: "Y-axis Label", value: "y", readOnly: false }
       ]
     }
   ];
@@ -324,6 +366,8 @@ points(df$time, df$value, col = "red", pch = 16)`,
               categoryColumn={categoryColumn}
               valueColumn={valueColumn}
               timeColumn={timeColumn}
+              xColumn={xColumn}
+              yColumn={yColumn}
               onColumnSelectionChange={handleColumnSelectionChange}
             />
 
@@ -359,6 +403,12 @@ points(df$time, df$value, col = "red", pch = 16)`,
                   <>
                     <p><strong>Time Column:</strong> {timeColumn || 'None selected'}</p>
                     <p><strong>Value Column:</strong> {valueColumn || 'None selected'}</p>
+                  </>
+                )}
+                {selectedTool === 'dot-plot' && (
+                  <>
+                    <p><strong>X Column:</strong> {xColumn || 'None selected'}</p>
+                    <p><strong>Y Column:</strong> {yColumn || 'None selected'}</p>
                   </>
                 )}
                 <p className={styles.columnSelectionHint}>
