@@ -1,13 +1,266 @@
 import Head from "next/head";
-import { useRef } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useRouter } from "next/router";
 import Header from "../components/header";
 import { EditableDataTable } from "../components/EditableDataTable";
 import { useLinearRegression } from "../logic/useLinearRegression";
+import { RCodeService } from "../logic/RCodeService";
 import styles from "../styles/Home.module.css";
 
+const STORAGE_KEY = "gains-projects";
+const ACTIVE_ACCOUNT_KEY = "gains.activeAccount";
+const ACTIVE_PROJECTS_KEY = "gains.activeProjects";
+const DEFAULT_ACCOUNT_KEY = "__guest__";
+const IMPORTED_CSV_DATA_KEY = "importedCsvData";
+const LAST_USED_R_TOOL_KEY = "lastUsedRTool";
+const DEFAULT_TOOL_ID = "linear-regression";
+// Shared map allows us to round-trip tool ids between React state and stored PascalCase values.
+const TOOL_ID_TO_STORAGE_VALUE = {
+  "linear-regression": "LinearRegression",
+  "line-chart": "LineChart",
+  "bar-chart": "BarChart"
+};
+const TOOL_STORAGE_VALUE_TO_ID = {
+  LinearRegression: "linear-regression",
+  LineChart: "line-chart",
+  BarChart: "bar-chart"
+};
+
+// Normalize any persisted tool identifier, legacy or current, back into the canonical id.
+const coerceToolId = (value) => {
+  if (typeof value !== "string") {
+    return null;
+  }
+  const trimmed = value.trim();
+  if (!trimmed) {
+    return null;
+  }
+  if (TOOL_ID_TO_STORAGE_VALUE[trimmed]) {
+    return trimmed;
+  }
+  if (TOOL_STORAGE_VALUE_TO_ID[trimmed]) {
+    return TOOL_STORAGE_VALUE_TO_ID[trimmed];
+  }
+  return null;
+};
+
+const normalizeAccountKey = (accountName) => {
+  if (!accountName || typeof accountName !== "string") {
+    return DEFAULT_ACCOUNT_KEY;
+  }
+  const normalized = accountName.trim().toLowerCase();
+  return normalized || DEFAULT_ACCOUNT_KEY;
+};
+
+const parseStoredProjects = (raw) => {
+  const base = { accounts: {} };
+  if (!raw) {
+    return base;
+  }
+
+  try {
+    const data = JSON.parse(raw);
+    if (data && typeof data === "object") {
+      if (Array.isArray(data.projects)) {
+        base.accounts[DEFAULT_ACCOUNT_KEY] = {
+          projects: data.projects,
+          nextIndex:
+            typeof data.nextIndex === "number"
+              ? data.nextIndex
+              : data.projects.length + 1
+        };
+        return base;
+      }
+
+      if (data.accounts && typeof data.accounts === "object") {
+        const normalizedAccounts = {};
+        Object.entries(data.accounts).forEach(([key, value]) => {
+          if (Array.isArray(value?.projects) && typeof value?.nextIndex === "number") {
+            normalizedAccounts[normalizeAccountKey(key)] = {
+              projects: value.projects,
+              nextIndex: value.nextIndex
+            };
+          }
+        });
+        return { accounts: normalizedAccounts };
+      }
+    }
+  } catch (error) {
+    console.error("Failed to parse project storage", error);
+  }
+
+  return base;
+};
+
+const parseActiveProjects = (raw) => {
+  if (!raw) {
+    return {};
+  }
+  try {
+    const data = JSON.parse(raw);
+    if (data && typeof data === "object") {
+      return data;
+    }
+  } catch (error) {
+    console.error("Failed to parse active project selection", error);
+  }
+  return {};
+};
+
+const parseProjectId = (value) => {
+  if (Array.isArray(value)) {
+    return parseProjectId(value[0]);
+  }
+  if (value === null || value === undefined) {
+    return null;
+  }
+  const numeric = Number(value);
+  if (Number.isNaN(numeric)) {
+    return null;
+  }
+  return numeric;
+};
+
+// Normalize legacy project payloads so every project exposes imported CSV rows and selected tool.
+const withImportedCsvData = (project) => {
+  if (!project || typeof project !== "object") {
+    return project;
+  }
+  const importedCsvData = Array.isArray(project[IMPORTED_CSV_DATA_KEY])
+    ? project[IMPORTED_CSV_DATA_KEY]
+    : [];
+  const importedRows = Array.isArray(project.importedRows)
+    ? project.importedRows
+    : importedCsvData;
+  const normalizedToolId =
+    coerceToolId(project[LAST_USED_R_TOOL_KEY]) ||
+    coerceToolId(project.selectedTool) ||
+    DEFAULT_TOOL_ID;
+  return {
+    ...project,
+    [IMPORTED_CSV_DATA_KEY]: importedCsvData,
+    importedRows,
+    selectedTool: normalizedToolId,
+    [LAST_USED_R_TOOL_KEY]: TOOL_ID_TO_STORAGE_VALUE[normalizedToolId] || TOOL_ID_TO_STORAGE_VALUE[DEFAULT_TOOL_ID]
+  };
+};
+
 export default function linear() {
+  const router = useRouter();
   const fileInputRef = useRef(null);
+  const [currentProject, setCurrentProject] = useState(null);
+  const [projectHydrated, setProjectHydrated] = useState(false);
+  const [activeAccountKey, setActiveAccountKey] = useState(DEFAULT_ACCOUNT_KEY);
+  const [activeProjectId, setActiveProjectId] = useState(null);
+
+  const syncActiveProjectSelection = (accountKey, projectId) => {
+    if (typeof window === "undefined") {
+      return;
+    }
+    try {
+      const raw = window.localStorage.getItem(ACTIVE_PROJECTS_KEY);
+      const snapshot = parseActiveProjects(raw);
+      if (snapshot[accountKey] !== projectId) {
+        snapshot[accountKey] = projectId;
+        window.localStorage.setItem(ACTIVE_PROJECTS_KEY, JSON.stringify(snapshot));
+      }
+    } catch (error) {
+      console.error("Failed to persist active project selection", error);
+    }
+  };
+
+  const hydrateProjectContext = useCallback(() => {
+    if (typeof window === "undefined" || !router.isReady) {
+      return;
+    }
+
+    try {
+      const storage = window.localStorage;
+      const storedAccount = storage.getItem(ACTIVE_ACCOUNT_KEY);
+      const normalizedAccount = normalizeAccountKey(storedAccount);
+      setActiveAccountKey(normalizedAccount);
+
+      const projectsSnapshot = parseStoredProjects(storage.getItem(STORAGE_KEY));
+      const accountProjects = projectsSnapshot.accounts[normalizedAccount]?.projects ?? [];
+
+      const activeProjectsSnapshot = parseActiveProjects(storage.getItem(ACTIVE_PROJECTS_KEY));
+      const queryProjectId = parseProjectId(router.query.projectId);
+      const storedProjectId = parseProjectId(activeProjectsSnapshot[normalizedAccount]);
+
+      let resolvedProjectId = queryProjectId || storedProjectId;
+      let resolvedProject = accountProjects.find((project) => project.id === resolvedProjectId);
+
+      if (!resolvedProject && accountProjects.length > 0) {
+        [resolvedProject] = accountProjects;
+        resolvedProjectId = resolvedProject?.id ?? null;
+      }
+
+      if (resolvedProject) {
+        resolvedProject = withImportedCsvData(resolvedProject);
+      }
+
+      if (resolvedProjectId && normalizedAccount) {
+        syncActiveProjectSelection(normalizedAccount, resolvedProjectId);
+      }
+
+      setActiveProjectId(resolvedProjectId ?? null);
+      setCurrentProject(resolvedProject ?? null);
+      setProjectHydrated(true);
+    } catch (error) {
+      console.error("Failed to hydrate project context", error);
+      setProjectHydrated(true);
+    }
+  }, [router.isReady, router.query.projectId]);
+
+  useEffect(() => {
+    hydrateProjectContext();
+  }, [hydrateProjectContext]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+    const handleStorage = (event) => {
+      if (
+        event.key === STORAGE_KEY ||
+        event.key === ACTIVE_PROJECTS_KEY ||
+        event.key === ACTIVE_ACCOUNT_KEY
+      ) {
+        hydrateProjectContext();
+      }
+    };
+    window.addEventListener("storage", handleStorage);
+    return () => {
+      window.removeEventListener("storage", handleStorage);
+    };
+  }, [hydrateProjectContext]);
   
+  // Pull the hydrated rows every render so the regression hook can receive stable defaults.
+  const resolvedImportedRows = useMemo(() => {
+    if (!projectHydrated || !currentProject) {
+      return [];
+    }
+    return Array.isArray(currentProject.importedRows)
+      ? currentProject.importedRows
+      : Array.isArray(currentProject[IMPORTED_CSV_DATA_KEY])
+        ? currentProject[IMPORTED_CSV_DATA_KEY]
+        : [];
+  }, [projectHydrated, currentProject]);
+
+  const resolvedSelectedTool = useMemo(() => {
+    if (!projectHydrated || !currentProject) {
+      return DEFAULT_TOOL_ID;
+    }
+    return (
+      coerceToolId(currentProject[LAST_USED_R_TOOL_KEY]) ||
+      coerceToolId(currentProject.selectedTool) ||
+      DEFAULT_TOOL_ID
+    );
+  }, [projectHydrated, currentProject]);
+
+  // Changing the version triggers the regression hook to rebuild its internal state.
+  const projectVersion = projectHydrated ? currentProject?.id ?? activeProjectId : null;
+
   const {
     selectedTool,
     importedRows,
@@ -22,11 +275,169 @@ export default function linear() {
     availableColumns,
     validation,
     handleToolChange,
-    handleFileImport,
+    applyImportedRows,
     updateDataValue,
     updateColumnSelection,
     toggleRightPanel
-  } = useLinearRegression();
+  } = useLinearRegression({
+    initialRows: resolvedImportedRows,
+    initialTool: resolvedSelectedTool,
+    projectVersion
+  });
+  // Tracks the most recent project/tool combo we wrote so we can avoid redundant storage churn.
+  const lastPersistedToolRef = useRef({ projectId: null, toolId: null });
+
+  const persistImportedCsvData = useCallback(
+    (rows) => {
+      if (typeof window === "undefined" || activeProjectId === null) {
+        return;
+      }
+
+      try {
+        const storage = window.localStorage;
+        const snapshot = parseStoredProjects(storage.getItem(STORAGE_KEY));
+        const normalizedAccount = normalizeAccountKey(activeAccountKey);
+        const accountState = snapshot.accounts[normalizedAccount] || { projects: [], nextIndex: 1 };
+        const safeRows = Array.isArray(rows) ? rows : [];
+        const normalizedToolId = coerceToolId(selectedTool) || DEFAULT_TOOL_ID;
+        const storageToolValue =
+          TOOL_ID_TO_STORAGE_VALUE[normalizedToolId] || TOOL_ID_TO_STORAGE_VALUE[DEFAULT_TOOL_ID];
+
+        let projectExists = false;
+        const updatedProjects = accountState.projects.map((project) => {
+          if (project.id !== activeProjectId) {
+            return project;
+          }
+          projectExists = true;
+          return withImportedCsvData({
+            ...project,
+            [IMPORTED_CSV_DATA_KEY]: safeRows,
+            importedRows: safeRows,
+            selectedTool: normalizedToolId,
+            [LAST_USED_R_TOOL_KEY]: storageToolValue
+          });
+        });
+
+        if (!projectExists) {
+          updatedProjects.push(
+            withImportedCsvData({
+              id: activeProjectId,
+              name: currentProject?.name || `Project ${activeProjectId}`,
+              [IMPORTED_CSV_DATA_KEY]: safeRows,
+              importedRows: safeRows,
+              selectedTool: normalizedToolId,
+              [LAST_USED_R_TOOL_KEY]: storageToolValue
+            })
+          );
+        }
+
+        snapshot.accounts[normalizedAccount] = {
+          ...accountState,
+          projects: updatedProjects
+        };
+
+        storage.setItem(STORAGE_KEY, JSON.stringify(snapshot));
+
+        const updatedProject = updatedProjects.find((project) => project.id === activeProjectId);
+        if (updatedProject) {
+          setCurrentProject(withImportedCsvData(updatedProject));
+        }
+        lastPersistedToolRef.current = {
+          projectId: activeProjectId,
+          toolId: normalizedToolId
+        };
+      } catch (error) {
+        console.error("Failed to persist imported CSV data", error);
+      }
+    },
+    [activeAccountKey, activeProjectId, currentProject, selectedTool]
+  );
+  const handlePersistedDataUpdate = useCallback(
+    (rowIndex, columnName, newValue) => {
+      const updatedRows = updateDataValue(rowIndex, columnName, newValue);
+      if (Array.isArray(updatedRows)) {
+        persistImportedCsvData(updatedRows);
+      }
+    },
+    [persistImportedCsvData, updateDataValue]
+  );
+  // Persist the currently selected tool whenever it changes for the active project.
+  const persistSelectedTool = useCallback(
+    (toolId) => {
+      if (typeof window === "undefined" || activeProjectId === null) {
+        return;
+      }
+
+      const normalizedToolId = coerceToolId(toolId) || DEFAULT_TOOL_ID;
+      const lastPersisted = lastPersistedToolRef.current;
+      if (
+        lastPersisted.projectId === activeProjectId &&
+        lastPersisted.toolId === normalizedToolId
+      ) {
+        return;
+      }
+
+      try {
+        const storage = window.localStorage;
+        const snapshot = parseStoredProjects(storage.getItem(STORAGE_KEY));
+        const normalizedAccount = normalizeAccountKey(activeAccountKey);
+        const accountState = snapshot.accounts[normalizedAccount] || { projects: [], nextIndex: 1 };
+        let projectExists = false;
+
+        const updatedProjects = accountState.projects.map((project) => {
+          if (project.id !== activeProjectId) {
+            return project;
+          }
+          projectExists = true;
+          return withImportedCsvData({
+            ...project,
+            selectedTool: normalizedToolId,
+            [LAST_USED_R_TOOL_KEY]:
+              TOOL_ID_TO_STORAGE_VALUE[normalizedToolId] || TOOL_ID_TO_STORAGE_VALUE[DEFAULT_TOOL_ID]
+          });
+        });
+
+        if (!projectExists) {
+          const fallbackRows = Array.isArray(currentProject?.importedRows)
+            ? currentProject.importedRows
+            : Array.isArray(currentProject?.[IMPORTED_CSV_DATA_KEY])
+              ? currentProject[IMPORTED_CSV_DATA_KEY]
+              : [];
+          updatedProjects.push(
+            withImportedCsvData({
+              id: activeProjectId,
+              name: currentProject?.name || `Project ${activeProjectId}`,
+              [IMPORTED_CSV_DATA_KEY]: fallbackRows,
+              importedRows: fallbackRows,
+              selectedTool: normalizedToolId,
+              [LAST_USED_R_TOOL_KEY]:
+                TOOL_ID_TO_STORAGE_VALUE[normalizedToolId] || TOOL_ID_TO_STORAGE_VALUE[DEFAULT_TOOL_ID]
+            })
+          );
+        }
+
+        snapshot.accounts[normalizedAccount] = {
+          ...accountState,
+          projects: updatedProjects
+        };
+        storage.setItem(STORAGE_KEY, JSON.stringify(snapshot));
+        lastPersistedToolRef.current = {
+          projectId: activeProjectId,
+          toolId: normalizedToolId
+        };
+      } catch (error) {
+        console.error("Failed to persist selected R tool", error);
+      }
+    },
+    [activeAccountKey, activeProjectId, currentProject]
+  );
+
+  useEffect(() => {
+    if (!projectHydrated || activeProjectId === null) {
+      return;
+    }
+    persistSelectedTool(selectedTool);
+  }, [projectHydrated, activeProjectId, selectedTool, persistSelectedTool]);
 
   function handleTriggerImport(e) {
     e.preventDefault();
@@ -42,7 +453,9 @@ export default function linear() {
     reader.onload = () => {
       try {
         const text = String(reader.result || '');
-        handleFileImport(text);
+        const parsedRows = RCodeService.parseCsv(text);
+        applyImportedRows(parsedRows, selectedTool);
+        persistImportedCsvData(parsedRows);
       } catch (err) {
         console.error('Failed to parse CSV', err);
       }
@@ -236,6 +649,7 @@ points(df$time, df$value, col = "red", pch = 16)`,
 
   // Get current tool configuration
   const currentTool = tools.find(tool => tool.id === selectedTool);
+  const currentProjectName = currentProject?.name || (projectHydrated ? "Untitled Project" : "");
 
   return (
     <>
@@ -246,7 +660,12 @@ points(df$time, df$value, col = "red", pch = 16)`,
         <link rel="icon" href="/favicon.ico" />
       </Head>
 
-      <Header onImportClick={handleTriggerImport} onEditClick={toggleRightPanel} isRightPanelVisible={isRightPanelVisible} />
+      <Header
+        onImportClick={handleTriggerImport}
+        onEditClick={toggleRightPanel}
+        isRightPanelVisible={isRightPanelVisible}
+        currentProjectName={projectHydrated ? currentProjectName : undefined}
+      />
 
       <div className={styles.dashboard}>
         <input
@@ -317,7 +736,7 @@ points(df$time, df$value, col = "red", pch = 16)`,
             {/* Data Table / Placeholder */}
             <EditableDataTable
               data={importedRows}
-              onDataUpdate={updateDataValue}
+              onDataUpdate={handlePersistedDataUpdate}
               selectedTool={selectedTool}
               responseColumn={responseColumn}
               predictorColumns={predictorColumns}

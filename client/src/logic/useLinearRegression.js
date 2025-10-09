@@ -1,16 +1,15 @@
-/**
- * Custom hook for managing linear regression state and logic
- * Follows React best practices for state management
- */
-
-import { useState, useCallback, useMemo } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { RCodeService } from './RCodeService';
 
-export const useLinearRegression = () => {
-  const [selectedTool, setSelectedTool] = useState("linear-regression");
-  const [importedRows, setImportedRows] = useState([]);
+export const useLinearRegression = ({
+  initialRows = [],
+  initialTool = 'linear-regression',
+  projectVersion
+} = {}) => {
+  const [selectedTool, setSelectedTool] = useState(initialTool || 'linear-regression');
+  const [importedRows, setImportedRows] = useState(Array.isArray(initialRows) ? initialRows : []);
   const [isRightPanelVisible, setIsRightPanelVisible] = useState(true);
-  
+
   // Tool-specific selections
   const [responseColumn, setResponseColumn] = useState('');
   const [predictorColumns, setPredictorColumns] = useState([]);
@@ -18,70 +17,113 @@ export const useLinearRegression = () => {
   const [valueColumn, setValueColumn] = useState('');
   const [timeColumn, setTimeColumn] = useState('');
 
-  // Parse CSV data when imported
-  const handleFileImport = useCallback((csvText) => {
-    const parsedData = RCodeService.parseCsv(csvText);
-    setImportedRows(parsedData);
-    
-    // Auto-select columns based on current tool
-    if (parsedData.length > 0) {
-      const columns = RCodeService.getColumnNames(parsedData);
-      if (columns.length >= 2) {
-        switch (selectedTool) {
-          case 'linear-regression':
-            setResponseColumn(columns[0]);
-            setPredictorColumns(columns.slice(1));
-            break;
-          case 'bar-chart':
-            setCategoryColumn(columns[0]);
-            setValueColumn(columns[1]);
-            break;
-          case 'line-chart':
-            setTimeColumn(columns[0]);
-            setValueColumn(columns[1]);
-            break;
-        }
+  // Reset dependent selections whenever the table rows or active tool change.
+  const autoSelectColumns = useCallback((rows, tool = selectedTool) => {
+    if (!rows || rows.length === 0) {
+      setResponseColumn('');
+      setPredictorColumns([]);
+      setCategoryColumn('');
+      setValueColumn('');
+      setTimeColumn('');
+      return;
+    }
+
+    const columns = RCodeService.getColumnNames(rows);
+    if (!columns.length) {
+      return;
+    }
+
+    switch (tool) {
+      case 'linear-regression': {
+        setResponseColumn(columns[0] ?? '');
+        setPredictorColumns(columns.slice(1));
+        break;
       }
+      case 'bar-chart': {
+        setCategoryColumn(columns[0] ?? '');
+        setValueColumn(columns[1] ?? '');
+        break;
+      }
+      case 'line-chart': {
+        setTimeColumn(columns[0] ?? '');
+        setValueColumn(columns[1] ?? '');
+        break;
+      }
+      default:
+        break;
     }
   }, [selectedTool]);
+
+  // Centralized helper so every entry point (snapshot load, CSV import, edits) keeps tool + rows in sync.
+  const applyImportedRows = useCallback((rows, tool = selectedTool) => {
+    const normalizedRows = Array.isArray(rows) ? rows : [];
+    setImportedRows(normalizedRows);
+    autoSelectColumns(normalizedRows, tool);
+  }, [autoSelectColumns, selectedTool]);
+
+  const handleFileImport = useCallback((csvText) => {
+    const parsedData = RCodeService.parseCsv(csvText);
+    applyImportedRows(parsedData);
+  }, [applyImportedRows]);
+
+  // Allows the parent page to rehydrate the hook whenever a different project is opened.
+  const initializeFromSnapshot = useCallback(({ rows, tool } = {}) => {
+    const nextTool = tool || 'linear-regression';
+    setSelectedTool(nextTool);
+    applyImportedRows(rows ?? [], nextTool);
+  }, [applyImportedRows]);
+
+  const lastHydratedRef = useRef({
+    projectVersion: null,
+    tool: null,
+    rowsSignature: null
+  });
+
+  // Only rehydrate when the upstream project payload actually changes, avoiding feedback loops.
+  useEffect(() => {
+    const nextVersion = projectVersion ?? null;
+    const targetRows = Array.isArray(initialRows) ? initialRows : [];
+    const rowsSignature = JSON.stringify(targetRows);
+    const nextTool = initialTool || 'linear-regression';
+    const last = lastHydratedRef.current;
+
+    if (
+      nextVersion !== null &&
+      (last.projectVersion !== nextVersion ||
+        last.rowsSignature !== rowsSignature ||
+        last.tool !== nextTool)
+    ) {
+      initializeFromSnapshot({ rows: targetRows, tool: nextTool });
+      lastHydratedRef.current = {
+        projectVersion: nextVersion,
+        rowsSignature,
+        tool: nextTool
+      };
+    }
+  }, [initialRows, initialTool, projectVersion, initializeFromSnapshot]);
 
   // Handle tool switching
   const handleToolChange = useCallback((toolId) => {
     setSelectedTool(toolId);
-    
+
     // Reset all column selections
     setResponseColumn('');
     setPredictorColumns([]);
     setCategoryColumn('');
     setValueColumn('');
     setTimeColumn('');
-    
+
     // Auto-select columns for new tool if data is available
     if (importedRows.length > 0) {
-      const columns = RCodeService.getColumnNames(importedRows);
-      if (columns.length >= 2) {
-        switch (toolId) {
-          case 'linear-regression':
-            setResponseColumn(columns[0]);
-            setPredictorColumns(columns.slice(1));
-            break;
-          case 'bar-chart':
-            setCategoryColumn(columns[0]);
-            setValueColumn(columns[1]);
-            break;
-          case 'line-chart':
-            setTimeColumn(columns[0]);
-            setValueColumn(columns[1]);
-            break;
-        }
-      }
+      autoSelectColumns(importedRows, toolId);
     }
-  }, [importedRows]);
+  }, [autoSelectColumns, importedRows]);
 
   // Update data value in the table
   const updateDataValue = useCallback((rowIndex, columnName, newValue) => {
     const updatedData = RCodeService.updateDataValue(importedRows, rowIndex, columnName, newValue);
     setImportedRows(updatedData);
+    return updatedData;
   }, [importedRows]);
 
   // Update column selections based on tool type
@@ -112,6 +154,8 @@ export const useLinearRegression = () => {
         } else if (type === 'value') {
           setValueColumn(columnName);
         }
+        break;
+      default:
         break;
     }
   }, [selectedTool]);
@@ -167,18 +211,20 @@ export const useLinearRegression = () => {
     valueColumn,
     timeColumn,
     isRightPanelVisible,
-    
+
     // Computed values
     generatedRCode,
     generatedArguments,
     availableColumns,
     validation,
-    
+
     // Actions
     handleToolChange,
     handleFileImport,
+    applyImportedRows,
     updateDataValue,
     updateColumnSelection,
-    toggleRightPanel
+    toggleRightPanel,
+    initializeFromSnapshot
   };
 };

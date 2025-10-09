@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/router";
 import Header from "../components/header";
 import Footer from "../components/footer";
 import layoutStyles from "../styles/Home.module.css";
@@ -7,8 +8,41 @@ import projectStyles from "../styles/Project.module.css";
 // Persist projects in localStorage so we remember state between sessions
 const STORAGE_KEY = "gains-projects";
 const ACTIVE_ACCOUNT_KEY = "gains.activeAccount";
+const ACTIVE_PROJECTS_KEY = "gains.activeProjects";
 const AUTH_CHANGE_EVENT = "gains-auth-change";
 const DEFAULT_ACCOUNT_KEY = "__guest__";
+const IMPORTED_CSV_DATA_KEY = "importedCsvData";
+const LAST_USED_R_TOOL_KEY = "lastUsedRTool";
+const DEFAULT_TOOL_ID = "linear-regression";
+// Map between our internal tool ids and the PascalCase values persisted in storage.
+const TOOL_ID_TO_STORAGE_VALUE = {
+  "linear-regression": "LinearRegression",
+  "line-chart": "LineChart",
+  "bar-chart": "BarChart"
+};
+const TOOL_STORAGE_VALUE_TO_ID = {
+  LinearRegression: "linear-regression",
+  LineChart: "line-chart",
+  BarChart: "bar-chart"
+};
+
+// Normalize persisted tool identifiers into the canonical kebab-case ids we use in code.
+const coerceToolId = (value) => {
+  if (typeof value !== "string") {
+    return null;
+  }
+  const trimmed = value.trim();
+  if (!trimmed) {
+    return null;
+  }
+  if (TOOL_ID_TO_STORAGE_VALUE[trimmed]) {
+    return trimmed;
+  }
+  if (TOOL_STORAGE_VALUE_TO_ID[trimmed]) {
+    return TOOL_STORAGE_VALUE_TO_ID[trimmed];
+  }
+  return null;
+};
 const INITIAL_PROJECTS = [
   { id: 1, name: "Sample Project 1" },
   { id: 2, name: "Sample Project 2" },
@@ -16,9 +50,33 @@ const INITIAL_PROJECTS = [
   { id: 4, name: "Sample Project 4" }
 ];
 
+// Keep a guaranteed CSV payload shell on every project record for the linear regression page.
+const withImportedCsvData = (project) => {
+  if (!project || typeof project !== "object") {
+    return project;
+  }
+  const importedCsvData = Array.isArray(project[IMPORTED_CSV_DATA_KEY])
+    ? project[IMPORTED_CSV_DATA_KEY]
+    : [];
+  const importedRows = Array.isArray(project.importedRows)
+    ? project.importedRows
+    : importedCsvData;
+  const normalizedToolId =
+    coerceToolId(project[LAST_USED_R_TOOL_KEY]) ||
+    coerceToolId(project.selectedTool) ||
+    DEFAULT_TOOL_ID;
+  return {
+    ...project,
+    [IMPORTED_CSV_DATA_KEY]: importedCsvData,
+    importedRows,
+    selectedTool: normalizedToolId,
+    [LAST_USED_R_TOOL_KEY]: TOOL_ID_TO_STORAGE_VALUE[normalizedToolId] || TOOL_ID_TO_STORAGE_VALUE[DEFAULT_TOOL_ID]
+  };
+};
+
 // Build the default state object used before localStorage synchronizes
 const createDefaultProjectsState = () => ({
-  projects: INITIAL_PROJECTS.map((project) => ({ ...project })),
+  projects: INITIAL_PROJECTS.map((project) => withImportedCsvData({ ...project })),
   nextIndex: INITIAL_PROJECTS.length + 1
 });
 
@@ -77,6 +135,7 @@ export default function Project() {
   const defaultState = createDefaultProjectsState();
   const [projects, setProjects] = useState(defaultState.projects);
   const [nextIndex, setNextIndex] = useState(defaultState.nextIndex);
+  const router = useRouter();
   // Delete-related UI state
   const [deleteMode, setDeleteMode] = useState(false);
   // Set once localStorage has been read on the client
@@ -131,7 +190,7 @@ export default function Project() {
     const accountState = snapshot.accounts[accountKey];
 
     if (accountState) {
-      setProjects(accountState.projects);
+      setProjects(accountState.projects.map((project) => withImportedCsvData(project)));
       setNextIndex(accountState.nextIndex);
     } else {
       const defaults = createDefaultProjectsState();
@@ -153,7 +212,7 @@ export default function Project() {
       const snapshot = parseStoredProjects(window.localStorage.getItem(STORAGE_KEY));
       const accountKey = normalizeAccountKey(activeAccount);
       snapshot.accounts[accountKey] = {
-        projects,
+        projects: projects.map((project) => withImportedCsvData(project)),
         nextIndex
       };
       window.localStorage.setItem(
@@ -183,7 +242,7 @@ export default function Project() {
     // Create a new project with an incrementing label and id
     setProjects((prev) => {
       const label = `Sample Project ${nextIndex}`;
-      const project = { id: nextIndex, name: label };
+      const project = withImportedCsvData({ id: nextIndex, name: label });
       return [...prev, project];
     });
     setNextIndex((prev) => prev + 1);
@@ -199,13 +258,39 @@ export default function Project() {
   }
 
   // Remove a project when the user clicks it while in delete mode
-  function handleProjectClick(id) {
-    if (!deleteMode) {
+  function persistActiveProjectSelection(projectId) {
+    if (typeof window === "undefined") {
       return;
     }
-    // Remove the selected project and exit delete mode afterward
-    setProjects((prev) => prev.filter((project) => project.id !== id));
-    setDeleteMode(false);
+    try {
+      const accountKey = normalizeAccountKey(activeAccount);
+      const raw = window.localStorage.getItem(ACTIVE_PROJECTS_KEY);
+      const snapshot = raw ? JSON.parse(raw) : {};
+      snapshot[accountKey] = projectId;
+      window.localStorage.setItem(ACTIVE_PROJECTS_KEY, JSON.stringify(snapshot));
+    } catch (err) {
+      console.error("Failed to persist active project selection", err);
+    }
+  }
+
+  function navigateToProject(project) {
+    persistActiveProjectSelection(project.id);
+    router
+      .push({
+        pathname: "/linear-regression",
+        query: { projectId: project.id }
+      })
+      .catch((err) => console.error("Failed to navigate to project page", err));
+  }
+
+  function handleProjectCardClick(project) {
+    if (deleteMode) {
+      // Remove the selected project and exit delete mode afterward
+      setProjects((prev) => prev.filter((candidate) => candidate.id !== project.id));
+      setDeleteMode(false);
+      return;
+    }
+    navigateToProject(project);
   }
 
   function handleDeleteAll() {
@@ -216,13 +301,10 @@ export default function Project() {
     setDeleteMode(false);
   }
 
-  function handleCardKeyDown(event, id) {
-    if (!deleteMode) {
-      return;
-    }
+  function handleCardKeyDown(event, project) {
     if (event.key === "Enter" || event.key === " ") {
       event.preventDefault();
-      handleProjectClick(id);
+      handleProjectCardClick(project);
     }
   }
 
@@ -291,10 +373,10 @@ export default function Project() {
                       ? `${cardClassName} ${projectStyles.projectCardExpanded}`
                       : cardClassName
                   }
-                  role={deleteMode ? "button" : "group"}
-                  tabIndex={deleteMode ? 0 : -1}
-                  onClick={() => handleProjectClick(project.id)}
-                  onKeyDown={(event) => handleCardKeyDown(event, project.id)}
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => handleProjectCardClick(project)}
+                  onKeyDown={(event) => handleCardKeyDown(event, project)}
                 >
                   <div className={projectStyles.cardHeader}>
                     <span className={projectStyles.cardSpacer} aria-hidden="true" />
