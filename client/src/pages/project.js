@@ -11,6 +11,7 @@ const ACTIVE_ACCOUNT_KEY = "gains.activeAccount";
 const ACTIVE_PROJECTS_KEY = "gains.activeProjects";
 const AUTH_CHANGE_EVENT = "gains-auth-change";
 const DEFAULT_ACCOUNT_KEY = "__guest__";
+const IMPORTED_CSV_DATA_KEY = "importedCsvData";
 const INITIAL_PROJECTS = [
   { id: 1, name: "Sample Project 1" },
   { id: 2, name: "Sample Project 2" },
@@ -18,9 +19,32 @@ const INITIAL_PROJECTS = [
   { id: 4, name: "Sample Project 4" }
 ];
 
+// Keep a guaranteed CSV payload shell on every project record for the linear regression page.
+const withImportedCsvData = (project) => {
+  if (!project || typeof project !== "object") {
+    return project;
+  }
+  const importedCsvData = Array.isArray(project[IMPORTED_CSV_DATA_KEY])
+    ? project[IMPORTED_CSV_DATA_KEY]
+    : [];
+  const importedRows = Array.isArray(project.importedRows)
+    ? project.importedRows
+    : importedCsvData;
+  const selectedTool =
+    typeof project.selectedTool === "string" && project.selectedTool.trim()
+      ? project.selectedTool
+      : "linear-regression";
+  return {
+    ...project,
+    [IMPORTED_CSV_DATA_KEY]: importedCsvData,
+    importedRows,
+    selectedTool
+  };
+};
+
 // Build the default state object used before localStorage synchronizes
 const createDefaultProjectsState = () => ({
-  projects: INITIAL_PROJECTS.map((project) => ({ ...project })),
+  projects: INITIAL_PROJECTS.map((project) => withImportedCsvData({ ...project })),
   nextIndex: INITIAL_PROJECTS.length + 1
 });
 
@@ -134,7 +158,7 @@ export default function Project() {
     const accountState = snapshot.accounts[accountKey];
 
     if (accountState) {
-      setProjects(accountState.projects);
+      setProjects(accountState.projects.map((project) => withImportedCsvData(project)));
       setNextIndex(accountState.nextIndex);
     } else {
       const defaults = createDefaultProjectsState();
@@ -156,7 +180,7 @@ export default function Project() {
       const snapshot = parseStoredProjects(window.localStorage.getItem(STORAGE_KEY));
       const accountKey = normalizeAccountKey(activeAccount);
       snapshot.accounts[accountKey] = {
-        projects,
+        projects: projects.map((project) => withImportedCsvData(project)),
         nextIndex
       };
       window.localStorage.setItem(
@@ -186,7 +210,7 @@ export default function Project() {
     // Create a new project with an incrementing label and id
     setProjects((prev) => {
       const label = `Sample Project ${nextIndex}`;
-      const project = { id: nextIndex, name: label };
+      const project = withImportedCsvData({ id: nextIndex, name: label });
       return [...prev, project];
     });
     setNextIndex((prev) => prev + 1);
