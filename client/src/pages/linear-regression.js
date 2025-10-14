@@ -923,7 +923,7 @@ grid(col = "lightgray")`,
   return (
     <>
       <Head>
-        <title>Add R Tool</title>
+        <title>Select R Tool</title>
         <meta name="description" content="R programming language tools dashboard for statistical students" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <link rel="icon" href="/favicon.ico" />
@@ -963,7 +963,7 @@ grid(col = "lightgray")`,
           {/* Left Panel - Tool Selection */}
           <div className={styles.leftPanel}>
             <div className={styles.panelHeader}>
-              <h2>Add R Tool</h2>
+              <h2>Select R Tool</h2>
               <p>Select one of the provided RStudio tools.</p>
             </div>
             
