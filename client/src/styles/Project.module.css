@@ -1,20 +1,43 @@
-.projectIntro {
+.heroSection {
+  display: grid;
+  align-items: center;
+  gap: clamp(24px, 3vw, 40px);
+}
+
+.heroAside {
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  gap: 20px;
 }
 
-.pageTitle {
-  font-size: clamp(28px, 4vw, 36px);
+.heroBadge {
+  align-self: flex-start;
+  padding: 6px 14px;
+  border-radius: 999px;
+  background: rgba(79, 206, 255, 0.12);
+  border: 1px solid rgba(79, 206, 255, 0.35);
+  color: #d3f4ff;
+  font-size: 12px;
   font-weight: 600;
-  margin: 0;
-  color: #f1f4f9;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
 }
 
-.actionsRow {
+.heroChecklist {
+  background: rgba(18, 27, 49, 0.7);
+  border: 1px solid rgba(75, 142, 255, 0.35);
+  border-radius: 14px;
+  padding: 20px 24px;
   display: flex;
-  flex-wrap: wrap;
-  gap: 16px;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.heroChecklistTitle {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: #f1f4f9;
 }
 
 .actionButton {
@@ -58,8 +81,8 @@
 .projectsSection {
   display: flex;
   flex-direction: column;
-  gap: 24px;
-  align-items: center;
+  gap: 28px;
+  align-items: stretch;
 }
 
 .projectsGrid {
@@ -189,6 +212,7 @@
   margin: 0;
   font-size: 15px;
   color: #c2ccdf;
+  text-align: center;
 }
 
 .settingsOverlay {

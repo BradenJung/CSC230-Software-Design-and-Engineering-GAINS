@@ -28,6 +28,7 @@ const TOOL_STORAGE_VALUE_TO_ID = {
   BarChart: "bar-chart",
   DotPlot: "dot-plot"
 };
+const TOTAL_TOOL_COUNT = Object.keys(TOOL_ID_TO_STORAGE_VALUE).length;
 
 // Normalize persisted tool identifiers into the canonical kebab-case ids we use in code.
 const coerceToolId = (value) => {
@@ -322,46 +323,100 @@ export default function Project() {
     }
   }, [deleteMode]);
 
+  const projectHighlights = useMemo(
+    () => [
+      {
+        label: "Active projects",
+        value: projects.length.toString().padStart(2, "0")
+      },
+      {
+        label: "Available tools",
+        value: `${TOTAL_TOOL_COUNT} modules`
+      },
+      {
+        label: "Delete mode",
+        value: deleteMode ? "Enabled" : "Disabled"
+      }
+    ],
+    [projects.length, deleteMode]
+  );
+
   return (
     <div className={layoutStyles.home}>
       <Header />
       <main className={layoutStyles.homeMain}>
-        <section className={projectStyles.projectIntro}>
-          <h1 className={projectStyles.pageTitle}>Projects</h1>
-          <div className={projectStyles.actionsRow}>
-            <button
-              type="button"
-              className={`${layoutStyles.primaryButton} ${projectStyles.actionButton}`}
-              onClick={handleCreateProject}
-            >
-              New project +
-            </button>
-            <button
-              type="button"
-              className={deleteButtonClassName}
-              onClick={handleToggleDeleteMode}
-              disabled={projects.length === 0 && !deleteMode}
-            >
-              {deleteMode ? "Cancel delete" : "Delete project -"}
-            </button>
-            {deleteMode && projects.length > 0 && (
+        <section className={`${layoutStyles.heroSection} ${projectStyles.heroSection}`}>
+          <div className={layoutStyles.heroCopy}>
+            <p className={layoutStyles.heroEyebrow}>Workspace</p>
+            <h1 className={layoutStyles.heroTitle}>Organize every GAINS scenario in one place.</h1>
+            <p className={layoutStyles.heroSubtitle}>
+              Spin up draft analyses, revisit saved regressions, and hop into dashboards without
+              losing your momentum. Launch a new idea or prune older work with a couple of clicks.
+            </p>
+            <div className={layoutStyles.heroActions}>
               <button
                 type="button"
-                className={`${layoutStyles.secondaryButton} ${projectStyles.actionButton} ${projectStyles.selectAllButton}`}
-                onClick={handleDeleteAll}
+                className={`${layoutStyles.primaryButton} ${projectStyles.actionButton}`}
+                onClick={handleCreateProject}
               >
-                Select all
+                New project +
               </button>
+              <button
+                type="button"
+                className={deleteButtonClassName}
+                onClick={handleToggleDeleteMode}
+                disabled={projects.length === 0 && !deleteMode}
+              >
+                {deleteMode ? "Cancel delete" : "Delete project -"}
+              </button>
+              {deleteMode && projects.length > 0 && (
+                <button
+                  type="button"
+                  className={`${layoutStyles.secondaryButton} ${projectStyles.actionButton} ${projectStyles.selectAllButton}`}
+                  onClick={handleDeleteAll}
+                >
+                  Select all
+                </button>
+              )}
+            </div>
+            {deleteMode && (
+              <p className={projectStyles.deleteHelper}>
+                Delete mode: select a project card to remove it, or use Select all to delete
+                everything.
+              </p>
             )}
           </div>
-          {deleteMode && (
-            <p className={projectStyles.deleteHelper}>
-              Delete mode: select a project card to remove it, or use Select all to delete everything.
-            </p>
-          )}
+          <div className={projectStyles.heroAside} aria-hidden="true">
+            <div className={projectStyles.heroBadge}>Project Overview</div>
+            <div className={layoutStyles.metricsGrid}>
+              {projectHighlights.map(({ label, value }) => (
+                <div key={label} className={layoutStyles.metricCard}>
+                  <p className={layoutStyles.metricValue}>{value}</p>
+                  <p className={layoutStyles.metricLabel}>{label}</p>
+                </div>
+              ))}
+            </div>
+            <div className={projectStyles.heroChecklist}>
+              <p className={projectStyles.heroChecklistTitle}>Quick actions</p>
+              <ul className={layoutStyles.previewList}>
+                <li>Click a project to reopen it on the regression workspace.</li>
+                <li>Toggle delete mode to archive older scenarios in bulk.</li>
+                <li>Use settings to prep workflows before sharing with teammates.</li>
+              </ul>
+            </div>
+          </div>
         </section>
 
-        <section className={projectStyles.projectsSection}>
+        <section className={`${layoutStyles.featuresSection} ${projectStyles.projectsSection}`}>
+          <div className={layoutStyles.sectionHeaderRow}>
+            <div>
+              <h2 className={layoutStyles.sectionTitle}>Choose a project to continue</h2>
+              <p className={layoutStyles.sectionSubtitle}>
+                Every project retains its imported data, your last selected tool, and dashboard
+                settings so you can pick up right where you left off.
+              </p>
+            </div>
+          </div>
           {projects.length === 0 ? (
             <p className={projectStyles.emptyState}>
               You haven&apos;t created any projects yet. Click “New project +” to get started.
