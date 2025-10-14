@@ -490,6 +490,71 @@ export default function linear() {
     }
   }
 
+  async function handleExport() {
+    if (!generatedRCode) {
+      console.warn('No R code available to export');
+      return;
+    }
+
+    // Get tool name for filename
+    const toolName = selectedTool.replace(/-/g, '_');
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-').split('T')[0];
+    const suggestedFileName = `${toolName}_${timestamp}.R`;
+
+    try {
+      // Create blob with R code content
+      const blob = new Blob([generatedRCode], { type: 'text/x-r' });
+
+      // Check if File System Access API is supported
+      if ('showSaveFilePicker' in window) {
+        try {
+          // Use File System Access API for better UX
+          const handle = await window.showSaveFilePicker({
+            suggestedName: suggestedFileName,
+            types: [{
+              description: 'R Script',
+              accept: { 'text/x-r': ['.R'] },
+            }],
+          });
+
+          // Create a writable stream
+          const writable = await handle.createWritable();
+
+          // Write the blob to the file
+          await writable.write(blob);
+
+          // Close the file and write the contents to disk
+          await writable.close();
+
+          console.log('R script exported successfully');
+        } catch (err) {
+          // User cancelled the save dialog or permission denied
+          if (err.name !== 'AbortError') {
+            console.error('Error using File System Access API:', err);
+            // Fall back to traditional download
+            fallbackDownload(blob, suggestedFileName);
+          }
+        }
+      } else {
+        // Fallback for browsers that do not support the File System Access API
+        fallbackDownload(blob, suggestedFileName);
+      }
+    } catch (err) {
+      console.error('Error exporting R code:', err);
+    }
+  }
+
+  function fallbackDownload(blob, fileName) {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = fileName;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
+
   function getCodeDescription() {
     switch (selectedTool) {
       case 'linear-regression':
@@ -723,6 +788,7 @@ grid(col = "lightgray")`,
       <Header
         onImportClick={handleTriggerImport}
         onEditClick={toggleRightPanel}
+        onExportClick={handleExport}
         isRightPanelVisible={isRightPanelVisible}
         currentProjectName={projectHydrated ? currentProjectName : undefined}
       />

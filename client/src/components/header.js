@@ -6,7 +6,7 @@ import styles from "../styles/Home.module.css";
 const ACTIVE_ACCOUNT_KEY = "gains.activeAccount";
 const AUTH_CHANGE_EVENT = "gains-auth-change";
 
-export default function Header({ onImportClick, onEditClick, isRightPanelVisible, currentProjectName }) {
+export default function Header({ onImportClick, onEditClick, onExportClick, isRightPanelVisible, currentProjectName }) {
   const router = useRouter();
   const containerRef = useRef(null);
   const [activeAccount, setActiveAccount] = useState(null);
@@ -107,7 +107,7 @@ export default function Header({ onImportClick, onEditClick, isRightPanelVisible
   const toolNavItems = [
     { label: "Edit", onClick: onEditClick },
     { label: "Import", onClick: onImportClick },
-    { label: "Export", onClick: () => {} },
+    { label: "Export", onClick: onExportClick },
   ];
 
   const authButtons = [
