@@ -6,7 +6,14 @@ import styles from "../styles/Home.module.css";
 const ACTIVE_ACCOUNT_KEY = "gains.activeAccount";
 const AUTH_CHANGE_EVENT = "gains-auth-change";
 
-export default function Header({ onImportClick, onEditClick, onExportClick, isRightPanelVisible, currentProjectName }) {
+export default function Header({
+  onImportClick,
+  onEditClick,
+  onExportClick,
+  onCopyClick = () => {},
+  isRightPanelVisible,
+  currentProjectName
+}) {
   const router = useRouter();
   const containerRef = useRef(null);
   const [activeAccount, setActiveAccount] = useState(null);
@@ -108,6 +115,7 @@ export default function Header({ onImportClick, onEditClick, onExportClick, isRi
     { label: "Edit", onClick: onEditClick },
     { label: "Import", onClick: onImportClick },
     { label: "Export", onClick: onExportClick },
+    { label: "Copy R Code", onClick: onCopyClick, icon: "{}" },
   ];
 
   const authButtons = [
@@ -138,7 +146,7 @@ export default function Header({ onImportClick, onEditClick, onExportClick, isRi
         {isLinearRegressionPage && (
           <div className={styles.navCenter}>
             <div className={styles.navLinks}>
-              {toolNavItems.map(({ label, onClick }) => (
+              {toolNavItems.map(({ label, onClick, icon }) => (
                 <button
                   key={label}
                   onClick={onClick}
@@ -152,6 +160,7 @@ export default function Header({ onImportClick, onEditClick, onExportClick, isRi
                     gap: '6px'
                   }}
                 >
+                  {icon && <span style={{ fontFamily: 'monospace' }}>{icon}</span>}
                   {label}
                 </button>
               ))}

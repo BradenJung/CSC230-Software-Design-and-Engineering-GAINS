@@ -544,6 +544,10 @@ export default function linear() {
     }
   }
 
+  function handleCopyRCode() {
+    // TODO: Implement copy behavior for generated R code
+  }
+
   function fallbackDownload(blob, fileName) {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -789,6 +793,7 @@ grid(col = "lightgray")`,
         onImportClick={handleTriggerImport}
         onEditClick={toggleRightPanel}
         onExportClick={handleExport}
+        onCopyClick={handleCopyRCode}
         isRightPanelVisible={isRightPanelVisible}
         currentProjectName={projectHydrated ? currentProjectName : undefined}
       />
@@ -841,13 +846,6 @@ grid(col = "lightgray")`,
                 <div className={styles.chartIcon} style={{ color: currentTool?.color }}>
                   {currentTool?.chartIcon}
                 </div>
-              </div>
-              
-              <div className={styles.actionButtons}>
-                <button className={styles.actionBtn}>
-                  <span>{"{}"}</span>
-                  Copy R Code
-                </button>
               </div>
             </div>
 
