@@ -239,12 +239,13 @@ export const EditableDataTable = ({
 
   return (
     <div className={styles.dataTable}>
-      <table>
-        <thead>
-          <tr>
-            {columns.map((columnName) => (
-              <th 
-                key={columnName} 
+      <div className={styles.dataTableScrollArea}>
+        <table>
+          <thead>
+            <tr>
+              {columns.map((columnName) => (
+                <th 
+                  key={columnName} 
                 className={getColumnHeaderClass(columnName)}
                 onClick={() => handleColumnHeaderClick(columnName)}
                 title={getColumnHeaderTitle(columnName)}
@@ -312,7 +313,8 @@ export const EditableDataTable = ({
             </tr>
           ))}
         </tbody>
-      </table>
+        </table>
+      </div>
     </div>
   );
 };

@@ -848,14 +848,6 @@ grid(col = "lightgray")`,
                   <span>{"{}"}</span>
                   Copy R Code
                 </button>
-                <button className={styles.actionBtn}>
-                  <span>⬇</span>
-                  Download R Code
-                </button>
-                <button className={styles.actionBtn}>
-                  <span>✏</span>
-                  Edit
-                </button>
               </div>
             </div>
 

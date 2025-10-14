@@ -625,10 +625,18 @@
   border: 1px solid #333;
   border-radius: 8px;
   overflow: hidden;
+  display: flex;
+  flex-direction: column;
 }
 
-.dataTable table {
-  width: 100%;
+.dataTableScrollArea {
+  overflow: auto;
+  max-height: clamp(240px, 50vh, 540px);
+}
+
+.dataTableScrollArea table {
+  width: max-content;
+  min-width: 100%;
   border-collapse: collapse;
 }
 
