@@ -517,6 +517,28 @@ export default function linear() {
     [activeAccountKey, activeProjectId, currentProject]
   );
 
+  const handleToolSelection = useCallback(
+    (toolId) => {
+      handleToolChange(toolId);
+
+      const normalizedToolId = coerceToolId(toolId) || DEFAULT_TOOL_ID;
+      setCurrentProject((prev) => {
+        if (!prev) {
+          return prev;
+        }
+        return withImportedCsvData({
+          ...prev,
+          selectedTool: normalizedToolId,
+          [LAST_USED_R_TOOL_KEY]:
+            TOOL_ID_TO_STORAGE_VALUE[normalizedToolId] || TOOL_ID_TO_STORAGE_VALUE[DEFAULT_TOOL_ID]
+        });
+      });
+
+      persistSelectedTool(normalizedToolId);
+    },
+    [handleToolChange, persistSelectedTool]
+  );
+
   useEffect(() => {
     if (!projectHydrated || activeProjectId === null) {
       return;
@@ -972,7 +994,7 @@ grid(col = "lightgray")`,
                 <div
                   key={tool.id}
                   className={`${styles.toolCard} ${selectedTool === tool.id ? styles.selected : ''}`}
-                  onClick={() => handleToolChange(tool.id)}
+                  onClick={() => handleToolSelection(tool.id)}
                 >
                   <div className={styles.toolIcon} style={{ color: tool.color }}>
                     {tool.icon}
