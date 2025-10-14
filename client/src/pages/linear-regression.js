@@ -239,6 +239,15 @@ export default function linear() {
     };
   }, [hydrateProjectContext]);
   
+  useEffect(() => {
+    return () => {
+      if (copyToastTimerRef.current) {
+        clearTimeout(copyToastTimerRef.current);
+        copyToastTimerRef.current = null;
+      }
+    };
+  }, []);
+  
   // Pull the hydrated rows every render so the regression hook can receive stable defaults.
   const resolvedImportedRows = useMemo(() => {
     if (!projectHydrated || !currentProject) {
@@ -292,6 +301,25 @@ export default function linear() {
   });
   // Tracks the most recent project/tool combo we wrote so we can avoid redundant storage churn.
   const lastPersistedToolRef = useRef({ projectId: null, toolId: null });
+  const copyToastTimerRef = useRef(null);
+  const [copyToastVisible, setCopyToastVisible] = useState(false);
+  const [copyToastMessage, setCopyToastMessage] = useState('');
+  const [copyToastTone, setCopyToastTone] = useState('success');
+
+  const showCopyToast = useCallback((message, tone = 'success') => {
+    setCopyToastMessage(message);
+    setCopyToastTone(tone);
+    setCopyToastVisible(true);
+
+    if (copyToastTimerRef.current) {
+      clearTimeout(copyToastTimerRef.current);
+    }
+
+    copyToastTimerRef.current = setTimeout(() => {
+      setCopyToastVisible(false);
+      copyToastTimerRef.current = null;
+    }, 2200);
+  }, []);
 
   const persistImportedCsvData = useCallback(
     (rows) => {
@@ -357,6 +385,57 @@ export default function linear() {
       }
     },
     [activeAccountKey, activeProjectId, currentProject, selectedTool]
+  );
+
+  const handleProjectRename = useCallback(
+    async (nextName) => {
+      const trimmed = (nextName || '').trim();
+      if (!trimmed) {
+        return false;
+      }
+
+      if (typeof window === "undefined" || activeProjectId === null) {
+        return false;
+      }
+
+      try {
+        const storage = window.localStorage;
+        const snapshot = parseStoredProjects(storage.getItem(STORAGE_KEY));
+        const normalizedAccount = normalizeAccountKey(activeAccountKey);
+        const accountState = snapshot.accounts[normalizedAccount] || { projects: [], nextIndex: 1 };
+        const projects = Array.isArray(accountState.projects) ? accountState.projects : [];
+
+        if (projects.length === 0) {
+          return false;
+        }
+
+        let updatedProject = null;
+        const updatedProjects = projects.map((project) => {
+          if (project.id !== activeProjectId) {
+            return project;
+          }
+          updatedProject = { ...project, name: trimmed };
+          return updatedProject;
+        });
+
+        if (!updatedProject) {
+          return false;
+        }
+
+        snapshot.accounts[normalizedAccount] = {
+          ...accountState,
+          projects: updatedProjects
+        };
+
+        storage.setItem(STORAGE_KEY, JSON.stringify(snapshot));
+        setCurrentProject(withImportedCsvData(updatedProject));
+        return true;
+      } catch (error) {
+        console.error("Failed to rename project", error);
+        return false;
+      }
+    },
+    [activeAccountKey, activeProjectId]
   );
   const handlePersistedDataUpdate = useCallback(
     (rowIndex, columnName, newValue) => {
@@ -544,8 +623,69 @@ export default function linear() {
     }
   }
 
-  function handleCopyRCode() {
-    // TODO: Implement copy behavior for generated R code
+  async function handleCopyRCode() {
+    if (!generatedRCode) {
+      console.warn('No R code available to copy');
+      showCopyToast('No R code available to copy', 'error');
+      return;
+    }
+
+    if (typeof window === "undefined" || typeof document === "undefined") {
+      console.warn('Clipboard access is unavailable during server-side rendering');
+      showCopyToast('Clipboard unavailable in this environment', 'error');
+      return;
+    }
+
+    try {
+      if (navigator?.clipboard?.writeText) {
+        await navigator.clipboard.writeText(generatedRCode);
+        console.log('R code copied to clipboard');
+        showCopyToast('R code copied to clipboard');
+        return;
+      }
+    } catch (err) {
+      console.warn('navigator.clipboard.writeText failed, falling back to buffer copy', err);
+    }
+
+    const buffer = document.createElement('textarea');
+    buffer.value = generatedRCode;
+    buffer.setAttribute('readonly', '');
+    buffer.style.position = 'absolute';
+    buffer.style.left = '-9999px';
+    buffer.style.top = '0';
+
+    document.body.appendChild(buffer);
+
+    const selection = document.getSelection();
+    const previousRanges = [];
+
+    if (selection && selection.rangeCount > 0) {
+      for (let i = 0; i < selection.rangeCount; i++) {
+        previousRanges.push(selection.getRangeAt(i));
+      }
+    }
+
+    buffer.select();
+    buffer.setSelectionRange(0, buffer.value.length);
+
+    try {
+      const succeeded = document.execCommand('copy');
+      if (!succeeded) {
+        throw new Error('document.execCommand returned false');
+      }
+      console.log('R code copied to clipboard via fallback buffer');
+      showCopyToast('R code copied to clipboard');
+      return;
+    } catch (err) {
+      console.error('Failed to copy R code to clipboard', err);
+      showCopyToast('Failed to copy R code', 'error');
+    } finally {
+      document.body.removeChild(buffer);
+      if (selection) {
+        selection.removeAllRanges();
+        previousRanges.forEach((range) => selection.addRange(range));
+      }
+    }
   }
 
   function fallbackDownload(blob, fileName) {
@@ -794,9 +934,21 @@ grid(col = "lightgray")`,
         onEditClick={toggleRightPanel}
         onExportClick={handleExport}
         onCopyClick={handleCopyRCode}
+        onProjectRename={handleProjectRename}
         isRightPanelVisible={isRightPanelVisible}
         currentProjectName={projectHydrated ? currentProjectName : undefined}
       />
+
+      <div
+        className={`${styles.copyToast} ${copyToastVisible ? styles.copyToastVisible : ''} ${copyToastTone === 'error' ? styles.copyToastError : styles.copyToastSuccess}`}
+        role="status"
+        aria-live="polite"
+      >
+        <span className={styles.copyToastIcon}>
+          {copyToastTone === 'error' ? '⚠️' : '✅'}
+        </span>
+        <span>{copyToastMessage}</span>
+      </div>
 
       <div className={styles.dashboard}>
         <input

@@ -11,6 +11,7 @@ export default function Header({
   onEditClick,
   onExportClick,
   onCopyClick = () => {},
+  onProjectRename = () => {},
   isRightPanelVisible,
   currentProjectName
 }) {
@@ -102,6 +103,61 @@ export default function Header({
   // Check if we're on the linear regression page
   const isLinearRegressionPage = router.pathname === '/linear-regression';
 
+  const [renamingProject, setRenamingProject] = useState(false);
+  const [projectNameDraft, setProjectNameDraft] = useState(currentProjectName || "");
+  const renameInputRef = useRef(null);
+
+  useEffect(() => {
+    if (!renamingProject) {
+      setProjectNameDraft(currentProjectName || "");
+    }
+  }, [currentProjectName, renamingProject]);
+
+  useEffect(() => {
+    if (renamingProject && renameInputRef.current) {
+      renameInputRef.current.focus();
+      renameInputRef.current.select();
+    }
+  }, [renamingProject]);
+
+  const beginRename = () => {
+    setProjectNameDraft(currentProjectName || "");
+    setRenamingProject(true);
+  };
+
+  const cancelRename = () => {
+    setRenamingProject(false);
+    setProjectNameDraft(currentProjectName || "");
+  };
+
+  const submitRename = async () => {
+    const trimmed = (projectNameDraft || "").trim();
+    if (!trimmed || trimmed === currentProjectName) {
+      cancelRename();
+      return;
+    }
+    try {
+      const result = await onProjectRename(trimmed);
+      if (result === false) {
+        return;
+      }
+      setProjectNameDraft(trimmed);
+      setRenamingProject(false);
+    } catch (error) {
+      console.error("Failed to rename project", error);
+    }
+  };
+
+  const handleRenameKey = (event) => {
+    if (event.key === "Enter") {
+      event.preventDefault();
+      submitRename();
+    } else if (event.key === "Escape") {
+      event.preventDefault();
+      cancelRename();
+    }
+  };
+
   // Surface every routable page so teammates can reach each screen quickly
   const navItems = [
     { href: "/home", label: "Home" },
@@ -168,7 +224,51 @@ export default function Header({
             {currentProjectName && (
               <div className={styles.currentProjectBadge} aria-live="polite">
                 <span className={styles.currentProjectLabel}>Project</span>
-                <span className={styles.currentProjectName}>{currentProjectName}</span>
+                {renamingProject ? (
+                  <div className={styles.projectRenameForm}>
+                    <input
+                      ref={renameInputRef}
+                      type="text"
+                      value={projectNameDraft}
+                      onChange={(event) => setProjectNameDraft(event.target.value)}
+                      onKeyDown={handleRenameKey}
+                      onBlur={submitRename}
+                      className={styles.projectRenameInput}
+                      maxLength={64}
+                      aria-label="Project name"
+                    />
+                    <div className={styles.projectRenameActions}>
+                      <button
+                        type="button"
+                        onMouseDown={(event) => event.preventDefault()}
+                        onClick={submitRename}
+                        className={styles.projectRenameButton}
+                      >
+                        Save
+                      </button>
+                      <button
+                        type="button"
+                        onMouseDown={(event) => event.preventDefault()}
+                        onClick={cancelRename}
+                        className={styles.projectRenameButtonSecondary}
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className={styles.projectNameRow}>
+                    <span className={styles.currentProjectName}>{currentProjectName}</span>
+                    <button
+                      type="button"
+                      onClick={beginRename}
+                      className={styles.projectRenameTrigger}
+                      aria-label="Rename project"
+                    >
+                      ✏
+                    </button>
+                  </div>
+                )}
               </div>
             )}
           </div>

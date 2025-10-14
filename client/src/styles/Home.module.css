@@ -84,6 +84,85 @@
   color: #ffffff;
 }
 
+.projectNameRow {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.projectRenameTrigger {
+  background: transparent;
+  border: none;
+  color: #8fbfff;
+  cursor: pointer;
+  font-size: 14px;
+  padding: 2px 4px;
+  border-radius: 6px;
+  transition: background 0.2s ease, color 0.2s ease;
+}
+
+.projectRenameTrigger:hover,
+.projectRenameTrigger:focus {
+  color: #ffffff;
+  background: rgba(79, 158, 255, 0.2);
+  outline: none;
+}
+
+.projectRenameForm {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.projectRenameInput {
+  background: #1a1a1a;
+  color: #ffffff;
+  border: 1px solid #4a9eff;
+  border-radius: 8px;
+  padding: 6px 10px;
+  font-size: 13px;
+  font-weight: 600;
+  min-width: 180px;
+}
+
+.projectRenameInput:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(74, 158, 255, 0.4);
+}
+
+.projectRenameActions {
+  display: inline-flex;
+  gap: 6px;
+}
+
+.projectRenameButton,
+.projectRenameButtonSecondary {
+  background: #2a2a2a;
+  border-radius: 8px;
+  border: 1px solid #333;
+  color: #ffffff;
+  padding: 5px 10px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+}
+
+.projectRenameButton:hover,
+.projectRenameButton:focus {
+  background: #4a9eff;
+  border-color: #4a9eff;
+  color: #0f1b2b;
+  outline: none;
+}
+
+.projectRenameButtonSecondary:hover,
+.projectRenameButtonSecondary:focus {
+  background: #3a3a3a;
+  border-color: #4a9eff;
+  outline: none;
+}
+
 .navButton {
   background: #4a9eff;
   color: #ffffff;
@@ -686,6 +765,44 @@
   font-weight: 500;
   text-transform: uppercase;
   letter-spacing: 0.5px;
+}
+
+.copyToast {
+  position: fixed;
+  top: 92px;
+  right: 32px;
+  background: rgba(26, 26, 26, 0.95);
+  color: #ffffff;
+  border-radius: 10px;
+  padding: 12px 18px;
+  border: 1px solid #333;
+  border-left-width: 3px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.35);
+  opacity: 0;
+  transform: translateY(-8px);
+  pointer-events: none;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+  z-index: 1000;
+}
+
+.copyToastVisible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.copyToastSuccess {
+  border-left-color: #4a9eff;
+}
+
+.copyToastError {
+  border-left-color: #ff7b7b;
+}
+
+.copyToastIcon {
+  font-size: 16px;
 }
 
 .responseColumn {
