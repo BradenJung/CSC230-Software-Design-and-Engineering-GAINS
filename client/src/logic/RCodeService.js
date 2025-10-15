@@ -82,6 +82,8 @@ export class RCodeService {
         return this.generateLineChartCode(data, selections.timeColumn, selections.valueColumn);
       case 'dot-plot':
         return this.generateDotPlotCode(data, selections.xColumn, selections.yColumn);
+      case 'pie-chart':
+        return this.generatePieChartCode(data, selections.categoryColumn, selections.valueColumn);
       default:
         return this.getDefaultCode(toolId);
     }
@@ -304,6 +306,41 @@ grid(col = "lightgray")`;
   }
 
   /**
+   * Generate R code for pie chart based on data
+   * @param {Array<Object>} data - Parsed CSV data
+   * @param {string} categoryColumn - Name of the category column
+   * @param {string} valueColumn - Name of the value column
+   * @returns {string} Generated R code
+   */
+  static generatePieChartCode(data, categoryColumn, valueColumn) {
+    if (!data || data.length === 0) {
+      return this.getDefaultPieChartCode();
+    }
+
+    const categories = data.map(row => row[categoryColumn]).filter(val => val !== '');
+    const values = data.map(row => row[valueColumn]).filter(val => val !== '');
+
+    const rCode = `# Define the data vector with values
+x <- c(${values.join(', ')})
+
+# Define labels for each value in x
+names(x) <- c(${categories.map(cat => `"${cat}"`).join(', ')})
+
+# Set the output to be a PNG file
+png(file = "piechart.png")
+
+# Create the pie chart
+pie(x, labels = names(x), col = "white",
+    main = "Pie Chart", radius = -1,
+    col.main = "darkgreen")
+
+# Save the file
+dev.off()`;
+
+    return rCode;
+  }
+
+  /**
    * Get default code for a specific tool when no data is available
    * @param {string} toolId - Tool identifier
    * @returns {string} Default R code
@@ -318,6 +355,8 @@ grid(col = "lightgray")`;
         return this.getDefaultLineChartCode();
       case 'dot-plot':
         return this.getDefaultDotPlotCode();
+      case 'pie-chart':
+        return this.getDefaultPieChartCode();
       default:
         return this.getDefaultLinearRegressionCode();
     }
@@ -449,6 +488,29 @@ grid(col = "lightgray")`;
   }
 
   /**
+   * Get default pie chart code when no data is available
+   * @returns {string} Default R code
+   */
+  static getDefaultPieChartCode() {
+    return `# Define the data vector with the number of articles
+x <- c(210, 450, 250, 100, 50, 90)
+
+# Define labels for each value in x
+names(x) <- c("Algo", "DS", "Java", "C", "C++", "Python")
+
+# Set the output to be a PNG file
+png(file = "piechart.png")
+
+# Create the pie chart
+pie(x, labels = names(x), col = "white",
+    main = "Articles on GeeksforGeeks", radius = -1,
+    col.main = "darkgreen")
+
+# Save the file
+dev.off()`;
+  }
+
+  /**
    * Generate arguments configuration based on tool type and data
    * @param {string} toolId - Tool identifier
    * @param {Array<Object>} data - Parsed CSV data
@@ -465,6 +527,8 @@ grid(col = "lightgray")`;
         return this.generateLineChartArguments(data, selections.timeColumn, selections.valueColumn);
       case 'dot-plot':
         return this.generateDotPlotArguments(data, selections.xColumn, selections.yColumn);
+      case 'pie-chart':
+        return this.generatePieChartArguments(data, selections.categoryColumn, selections.valueColumn);
       default:
         return this.getDefaultArguments(toolId);
     }
@@ -589,6 +653,31 @@ grid(col = "lightgray")`;
   }
 
   /**
+   * Generate arguments configuration for pie chart
+   * @param {Array<Object>} data - Parsed CSV data
+   * @param {string} categoryColumn - Name of the category column
+   * @param {string} valueColumn - Name of the value column
+   * @returns {Array<Object>} Arguments configuration
+   */
+  static generatePieChartArguments(data, categoryColumn, valueColumn) {
+    if (!data || data.length === 0) {
+      return this.getDefaultArguments('pie-chart');
+    }
+
+    const categories = data.map(row => row[categoryColumn]).filter(val => val !== '');
+    const values = data.map(row => row[valueColumn]).filter(val => val !== '');
+
+    return [
+      { name: "Categories", value: categories.join(', '), readOnly: true },
+      { name: "Values", value: values.join(', '), readOnly: true },
+      { name: "Main Title", value: "Pie Chart", readOnly: false },
+      { name: "Output File", value: "piechart.png", readOnly: false },
+      { name: "Colors", value: "white", readOnly: false },
+      { name: "Title Color", value: "darkgreen", readOnly: false }
+    ];
+  }
+
+  /**
    * Get default arguments when no data is available
    * @param {string} toolId - Tool identifier
    * @returns {Array<Object>} Default arguments
@@ -635,6 +724,15 @@ grid(col = "lightgray")`;
           { name: "Y-axis Label", value: "Y Values", readOnly: false },
           { name: "Point Color", value: "darkgreen", readOnly: false },
           { name: "Point Size", value: "1.2", readOnly: false }
+        ];
+      case 'pie-chart':
+        return [
+          { name: "Categories", value: "Algo, DS, Java, C, C++, Python", readOnly: false },
+          { name: "Values", value: "210, 450, 250, 100, 50, 90", readOnly: false },
+          { name: "Main Title", value: "Articles on GeeksforGeeks", readOnly: false },
+          { name: "Output File", value: "piechart.png", readOnly: false },
+          { name: "Colors", value: "white", readOnly: false },
+          { name: "Title Color", value: "darkgreen", readOnly: false }
         ];
       default:
         return [

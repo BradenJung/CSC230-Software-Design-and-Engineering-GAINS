@@ -60,6 +60,11 @@ export const useLinearRegression = ({
         setYColumn(columns[1] ?? '');
         break;
       }
+      case 'pie-chart': {
+        setCategoryColumn(columns[0] ?? '');
+        setValueColumn(columns[1] ?? '');
+        break;
+      }
       default:
         break;
     }
@@ -175,6 +180,13 @@ export const useLinearRegression = ({
           setYColumn(columnName);
         }
         break;
+      case 'pie-chart':
+        if (type === 'category') {
+          setCategoryColumn(columnName);
+        } else if (type === 'value') {
+          setValueColumn(columnName);
+        }
+        break;
       default:
         break;
     }
@@ -191,6 +203,8 @@ export const useLinearRegression = ({
         return { timeColumn, valueColumn };
       case 'dot-plot':
         return { xColumn, yColumn };
+      case 'pie-chart':
+        return { categoryColumn, valueColumn };
       default:
         return { responseColumn, predictorColumns };
     }
