@@ -1,28 +1,38 @@
-const username = process.env.USER_NAME;
-const password = process.env.PASSWORD;
+import { MongoClient } from "mongodb";
 
-const { MongoClient, ServerApiVersion } = require('mongodb');
-const uri = `mongodb+srv://${username}:${password}@cluster0.7tah6nm.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`;
+let client, db;
 
-// Create a MongoClient with a MongoClientOptions object to set the Stable API version
-const client = new MongoClient(uri, {
-  serverApi: {
-    version: ServerApiVersion.v1,
-    strict: true,
-    deprecationErrors: true,
+export async function connectDB() {
+  const uri = process.env.MONGO_URI;
+  const dbName = process.env.DB_NAME || "mydb";
+  if (!uri) throw new Error("MONGO_URI missing");
+
+  // 🔍 DEBUG — confirm credentials parsed correctly
+  const m = uri.match(/^mongodb\+srv:\/\/([^:]+):([^@]+)@([^/]+)\//);
+  if (m) {
+    console.log(
+      "Mongo → user:",
+      decodeURIComponent(m[1]),
+      "| passLen:",
+      decodeURIComponent(m[2]).length,
+      "| host:",
+      m[3]
+    );
+  } else {
+    console.log("⚠ Could not parse MONGO_URI format");
   }
-});
 
-async function run() {
-  try {
-    // Connect the client to the server	(optional starting in v4.7)
-    await client.connect();
-    // Send a ping to confirm a successful connection
-    await client.db("admin").command({ ping: 1 });
-    console.log("Pinged your deployment. You successfully connected to MongoDB!");
-  } finally {
-    // Ensures that the client will close when you finish/error
-    await client.close();
-  }
+  if (db) return db; // already connected
+
+  client = new MongoClient(uri);
+  await client.connect();
+  await client.db("admin").command({ ping: 1 });
+  db = client.db(dbName);
+  console.log("✅ Connected to MongoDB Atlas! DB:", dbName);
+  return db;
 }
-run().catch(console.dir);
+
+export function getDB() {
+  if (!db) throw new Error("DB not connected yet. Call connectDB() first.");
+  return db;
+}
