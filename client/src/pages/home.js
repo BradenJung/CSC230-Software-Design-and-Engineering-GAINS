@@ -43,17 +43,34 @@ export default function Home() {
   useEffect(() => {
     async function fetchBackendMessage() {
       try {
-        const response = await fetch("http://localhost:3000/api/welcome");
+        const response = await fetch("/api/health/db");
         if (!response.ok) {
-          throw new Error(`Request failed with status ${response.status}`);
+          let message = `Request failed with status ${response.status}`;
+          try {
+            const errorData = await response.json();
+            if (errorData?.error) message = errorData.error;
+          } catch {
+            // ignore JSON parse issues for non-JSON responses
+          }
+          throw new Error(message);
         }
         const data = await response.json();
-        setBackendMessage(data);
-        setBackendError(null);
+        if (data?.ok) {
+          const collectionsCount = Array.isArray(data.collections)
+            ? data.collections.length
+            : null;
+          const successMessage =
+            collectionsCount !== null
+              ? `Backend online · MongoDB collections detected: ${collectionsCount}`
+              : "Backend online · Successfully reached the API health endpoint.";
+          setBackendMessage(successMessage);
+          setBackendError(null);
+          return;
+        }
+        throw new Error(data?.error || "Backend responded without ok=true");
       } catch (error) {
-        //console.error("Backend fetch failed", error);
         setBackendMessage(null);
-        setBackendError("Unable to reach backend");
+        setBackendError(error.message || "Unable to reach backend");
       }
     }
 
@@ -69,10 +86,7 @@ export default function Home() {
             <p className={styles.heroEyebrow}>CSC 230 Software Design</p>
 
             {backendMessage && (
-              <div className={styles.backendBanner}>
-                <p className={styles.backendBannerTitle}>{backendMessage.title}</p>
-                <p className={styles.backendBannerBody}>{backendMessage.body}</p>
-              </div>
+              <p className={styles.backendStatus}>{backendMessage}</p>
             )}
 
             <h1 className={styles.heroTitle}>
@@ -93,7 +107,7 @@ export default function Home() {
             </div>
 
             {backendError && (
-              <div className={styles.backendBannerError}>{backendError}</div>
+              <p className={styles.backendStatusError}>{backendError}</p>
             )}
           </div>
           <div className={styles.heroIllustration} aria-hidden="true">

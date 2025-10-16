@@ -2107,30 +2107,16 @@
   line-height: 1.6;
   padding-top: 8px;
 }
-.backendBanner {
-  margin: 12px 0;
-  padding: 12px 16px;
-  border-radius: 8px;
-  background: rgba(74, 158, 255, 0.12);
-  border: 1px solid rgba(74, 158, 255, 0.4);
-  color: #dfeaff;
-}
-
-.backendBannerTitle {
-  font-weight: 600;
-  margin-bottom: 4px;
-}
-
-.backendBannerBody {
-  font-size: 14px;
+.backendStatus {
+  margin: 8px 0 0;
   color: #bcd7ff;
+  font-size: 14px;
 }
 
-.backendBannerError {
-  margin: 0px 0;
-  padding: 0px 0px 0px 0px;
-  color: #a7a7a7;
-  opacity: 0.8;
+.backendStatusError {
+  margin: 8px 0 0;
+  color: #f29f9f;
+  opacity: 0.9;
   font-size: 14px;
 }
 
