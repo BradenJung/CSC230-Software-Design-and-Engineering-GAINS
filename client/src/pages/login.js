@@ -2,28 +2,13 @@ import Head from "next/head";
 import { useState } from "react";
 import Link from "next/link";
 import Header from "../components/header";
+import { loginRequest } from "./api/api";
 import styles from "../styles/Home.module.css";
 
 const ACCOUNTS_STORAGE_KEY = "gains.accounts";
 const ACTIVE_ACCOUNT_KEY = "gains.activeAccount";
 
 const initialState = { accountName: "", password: "" };
-
-const notifyBackend = async (path, payload) => {
-  try {
-    const response = await fetch(`http://localhost:3000${path}`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    });
-
-    if (!response.ok) {
-      console.warn(`Backend ${path} responded with status ${response.status}`);
-    }
-  } catch (error) {
-    console.warn(`Unable to reach backend endpoint ${path}`, error);
-  }
-};
 
 export default function Login() {
   const [formState, setFormState] = useState(initialState);
@@ -36,7 +21,7 @@ export default function Login() {
     setStatus(null);
   };
 
-  const handleSubmit = (event) => {
+  const handleSubmit = async (event) => {
     event.preventDefault();
     if (!formState.accountName || !formState.password) {
       setStatus({ type: "error", message: "Please enter your account name and password." });
@@ -51,36 +36,52 @@ export default function Login() {
       return;
     }
 
-    const storage = window.localStorage;
-    let accounts = {};
+    const trimmedAccountName = formState.accountName.trim();
+    const normalizedAccountName = trimmedAccountName.toLowerCase();
 
     try {
-      const storedAccounts = storage.getItem(ACCOUNTS_STORAGE_KEY);
-      accounts = storedAccounts ? JSON.parse(storedAccounts) : {};
+      const response = await loginRequest({
+        username: trimmedAccountName,
+        password: formState.password,
+      });
+
+      const storage = window.localStorage;
+      let accounts = {};
+
+      try {
+        const storedAccounts = storage.getItem(ACCOUNTS_STORAGE_KEY);
+        accounts = storedAccounts ? JSON.parse(storedAccounts) : {};
+      } catch (error) {
+        console.warn("Unable to parse stored account data", error);
+        accounts = {};
+      }
+
+      const existingAccount = accounts[normalizedAccountName] || {
+        accountName: trimmedAccountName,
+      };
+      accounts[normalizedAccountName] = {
+        ...existingAccount,
+        password: formState.password,
+        lastLogin: new Date().toISOString(),
+      };
+
+      storage.setItem(ACCOUNTS_STORAGE_KEY, JSON.stringify(accounts));
+      storage.setItem(ACTIVE_ACCOUNT_KEY, trimmedAccountName);
+      window.dispatchEvent(
+        new CustomEvent("gains-auth-change", { detail: { accountName: trimmedAccountName } })
+      );
+
+      setStatus({
+        type: "success",
+        message: response.message || `Welcome back, ${trimmedAccountName}!`,
+      });
+      setFormState(initialState);
     } catch (error) {
-      console.warn("Unable to parse stored account data", error);
-      setStatus({ type: "error", message: "Stored account data is corrupted." });
-      return;
+      setStatus({
+        type: "error",
+        message: error.message || "Account name or password is incorrect.",
+      });
     }
-
-    const normalizedAccountName = formState.accountName.trim().toLowerCase();
-    const existingAccount = accounts[normalizedAccountName];
-
-    if (!existingAccount || existingAccount.password !== formState.password) {
-      setStatus({ type: "error", message: "Account name or password is incorrect." });
-      return;
-    }
-
-    storage.setItem(ACTIVE_ACCOUNT_KEY, existingAccount.accountName);
-    window.dispatchEvent(
-      new CustomEvent("gains-auth-change", { detail: { accountName: existingAccount.accountName } })
-    );
-    setStatus({
-      type: "success",
-      message: `Welcome back, ${existingAccount.accountName}!`,
-    });
-    setFormState(initialState);
-    notifyBackend("/api/auth/login", { accountName: existingAccount.accountName });
   };
 
   return (

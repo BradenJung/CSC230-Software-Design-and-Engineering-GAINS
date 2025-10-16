@@ -7,10 +7,13 @@ import "dotenv/config";
 import express from "express";
 import cors from "cors";
 import { connectDB } from "./config/db.js";
+import authRoutes from "./routes/auth.routes.js";
+import errorHandler from "./middleware/errorHandle.js";
 
 const app = express();
 app.use(cors({ origin: process.env.CORS_ORIGIN || "http://localhost:3000", credentials: true }));
 app.use(express.json());
+app.use("/api/auth", authRoutes);
 
 // health
 app.get("/api/health/db", async (_req, res) => {
@@ -23,7 +26,14 @@ app.get("/api/health/db", async (_req, res) => {
   }
 });
 
+app.use(errorHandler);
+
 const PORT = process.env.PORT || 4000;
 connectDB()
-  .then(() => app.listen(PORT, () => console.log(`🚀 API on http://localhost:${PORT}`)))
-  .catch(err => { console.error("❌ DB connect failed:", err.message); process.exit(1); });
+  .then(() => {
+    app.listen(PORT, () => console.log(`🚀 API on http://localhost:${PORT}`));
+  })
+  .catch(err => {
+    console.error("❌ DB connect failed:", err.message);
+    process.exit(1);
+  });

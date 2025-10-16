@@ -2,6 +2,7 @@ import Head from "next/head";
 import { useState } from "react";
 import Link from "next/link";
 import Header from "../components/header";
+import { signupRequest } from "./api/api";
 import styles from "../styles/Home.module.css";
 
 const initialState = {
@@ -10,39 +11,8 @@ const initialState = {
   confirmPassword: "",
 };
 
-async function handleSignup(e) {
-  e.preventDefault();
-  const fd = new FormData(e.currentTarget);
-  const username = String(fd.get("username") || "");
-  const password = String(fd.get("password") || "");
-  try {
-    const { message } = await signupRequest({ username, password });
-    alert(message || "Signup successful");
-    // optional: redirect after success
-    // router.push("/login");
-  } catch (err) {
-    alert(err.message);
-  }
-}
-
 const ACCOUNTS_STORAGE_KEY = "gains.accounts";
 const ACTIVE_ACCOUNT_KEY = "gains.activeAccount";
-
-const notifyBackend = async (path, payload) => {
-  try {
-    const response = await fetch(`http://localhost:3000${path}`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    });
-
-    if (!response.ok) {
-      console.warn(`Backend ${path} responded with status ${response.status}`);
-    }
-  } catch (error) {
-    console.warn(`Unable to reach backend endpoint ${path}`, error);
-  }
-};
 
 export default function Signup() {
   const [formState, setFormState] = useState(initialState);
@@ -55,7 +25,7 @@ export default function Signup() {
     setStatus(null);
   };
 
-  const handleSubmit = (event) => {
+  const handleSubmit = async (event) => {
     event.preventDefault();
 
     if (!formState.accountName || !formState.password || !formState.confirmPassword) {
@@ -96,22 +66,35 @@ export default function Signup() {
       return;
     }
 
-    accounts[normalizedAccountName] = {
-      accountName: trimmedAccountName,
-      password: formState.password,
-      createdAt: new Date().toISOString(),
-    };
+    try {
+      const { message } = await signupRequest({
+        username: trimmedAccountName,
+        password: formState.password,
+      });
 
-    storage.setItem(ACCOUNTS_STORAGE_KEY, JSON.stringify(accounts));
-    storage.setItem(ACTIVE_ACCOUNT_KEY, trimmedAccountName);
-    window.dispatchEvent(new CustomEvent("gains-auth-change", { detail: { accountName: trimmedAccountName } }));
+      accounts[normalizedAccountName] = {
+        accountName: trimmedAccountName,
+        password: formState.password,
+        createdAt: new Date().toISOString(),
+      };
 
-    setStatus({
-      type: "success",
-      message: "Account created. You can now sign in with your credentials.",
-    });
-    setFormState(initialState);
-    notifyBackend("/api/auth/signup", { accountName: trimmedAccountName });
+      storage.setItem(ACCOUNTS_STORAGE_KEY, JSON.stringify(accounts));
+      storage.setItem(ACTIVE_ACCOUNT_KEY, trimmedAccountName);
+      window.dispatchEvent(
+        new CustomEvent("gains-auth-change", { detail: { accountName: trimmedAccountName } })
+      );
+
+      setStatus({
+        type: "success",
+        message: message || "Account created. You can now sign in with your credentials.",
+      });
+      setFormState(initialState);
+    } catch (error) {
+      setStatus({
+        type: "error",
+        message: error.message || "Signup failed. Please try again.",
+      });
+    }
   };
 
   return (
@@ -136,7 +119,7 @@ export default function Signup() {
             </aside>
 
             <div className={styles.authCard}>
-              <form onSubmit={handleSignup} className={styles.authForm}>
+              <form onSubmit={handleSubmit} className={styles.authForm}>
                 <div className={styles.inputGroup}>
                   <label htmlFor="accountName" className={styles.inputLabel}>
                     Account name

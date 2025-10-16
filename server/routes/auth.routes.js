@@ -12,6 +12,7 @@ router.post("/signup", async (req, res) => {
       return res.status(400).json({ error: "Missing fields" });
 
     const id = await createUser({ username, password });
+    console.log(`[auth] signup ok user=${username} id=${id}`);
     res.json({ message: "Signup successful", userId: id });
   } catch (err) {
     res.status(400).json({ error: err.message });
@@ -25,6 +26,7 @@ router.post("/login", async (req, res) => {
     const user = await findUser({ username, password });
 
     if (!user) return res.status(401).json({ error: "Invalid credentials" });
+    console.log(`[auth] login ok user=${username} id=${user._id}`);
     res.json({ message: "Login successful", user });
   } catch (err) {
     res.status(500).json({ error: "Server error" });
