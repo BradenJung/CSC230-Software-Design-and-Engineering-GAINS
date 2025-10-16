@@ -75,10 +75,6 @@ export default function Home() {
               </div>
             )}
 
-            {backendError && (
-              <div className={styles.backendBannerError}>{backendError}</div>
-            )}
-
             <h1 className={styles.heroTitle}>
               Prototype, analyze, and present data stories in minutes.
             </h1>
@@ -95,6 +91,10 @@ export default function Home() {
                 Sign In
               </Link>
             </div>
+
+            {backendError && (
+              <div className={styles.backendBannerError}>{backendError}</div>
+            )}
           </div>
           <div className={styles.heroIllustration} aria-hidden="true">
             <div className={styles.illustrationHeader}>

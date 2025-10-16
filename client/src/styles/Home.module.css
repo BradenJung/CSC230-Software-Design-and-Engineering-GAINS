@@ -2127,12 +2127,10 @@
 }
 
 .backendBannerError {
-  margin: 12px 0;
-  padding: 12px 16px;
-  border-radius: 8px;
-  background: rgba(255, 102, 102, 0.15);
-  border: 1px solid rgba(255, 102, 102, 0.4);
-  color: #ffb3b3;
+  margin: 0px 0;
+  padding: 0px 0px 0px 0px;
+  color: #a7a7a7;
+  opacity: 0.8;
   font-size: 14px;
 }
 
