@@ -1,0 +1,23 @@
+{
+    "name": "workspace",
+    "private": true,
+    "workspaces": [
+      "client",
+      "server"
+    ],
+    "scripts": {
+      "dev": "npm-run-all -p dev:backend dev:frontend",
+      "dev:backend": "npm --workspace server run dev",
+      "dev:frontend": "npm --workspace client run dev",
+      "build": "npm --workspace client run build",
+      "start": "npm-run-all -p start:backend start:frontend",
+      "start:backend": "npm --workspace server run start",
+      "start:frontend": "npm --workspace client run start"
+    },
+    "devDependencies": {
+      "npm-run-all": "^4.1.5"
+    },
+    "dependencies": {
+      "dotenv": "^17.2.3"
+    }
+  }
