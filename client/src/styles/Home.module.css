@@ -2135,3 +2135,393 @@
   color: #ffb3b3;
   font-size: 14px;
 }
+
+/* Learn Page Styles */
+.learnContainer {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #1a1a1a 0%, #2a2a2a 100%);
+  color: #ffffff;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+  padding: 0;
+}
+
+.learnHeader {
+  background: linear-gradient(135deg, #3a3a3a 0%, #4a4a4a 100%);
+  padding: 60px 24px;
+  text-align: center;
+  border-bottom: 2px solid #555;
+}
+
+.learnHeader h1 {
+  font-size: 3rem;
+  font-weight: 700;
+  margin: 0 0 16px 0;
+  background: linear-gradient(45deg, #4a9eff, #8fbfff);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.learnHeader p {
+  font-size: 1.2rem;
+  color: #cccccc;
+  margin: 0;
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.bookContainer {
+  display: grid;
+  grid-template-columns: 300px 1fr;
+  gap: 0;
+  min-height: calc(100vh - 200px);
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.tableOfContents {
+  background: #2a2a2a;
+  border-right: 2px solid #444;
+  padding: 24px;
+  overflow-y: auto;
+  max-height: calc(100vh - 200px);
+  margin-left: -140px;
+}
+
+.tableOfContents h2 {
+  font-size: 1.5rem;
+  margin: 0 0 24px 0;
+  color: #4a9eff;
+  border-bottom: 2px solid #444;
+  padding-bottom: 12px;
+}
+
+.tableOfContents ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.tableOfContents li {
+  margin-bottom: 8px;
+}
+
+.chapterButton {
+  width: 100%;
+  background: transparent;
+  border: 1px solid #444;
+  color: #ffffff;
+  padding: 12px 16px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  text-align: left;
+  font-family: inherit;
+}
+
+.chapterButton:hover {
+  background: #3a3a3a;
+  border-color: #4a9eff;
+  transform: translateX(4px);
+}
+
+.chapterButton:focus {
+  outline: 2px solid #4a9eff;
+  outline-offset: 2px;
+}
+
+.chapterNumber {
+  background: #4a9eff;
+  color: #ffffff;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.8rem;
+  font-weight: bold;
+  flex-shrink: 0;
+}
+
+.chapterTitle {
+  flex: 1;
+  font-size: 0.9rem;
+  line-height: 1.3;
+}
+
+.expandIcon {
+  transition: transform 0.3s ease;
+  font-size: 0.8rem;
+  color: #4a9eff;
+}
+
+.expandIcon.expanded {
+  transform: rotate(180deg);
+}
+
+.chaptersContainer {
+  padding: 24px;
+  overflow-y: auto;
+  max-height: calc(100vh - 200px);
+}
+
+.chapterSection {
+  margin-bottom: 32px;
+  border: 1px solid #444;
+  border-radius: 12px;
+  overflow: hidden;
+  background: #2a2a2a;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.chapterHeader {
+  width: 100%;
+  background: linear-gradient(135deg, #3a3a3a 0%, #4a4a4a 100%);
+  border: none;
+  color: #ffffff;
+  padding: 20px 24px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  text-align: left;
+  font-family: inherit;
+}
+
+.chapterHeader:hover {
+  background: linear-gradient(135deg, #4a4a4a 0%, #5a5a5a 100%);
+}
+
+.chapterHeader h2 {
+  margin: 0;
+  font-size: 1.4rem;
+  font-weight: 600;
+  flex: 1;
+}
+
+.chapterHeader .chapterNumber {
+  background: #4a9eff;
+  color: #ffffff;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1rem;
+  font-weight: bold;
+  flex-shrink: 0;
+}
+
+.chapterBody {
+  padding: 24px;
+  background: #1a1a1a;
+  animation: slideDown 0.3s ease-out;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.chapterContent h3 {
+  color: #4a9eff;
+  font-size: 1.5rem;
+  margin: 24px 0 16px 0;
+  border-bottom: 2px solid #444;
+  padding-bottom: 8px;
+}
+
+.chapterContent h4 {
+  color: #8fbfff;
+  font-size: 1.2rem;
+  margin: 20px 0 12px 0;
+}
+
+.chapterContent h5 {
+  color: #ffffff;
+  font-size: 1rem;
+  margin: 16px 0 8px 0;
+}
+
+.chapterContent p {
+  line-height: 1.6;
+  margin: 12px 0;
+  color: #cccccc;
+}
+
+.chapterContent ul {
+  margin: 12px 0;
+  padding-left: 24px;
+}
+
+.chapterContent li {
+  margin: 8px 0;
+  color: #cccccc;
+  line-height: 1.5;
+}
+
+.chapterContent code {
+  background: #333;
+  color: #4a9eff;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+  font-size: 0.9em;
+}
+
+.codeExample {
+  background: #1e1e1e;
+  border: 1px solid #444;
+  border-radius: 8px;
+  padding: 16px;
+  margin: 16px 0;
+  overflow-x: auto;
+}
+
+.codeExample h5 {
+  color: #8fbfff;
+  margin: 0 0 12px 0;
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.codeExample pre {
+  margin: 0;
+  overflow-x: auto;
+}
+
+.codeExample code {
+  background: transparent;
+  color: #ffffff;
+  padding: 0;
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+  font-size: 0.85rem;
+  line-height: 1.4;
+}
+
+.codeExample p {
+  margin: 8px 0 0 0;
+  font-style: italic;
+  color: #888;
+  font-size: 0.9rem;
+}
+
+.learnFooter {
+  background: #2a2a2a;
+  padding: 40px 24px;
+  text-align: center;
+  border-top: 2px solid #444;
+}
+
+.learnFooter h3 {
+  color: #4a9eff;
+  font-size: 1.8rem;
+  margin: 0 0 16px 0;
+}
+
+.learnFooter p {
+  color: #cccccc;
+  font-size: 1.1rem;
+  margin: 0 0 24px 0;
+  max-width: 600px;
+  margin: 0 auto 24px auto;
+}
+
+.actionButtons {
+  display: flex;
+  gap: 16px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.primaryButton {
+  background: linear-gradient(45deg, #4a9eff, #8fbfff);
+  color: #ffffff;
+  padding: 12px 24px;
+  border-radius: 8px;
+  text-decoration: none;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  display: inline-block;
+}
+
+.primaryButton:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(74, 158, 255, 0.3);
+}
+
+.secondaryButton {
+  background: transparent;
+  color: #ffffff;
+  padding: 12px 24px;
+  border: 2px solid #4a9eff;
+  border-radius: 8px;
+  text-decoration: none;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  display: inline-block;
+}
+
+.secondaryButton:hover {
+  background: #4a9eff;
+  transform: translateY(-2px);
+}
+
+/* Responsive Design for Learn Page */
+@media (max-width: 1024px) {
+  .bookContainer {
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+  
+  .tableOfContents {
+    border-right: none;
+    border-bottom: 2px solid #444;
+    max-height: none;
+  }
+  
+  .chaptersContainer {
+    max-height: none;
+  }
+}
+
+@media (max-width: 768px) {
+  .learnHeader h1 {
+    font-size: 2rem;
+  }
+  
+  .learnHeader p {
+    font-size: 1rem;
+  }
+  
+  .chapterHeader h2 {
+    font-size: 1.2rem;
+  }
+  
+  .chapterContent h3 {
+    font-size: 1.3rem;
+  }
+  
+  .actionButtons {
+    flex-direction: column;
+    align-items: center;
+  }
+  
+  .primaryButton,
+  .secondaryButton {
+    width: 200px;
+  }
+}

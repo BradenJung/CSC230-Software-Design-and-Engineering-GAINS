@@ -20,14 +20,16 @@ const TOOL_ID_TO_STORAGE_VALUE = {
   "linear-regression": "LinearRegression",
   "line-chart": "LineChart",
   "bar-chart": "BarChart",
-  "dot-plot": "DotPlot"
+  "dot-plot": "DotPlot",
+  "pie-chart": "PieChart"
 };
 // Normalize stored values back into kebab-case ids
 const TOOL_STORAGE_VALUE_TO_ID = {
   LinearRegression: "linear-regression",
   LineChart: "line-chart",
   BarChart: "bar-chart",
-  DotPlot: "dot-plot"
+  DotPlot: "dot-plot",
+  PieChart: "pie-chart"
 };
 
 // Normalize any persisted tool identifier, legacy or current, back into the canonical id.
@@ -586,6 +588,8 @@ export default function linear() {
         return timeColumn && valueColumn;
       case 'dot-plot':
         return xColumn && yColumn;
+      case 'pie-chart':
+        return categoryColumn && valueColumn;
       default:
         return false;
     }
@@ -731,6 +735,8 @@ export default function linear() {
         return `Generated R code for line chart using ${timeColumn} as time points and ${valueColumn} as values.`;
       case 'dot-plot':
         return `Generated R code for dot plot using ${xColumn} on the x-axis and ${yColumn} on the y-axis.`;
+      case 'pie-chart':
+        return `Generated R code for pie chart using ${categoryColumn} as categories and ${valueColumn} as values.`;
       default:
         return 'Generated R code based on your data and selections.';
     }
@@ -935,6 +941,47 @@ grid(col = "lightgray")`,
         { name: "Point Color", value: "darkgreen", readOnly: false },
         { name: "Point Size", value: "1.2", readOnly: false }
       ]
+    },
+    {
+      id: "pie-chart",
+      name: "Pie Chart",
+      description: "Display proportional data as slices of a circular chart.",
+      icon: "🥧",
+      color: "#ff6b35",
+      chartIcon: "🥧",
+      rCode: `# Define the data vector with the number of articles
+x <- c(210, 450, 250, 100, 50, 90)
+
+# Define labels for each value in x
+names(x) <- c("Algo", "DS", "Java", "C", "C++", "Python")
+
+# Set the output to be a PNG file
+png(file = "piechart.png")
+
+# Create the pie chart
+pie(x, labels = names(x), col = "white",
+    main = "Articles on GeeksforGeeks", radius = -1,
+    col.main = "darkgreen")
+
+# Save the file
+dev.off()`,
+      codeDescription: "Creates a pie chart showing proportional data with labels and saves as PNG.",
+      sampleData: [
+        { category: "Algo", value: 210 },
+        { category: "DS", value: 450 },
+        { category: "Java", value: 250 },
+        { category: "C", value: 100 },
+        { category: "C++", value: 50 },
+        { category: "Python", value: 90 }
+      ],
+      arguments: [
+        { name: "Categories", value: "Algo, DS, Java, C, C++, Python", readOnly: false },
+        { name: "Values", value: "210, 450, 250, 100, 50, 90", readOnly: false },
+        { name: "Main Title", value: "Articles on GeeksforGeeks", readOnly: false },
+        { name: "Output File", value: "piechart.png", readOnly: false },
+        { name: "Colors", value: "white", readOnly: false },
+        { name: "Title Color", value: "darkgreen", readOnly: false }
+      ]
     }
   ];
 
@@ -1076,6 +1123,12 @@ grid(col = "lightgray")`,
                   <>
                     <p><strong>X Column:</strong> {xColumn || 'None selected'}</p>
                     <p><strong>Y Column:</strong> {yColumn || 'None selected'}</p>
+                  </>
+                )}
+                {selectedTool === 'pie-chart' && (
+                  <>
+                    <p><strong>Category Column:</strong> {categoryColumn || 'None selected'}</p>
+                    <p><strong>Value Column:</strong> {valueColumn || 'None selected'}</p>
                   </>
                 )}
                 <p className={styles.columnSelectionHint}>

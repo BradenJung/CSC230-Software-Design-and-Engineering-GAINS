@@ -156,6 +156,23 @@ export const EditableDataTable = ({
           }
         }
         break;
+      case 'pie-chart':
+        if (categoryColumn === columnName) {
+          onColumnSelectionChange('category', null);
+        } else if (valueColumn === columnName) {
+          onColumnSelectionChange('value', null);
+        } else {
+          // Toggle between category and value
+          if (!categoryColumn) {
+            onColumnSelectionChange('category', columnName);
+          } else if (!valueColumn) {
+            onColumnSelectionChange('value', columnName);
+          } else {
+            // Replace category with new selection
+            onColumnSelectionChange('category', columnName);
+          }
+        }
+        break;
     }
   };
 
@@ -190,6 +207,13 @@ export const EditableDataTable = ({
           className += ` ${styles.xColumn}`;
         } else if (yColumn === columnName) {
           className += ` ${styles.yColumn}`;
+        }
+        break;
+      case 'pie-chart':
+        if (categoryColumn === columnName) {
+          className += ` ${styles.categoryColumn}`;
+        } else if (valueColumn === columnName) {
+          className += ` ${styles.valueColumn}`;
         }
         break;
     }
@@ -232,6 +256,14 @@ export const EditableDataTable = ({
           return 'Click to deselect as Y axis column';
         }
         return 'Click to select as X or Y axis column';
+      case 'pie-chart':
+        if (categoryColumn === columnName) {
+          return 'Click to deselect as category column';
+        }
+        if (valueColumn === columnName) {
+          return 'Click to deselect as value column';
+        }
+        return 'Click to select as category or value column';
       default:
         return 'Click to toggle column selection';
     }
@@ -275,6 +307,12 @@ export const EditableDataTable = ({
                   )}
                   {selectedTool === 'dot-plot' && yColumn === columnName && (
                     <span className={styles.columnBadge}>Y</span>
+                  )}
+                  {selectedTool === 'pie-chart' && categoryColumn === columnName && (
+                    <span className={styles.columnBadge}>Category</span>
+                  )}
+                  {selectedTool === 'pie-chart' && valueColumn === columnName && (
+                    <span className={styles.columnBadge}>Value</span>
                   )}
                 </div>
               </th>
