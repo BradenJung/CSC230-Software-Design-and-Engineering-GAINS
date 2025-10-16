@@ -32,32 +32,39 @@ const TOOL_STORAGE_VALUE_TO_ID = {
   PieChart: "pie-chart"
 };
 
-// Normalize any persisted tool identifier, legacy or current, back into the canonical id.
+// Turn whatever tool id we stored earlier back into the format this page expects.
 const coerceToolId = (value) => {
+  // If this is not a string, we give up.
   if (typeof value !== "string") {
     return null;
   }
+  // Clean up surrounding spaces.
   const trimmed = value.trim();
   if (!trimmed) {
     return null;
   }
+  // If it already matches our internal id, return it.
   if (TOOL_ID_TO_STORAGE_VALUE[trimmed]) {
     return trimmed;
   }
+  // Otherwise try to translate the stored PascalCase version.
   if (TOOL_STORAGE_VALUE_TO_ID[trimmed]) {
     return TOOL_STORAGE_VALUE_TO_ID[trimmed];
   }
   return null;
 };
 
+// Lowercase account names and trim spaces.
 const normalizeAccountKey = (accountName) => {
   if (!accountName || typeof accountName !== "string") {
     return DEFAULT_ACCOUNT_KEY;
   }
   const normalized = accountName.trim().toLowerCase();
+  // Fall back to the guest account if nothing usable is left.
   return normalized || DEFAULT_ACCOUNT_KEY;
 };
 
+// Get saved projects from localStorage and fix older formats.
 const parseStoredProjects = (raw) => {
   const base = { accounts: {} };
   if (!raw) {
@@ -68,6 +75,7 @@ const parseStoredProjects = (raw) => {
     const data = JSON.parse(raw);
     if (data && typeof data === "object") {
       if (Array.isArray(data.projects)) {
+        // Older saves put projects directly under "projects".
         base.accounts[DEFAULT_ACCOUNT_KEY] = {
           projects: data.projects,
           nextIndex:
@@ -82,6 +90,7 @@ const parseStoredProjects = (raw) => {
         const normalizedAccounts = {};
         Object.entries(data.accounts).forEach(([key, value]) => {
           if (Array.isArray(value?.projects) && typeof value?.nextIndex === "number") {
+            // For newer saves, copy projects per account and tidy the account name.
             normalizedAccounts[normalizeAccountKey(key)] = {
               projects: value.projects,
               nextIndex: value.nextIndex
@@ -98,6 +107,7 @@ const parseStoredProjects = (raw) => {
   return base;
 };
 
+// Read back which project was active per account.
 const parseActiveProjects = (raw) => {
   if (!raw) {
     return {};
@@ -105,6 +115,7 @@ const parseActiveProjects = (raw) => {
   try {
     const data = JSON.parse(raw);
     if (data && typeof data === "object") {
+      // We expect a plain object shaped like {accountKey: projectId}.
       return data;
     }
   } catch (error) {
@@ -113,8 +124,10 @@ const parseActiveProjects = (raw) => {
   return {};
 };
 
+// Turn whatever comes from the router or storage into a number we can compare.
 const parseProjectId = (value) => {
   if (Array.isArray(value)) {
+    // Next.js query params can be arrays, so pick the first item.
     return parseProjectId(value[0]);
   }
   if (value === null || value === undefined) {
@@ -127,17 +140,20 @@ const parseProjectId = (value) => {
   return numeric;
 };
 
-// Normalize legacy project payloads so every project exposes imported CSV rows and selected tool.
+// Make sure a project always has data rows and a selected tool in the format we expect.
 const withImportedCsvData = (project) => {
+  // If we did not get a real object, just return it untouched.
   if (!project || typeof project !== "object") {
     return project;
   }
+  // Look for rows under the new key, but keep old saves working too.
   const importedCsvData = Array.isArray(project[IMPORTED_CSV_DATA_KEY])
     ? project[IMPORTED_CSV_DATA_KEY]
     : [];
   const importedRows = Array.isArray(project.importedRows)
     ? project.importedRows
     : importedCsvData;
+  // Figure out which tool this project was using last time.
   const normalizedToolId =
     coerceToolId(project[LAST_USED_R_TOOL_KEY]) ||
     coerceToolId(project.selectedTool) ||
@@ -151,6 +167,7 @@ const withImportedCsvData = (project) => {
   };
 };
 
+// Main page component for the regression tool.
 export default function linear() {
   const router = useRouter();
   const fileInputRef = useRef(null);
@@ -159,13 +176,16 @@ export default function linear() {
   const [activeAccountKey, setActiveAccountKey] = useState(DEFAULT_ACCOUNT_KEY);
   const [activeProjectId, setActiveProjectId] = useState(null);
 
+  // Save which project is open so we can come back to it later.
   const syncActiveProjectSelection = (accountKey, projectId) => {
+    // Skip this on the server where localStorage does not exist.
     if (typeof window === "undefined") {
       return;
     }
     try {
       const raw = window.localStorage.getItem(ACTIVE_PROJECTS_KEY);
       const snapshot = parseActiveProjects(raw);
+      // Only write when the value actually changed.
       if (snapshot[accountKey] !== projectId) {
         snapshot[accountKey] = projectId;
         window.localStorage.setItem(ACTIVE_PROJECTS_KEY, JSON.stringify(snapshot));
@@ -175,20 +195,25 @@ export default function linear() {
     }
   };
 
+  // Load account and project info from localStorage and the URL.
   const hydrateProjectContext = useCallback(() => {
+    // Wait until we are on the client and router has the query ready.
     if (typeof window === "undefined" || !router.isReady) {
       return;
     }
 
     try {
+      // Pull the active account and saved projects from localStorage.
       const storage = window.localStorage;
       const storedAccount = storage.getItem(ACTIVE_ACCOUNT_KEY);
       const normalizedAccount = normalizeAccountKey(storedAccount);
       setActiveAccountKey(normalizedAccount);
 
+      // Grab every project for this account and clean it up.
       const projectsSnapshot = parseStoredProjects(storage.getItem(STORAGE_KEY));
       const accountProjects = projectsSnapshot.accounts[normalizedAccount]?.projects ?? [];
 
+      // Decide which project id to use: URL beats saved value.
       const activeProjectsSnapshot = parseActiveProjects(storage.getItem(ACTIVE_PROJECTS_KEY));
       const queryProjectId = parseProjectId(router.query.projectId);
       const storedProjectId = parseProjectId(activeProjectsSnapshot[normalizedAccount]);
@@ -202,6 +227,7 @@ export default function linear() {
       }
 
       if (resolvedProject) {
+        // Fill in any missing project fields.
         resolvedProject = withImportedCsvData(resolvedProject);
       }
 
@@ -211,6 +237,7 @@ export default function linear() {
 
       setActiveProjectId(resolvedProjectId ?? null);
       setCurrentProject(resolvedProject ?? null);
+      // Mark loading as done.
       setProjectHydrated(true);
     } catch (error) {
       console.error("Failed to hydrate project context", error);
@@ -218,14 +245,17 @@ export default function linear() {
     }
   }, [router.isReady, router.query.projectId]);
 
+  // Load initial data once the helper above is ready.
   useEffect(() => {
     hydrateProjectContext();
   }, [hydrateProjectContext]);
 
+  // Watch for changes in other tabs so this page stays up to date.
   useEffect(() => {
     if (typeof window === "undefined") {
       return;
     }
+    // When a relevant key changes, reload our project data.
     const handleStorage = (event) => {
       if (
         event.key === STORAGE_KEY ||
@@ -241,6 +271,7 @@ export default function linear() {
     };
   }, [hydrateProjectContext]);
   
+  // Stop the copy toast timer when the page goes away.
   useEffect(() => {
     return () => {
       if (copyToastTimerRef.current) {
@@ -250,7 +281,7 @@ export default function linear() {
     };
   }, []);
   
-  // Pull the hydrated rows every render so the regression hook can receive stable defaults.
+  // Give the hook a clean list of rows, even during loading.
   const resolvedImportedRows = useMemo(() => {
     if (!projectHydrated || !currentProject) {
       return [];
@@ -262,6 +293,7 @@ export default function linear() {
         : [];
   }, [projectHydrated, currentProject]);
 
+  // Remember which tool the project used last. Default to linear regression.
   const resolvedSelectedTool = useMemo(() => {
     if (!projectHydrated || !currentProject) {
       return DEFAULT_TOOL_ID;
@@ -273,9 +305,10 @@ export default function linear() {
     );
   }, [projectHydrated, currentProject]);
 
-  // Changing the version triggers the regression hook to rebuild its internal state.
+  // Changing this number makes the hook refresh its data.
   const projectVersion = projectHydrated ? currentProject?.id ?? activeProjectId : null;
 
+  // This hook handles table edits and R code generation.
   const {
     selectedTool,
     importedRows,
@@ -308,12 +341,14 @@ export default function linear() {
   const [copyToastMessage, setCopyToastMessage] = useState('');
   const [copyToastTone, setCopyToastTone] = useState('success');
 
+  // Show a quick message when we copy code or fail to do so.
   const showCopyToast = useCallback((message, tone = 'success') => {
     setCopyToastMessage(message);
     setCopyToastTone(tone);
     setCopyToastVisible(true);
 
     if (copyToastTimerRef.current) {
+      // Restart the timer if a toast is already showing.
       clearTimeout(copyToastTimerRef.current);
     }
 
@@ -323,6 +358,7 @@ export default function linear() {
     }, 2200);
   }, []);
 
+  // Save the latest table rows and tool choice into localStorage.
   const persistImportedCsvData = useCallback(
     (rows) => {
       if (typeof window === "undefined" || activeProjectId === null) {
@@ -330,6 +366,7 @@ export default function linear() {
       }
 
       try {
+        // Read the current save for this account.
         const storage = window.localStorage;
         const snapshot = parseStoredProjects(storage.getItem(STORAGE_KEY));
         const normalizedAccount = normalizeAccountKey(activeAccountKey);
@@ -345,6 +382,7 @@ export default function linear() {
             return project;
           }
           projectExists = true;
+          // Swap in the new rows while keeping everything else.
           return withImportedCsvData({
             ...project,
             [IMPORTED_CSV_DATA_KEY]: safeRows,
@@ -355,6 +393,7 @@ export default function linear() {
         });
 
         if (!projectExists) {
+          // If this project does not exist yet, add it now.
           updatedProjects.push(
             withImportedCsvData({
               id: activeProjectId,
@@ -367,6 +406,7 @@ export default function linear() {
           );
         }
 
+        // Write the updated project array back into the snapshot.
         snapshot.accounts[normalizedAccount] = {
           ...accountState,
           projects: updatedProjects
@@ -376,6 +416,7 @@ export default function linear() {
 
         const updatedProject = updatedProjects.find((project) => project.id === activeProjectId);
         if (updatedProject) {
+          // Update state so the page shows the saved data right away.
           setCurrentProject(withImportedCsvData(updatedProject));
         }
         lastPersistedToolRef.current = {
@@ -389,8 +430,10 @@ export default function linear() {
     [activeAccountKey, activeProjectId, currentProject, selectedTool]
   );
 
+  // Rename the current project in memory and in localStorage.
   const handleProjectRename = useCallback(
     async (nextName) => {
+      // Do nothing if the new name is empty.
       const trimmed = (nextName || '').trim();
       if (!trimmed) {
         return false;
@@ -416,6 +459,7 @@ export default function linear() {
           if (project.id !== activeProjectId) {
             return project;
           }
+          // Save the new name so we can update state below.
           updatedProject = { ...project, name: trimmed };
           return updatedProject;
         });
@@ -439,8 +483,10 @@ export default function linear() {
     },
     [activeAccountKey, activeProjectId]
   );
+  // Push table edits through the hook, then persist the changed dataset.
   const handlePersistedDataUpdate = useCallback(
     (rowIndex, columnName, newValue) => {
+      // The hook gives back the new rows so we can save them.
       const updatedRows = updateDataValue(rowIndex, columnName, newValue);
       if (Array.isArray(updatedRows)) {
         persistImportedCsvData(updatedRows);
@@ -448,9 +494,10 @@ export default function linear() {
     },
     [persistImportedCsvData, updateDataValue]
   );
-  // Persist the currently selected tool whenever it changes for the active project.
+  // Remember which R tool is active so we can restore it later.
   const persistSelectedTool = useCallback(
     (toolId) => {
+      // Skip this if we are on the server or no project is selected.
       if (typeof window === "undefined" || activeProjectId === null) {
         return;
       }
@@ -461,6 +508,7 @@ export default function linear() {
         lastPersisted.projectId === activeProjectId &&
         lastPersisted.toolId === normalizedToolId
       ) {
+        // If nothing changed, do not write again.
         return;
       }
 
@@ -476,6 +524,7 @@ export default function linear() {
             return project;
           }
           projectExists = true;
+          // Change only the tool info and keep the rows the same.
           return withImportedCsvData({
             ...project,
             selectedTool: normalizedToolId,
@@ -485,6 +534,7 @@ export default function linear() {
         });
 
         if (!projectExists) {
+          // If this project is brand new, make a simple saved record for it.
           const fallbackRows = Array.isArray(currentProject?.importedRows)
             ? currentProject.importedRows
             : Array.isArray(currentProject?.[IMPORTED_CSV_DATA_KEY])
@@ -519,6 +569,7 @@ export default function linear() {
     [activeAccountKey, activeProjectId, currentProject]
   );
 
+  // When the user picks a different tool, update state and storage.
   const handleToolSelection = useCallback(
     (toolId) => {
       handleToolChange(toolId);
@@ -528,6 +579,7 @@ export default function linear() {
         if (!prev) {
           return prev;
         }
+        // Change the project in memory so the UI updates right away.
         return withImportedCsvData({
           ...prev,
           selectedTool: normalizedToolId,
@@ -536,11 +588,13 @@ export default function linear() {
         });
       });
 
+      // Save the choice so we load the same tool next time.
       persistSelectedTool(normalizedToolId);
     },
     [handleToolChange, persistSelectedTool]
   );
 
+  // Once data is loaded, keep storage in sync with the current tool.
   useEffect(() => {
     if (!projectHydrated || activeProjectId === null) {
       return;
@@ -548,20 +602,25 @@ export default function linear() {
     persistSelectedTool(selectedTool);
   }, [projectHydrated, activeProjectId, selectedTool, persistSelectedTool]);
 
+  // Pressing the import button triggers the hidden file input.
   function handleTriggerImport(e) {
     e.preventDefault();
     if (fileInputRef.current) {
+      // Fake a click so the browser opens the file picker.
       fileInputRef.current.click();
     }
   }
 
+  // Read the uploaded CSV and push it through the rest of the app.
   function handleFileChange(event) {
     const file = event.target.files && event.target.files[0];
     if (!file) return;
+    // FileReader turns the file into text.
     const reader = new FileReader();
     reader.onload = () => {
       try {
         const text = String(reader.result || '');
+        // Let our CSV helper turn the text into rows.
         const parsedRows = RCodeService.parseCsv(text);
         applyImportedRows(parsedRows, selectedTool);
         persistImportedCsvData(parsedRows);
@@ -570,14 +629,16 @@ export default function linear() {
       }
     };
     reader.readAsText(file);
-    // Reset input so selecting the same file again retriggers change
+    // Clear the input so picking the same file later still fires change.
     event.target.value = '';
   }
 
+  // Relay column selections back to the hook.
   function handleColumnSelectionChange(type, columnName, isSelected = true) {
     updateColumnSelection(type, columnName, isSelected);
   }
 
+  // Check that the must-have columns are chosen for the current tool.
   function getCurrentSelectionsValid() {
     switch (selectedTool) {
       case 'linear-regression':
@@ -595,25 +656,27 @@ export default function linear() {
     }
   }
 
+  // Allows the user to download the generated R code as a .R script.
   async function handleExport() {
     if (!generatedRCode) {
+      // Stop here if there is no code yet.
       console.warn('No R code available to export');
       return;
     }
 
-    // Get tool name for filename
+    // Build a file name using the tool name and today's date.
     const toolName = selectedTool.replace(/-/g, '_');
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-').split('T')[0];
     const suggestedFileName = `${toolName}_${timestamp}.R`;
 
     try {
-      // Create blob with R code content
+      // Turn the R code string into a blob we can save.
       const blob = new Blob([generatedRCode], { type: 'text/x-r' });
 
-      // Check if File System Access API is supported
+      // Some browsers let us show the native save dialog.
       if ('showSaveFilePicker' in window) {
         try {
-          // Use File System Access API for better UX
+          // Ask the user where to save the file.
           const handle = await window.showSaveFilePicker({
             suggestedName: suggestedFileName,
             types: [{
@@ -622,26 +685,26 @@ export default function linear() {
             }],
           });
 
-          // Create a writable stream
+          // Open the file for writing.
           const writable = await handle.createWritable();
 
-          // Write the blob to the file
+          // Write the blob to disk.
           await writable.write(blob);
 
-          // Close the file and write the contents to disk
+          // Finish the write.
           await writable.close();
 
           console.log('R script exported successfully');
         } catch (err) {
-          // User cancelled the save dialog or permission denied
+          // If the user cancels we ignore it, otherwise fall back.
           if (err.name !== 'AbortError') {
             console.error('Error using File System Access API:', err);
-            // Fall back to traditional download
+            // Use the simple download method instead.
             fallbackDownload(blob, suggestedFileName);
           }
         }
       } else {
-        // Fallback for browsers that do not support the File System Access API
+        // Use the simple download method when the API is missing.
         fallbackDownload(blob, suggestedFileName);
       }
     } catch (err) {
@@ -649,20 +712,24 @@ export default function linear() {
     }
   }
 
+  // Copy the R code to the clipboard, using backups for older browsers.
   async function handleCopyRCode() {
     if (!generatedRCode) {
+      // Tell the user there is nothing to copy yet.
       console.warn('No R code available to copy');
       showCopyToast('No R code available to copy', 'error');
       return;
     }
 
     if (typeof window === "undefined" || typeof document === "undefined") {
+      // Clipboard features do not exist during server rendering.
       console.warn('Clipboard access is unavailable during server-side rendering');
       showCopyToast('Clipboard unavailable in this environment', 'error');
       return;
     }
 
     try {
+      // Try the modern clipboard API first.
       if (navigator?.clipboard?.writeText) {
         await navigator.clipboard.writeText(generatedRCode);
         console.log('R code copied to clipboard');
@@ -673,6 +740,7 @@ export default function linear() {
       console.warn('navigator.clipboard.writeText failed, falling back to buffer copy', err);
     }
 
+    // Fall back to the hidden textarea trick for older browsers.
     const buffer = document.createElement('textarea');
     buffer.value = generatedRCode;
     buffer.setAttribute('readonly', '');
@@ -708,12 +776,14 @@ export default function linear() {
     } finally {
       document.body.removeChild(buffer);
       if (selection) {
+        // Put back whatever the user had selected.
         selection.removeAllRanges();
         previousRanges.forEach((range) => selection.addRange(range));
       }
     }
   }
 
+  // Simple download helper for browsers without the fancy save dialog.
   function fallbackDownload(blob, fileName) {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -722,9 +792,11 @@ export default function linear() {
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
+    // Clean up the blob URL once we are done.
     URL.revokeObjectURL(url);
   }
 
+  // Explain in plain words what the current R code will do.
   function getCodeDescription() {
     switch (selectedTool) {
       case 'linear-regression':
