@@ -6,7 +6,6 @@
   <component name="ChangeListManager">
     <list default="true" id="fdd64d90-b837-42c0-8588-e0793efd1f71" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/server/routes/express.js" beforeDir="false" afterPath="$PROJECT_DIR$/server/routes/express.js" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -22,6 +21,9 @@
   </component>
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+  </component>
+  <component name="PackageJsonUpdateNotifier">
+    <dismissed value="$PROJECT_DIR$/package.json" />
   </component>
   <component name="ProjectColorInfo">{
   &quot;associatedIndex&quot;: 7
@@ -82,7 +84,8 @@
       <workItem from="1759239376047" duration="693000" />
       <workItem from="1760014275351" duration="697000" />
       <workItem from="1760447558864" duration="387000" />
-      <workItem from="1760583684921" duration="596000" />
+      <workItem from="1760583684921" duration="882000" />
+      <workItem from="1760619664444" duration="165000" />
     </task>
     <servers />
   </component>
