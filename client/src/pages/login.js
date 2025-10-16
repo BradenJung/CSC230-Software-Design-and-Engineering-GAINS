@@ -26,7 +26,7 @@ export default function Login() {
     // Placeholder success message; swap once API integration is implemented
     setStatus({
       type: "success",
-      message: "Form submitted. Your team can hook this into the backend when ready.",
+      message: "Form submitted.",
     });
   };
 
