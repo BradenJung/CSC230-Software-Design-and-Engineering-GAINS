@@ -1,16 +1,231 @@
 .codexTool {
   position: fixed;
-  bottom: 24px;
-  right: 24px;
-  padding: 14px 18px;
-  background: rgba(31, 31, 31, 0.9);
-  color: #ffffff;
-  border: 1px solid #4a9eff;
-  border-radius: 12px;
+  bottom: 32px;
+  right: 32px;
+  width: 340px;
+  border-radius: 18px;
+  border: 1px solid rgba(46, 58, 81, 0.6);
+  background: linear-gradient(145deg, rgba(17, 20, 27, 0.95), rgba(6, 8, 13, 0.95));
+  color: #f4f7fc;
+  box-shadow: 0 28px 68px rgba(2, 6, 14, 0.65);
+  overflow: hidden;
+  font-family: inherit;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  backdrop-filter: blur(12px);
+  z-index: 1000;
+}
+
+.codexTool:hover {
+  box-shadow: 0 32px 80px rgba(2, 6, 14, 0.72);
+}
+
+.trigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  width: 100%;
+  padding: 18px 22px;
+  background: linear-gradient(135deg, rgba(38, 51, 78, 0.75), rgba(22, 28, 44, 0.85));
+  border: none;
+  color: inherit;
+  cursor: pointer;
+  font-size: 15px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  text-align: left;
+}
+
+.trigger:focus {
+  outline: 2px solid rgba(115, 178, 255, 0.55);
+  outline-offset: -4px;
+}
+
+.triggerLabel {
+  flex: 1;
+}
+
+.triggerIcons {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.caret {
+  display: inline-block;
+  width: 0;
+  height: 0;
+  border-left: 6px solid transparent;
+  border-right: 6px solid transparent;
+  border-top: 6px solid currentColor;
+  transition: transform 0.22s ease, opacity 0.22s ease;
+  opacity: 0.8;
+}
+
+.caretOpen {
+  transform: rotate(180deg);
+}
+
+.closeIcon {
+  font-size: 22px;
+  line-height: 1;
+  color: rgba(221, 231, 255, 0.9);
+}
+
+.expanded {
+  border-color: rgba(91, 121, 168, 0.7);
+  box-shadow: 0 36px 80px rgba(2, 6, 14, 0.78);
+}
+
+.expanded .trigger {
+  background: linear-gradient(135deg, rgba(49, 63, 92, 0.95), rgba(32, 39, 61, 0.95));
+  border-bottom: 1px solid rgba(63, 84, 124, 0.6);
+}
+
+.panel {
+  padding: 24px 26px 26px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.panelBody {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+}
+
+.greeting {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+
+.greetingIcon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 46px;
+  height: 46px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, rgba(65, 113, 255, 0.25), rgba(65, 113, 255, 0.08));
+  border: 1px solid rgba(129, 168, 255, 0.42);
+  color: #c3d5ff;
+  font-size: 24px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.greetingCopy {
+  flex: 1;
+  align-items: center;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.greetingHeadline {
+  margin: 0;
+  font-size: 24px;
+  font-weight: 600;
+  color: #f8faff;
+}
+
+.greetingSubhead {
+  margin: 0;
+  font-size: 13px;
+  color: rgba(201, 211, 232, 0.75);
+}
+
+.optionList {
+  display: grid;
+  gap: 14px;
+}
+
+.optionButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px 18px;
+  background: linear-gradient(135deg, rgba(45, 57, 83, 0.9), rgba(28, 34, 53, 0.9));
+  border: 1px solid rgba(85, 114, 165, 0.45);
+  border-radius: 999px;
   font-size: 14px;
   font-weight: 600;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.35);
-  z-index: 1000;
+  color: #e3ecff;
+  cursor: pointer;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.15s ease;
+}
+
+.optionButton:hover,
+.optionButton:focus {
+  border-color: rgba(135, 175, 255, 0.65);
+  box-shadow: 0 0 0 3px rgba(71, 120, 218, 0.28);
+  transform: translateY(-1px);
+  outline: none;
+}
+
+.notice {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.7;
+  color: rgba(188, 202, 228, 0.75);
+}
+
+.noticeLink {
+  color: #73b2ff;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.noticeLink:hover,
+.noticeLink:focus {
+  text-decoration: underline;
+}
+
+.inputRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  border: 1px solid rgba(74, 105, 163, 0.45);
+  border-radius: 14px;
+  background: rgba(21, 28, 43, 0.85);
+  box-shadow: inset 0 0 0 1px rgba(33, 44, 72, 0.65);
+}
+
+.input {
+  flex: 1;
+  border: none;
+  background: transparent;
+  font-size: 14px;
+  color: rgba(215, 222, 240, 0.85);
+}
+
+.input:focus {
+  outline: none;
+}
+
+.input::placeholder {
+  color: rgba(150, 165, 199, 0.65);
+}
+
+.input:disabled {
+  color: rgba(215, 222, 240, 0.5);
+}
+
+.sendIcon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  color: #86a8ff;
+}
+
+.sendSvg {
+  width: 18px;
+  height: 18px;
+  fill: currentColor;
 }
