@@ -2,7 +2,6 @@
   position: fixed;
   bottom: 32px;
   right: 32px;
-  width: 340px;
   border-radius: 18px;
   border: 1px solid rgba(46, 58, 81, 0.6);
   background: linear-gradient(145deg, rgba(17, 20, 27, 0.95), rgba(6, 8, 13, 0.95));
@@ -15,6 +14,18 @@
   z-index: 1000;
 }
 
+.collapsed {
+  width: fit-content;
+}
+
+.sendArrow::before {
+  content: "";
+  width: 12px;
+  height: 2px;
+  background: currentColor;
+  border-radius: 999px;
+}
+
 .codexTool:hover {
   box-shadow: 0 32px 80px rgba(2, 6, 14, 0.72);
 }
@@ -23,9 +34,9 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 16px;
+  gap: 12px;
   width: 100%;
-  padding: 18px 22px;
+  padding: 12px 16px;
   background: linear-gradient(135deg, rgba(38, 51, 78, 0.75), rgba(22, 28, 44, 0.85));
   border: none;
   color: inherit;
@@ -37,19 +48,39 @@
   text-align: left;
 }
 
+.collapsed .trigger {
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 12px 16px 12px 12px;
+}
+
+.expanded .trigger {
+  padding: 12px 16px;
+}
+
 .trigger:focus {
-  outline: 2px solid rgba(115, 178, 255, 0.55);
-  outline-offset: -4px;
+  outline: none;
 }
 
 .triggerLabel {
   flex: 1;
 }
 
+.collapsed .triggerLabel {
+  flex: 0 0 auto;
+  text-align: right;
+  margin-right: 8px;
+  white-space: nowrap;
+}
+
 .triggerIcons {
   display: inline-flex;
   align-items: center;
   gap: 12px;
+}
+
+.collapsed .triggerIcons {
+  gap: 8px;
 }
 
 .caret {
@@ -74,6 +105,7 @@
 }
 
 .expanded {
+  width: 340px;
   border-color: rgba(91, 121, 168, 0.7);
   box-shadow: 0 36px 80px rgba(2, 6, 14, 0.78);
 }
@@ -84,7 +116,7 @@
 }
 
 .panel {
-  padding: 24px 26px 26px;
+  padding: 18px 16px 20px;
   display: flex;
   flex-direction: column;
   gap: 24px;
@@ -188,7 +220,7 @@
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 12px 16px;
+  padding: 8px 14px;
   border: 1px solid rgba(74, 105, 163, 0.45);
   border-radius: 14px;
   background: rgba(21, 28, 43, 0.85);
@@ -211,21 +243,37 @@
   color: rgba(150, 165, 199, 0.65);
 }
 
-.input:disabled {
-  color: rgba(215, 222, 240, 0.5);
+.sendButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 1px solid rgba(110, 140, 200, 0.4);
+  background: linear-gradient(135deg, rgba(60, 84, 136, 0.85), rgba(52, 70, 112, 0.7));
+  color: #aecaff;
+  cursor: pointer;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.15s ease;
+}
+
+.sendButton:hover,
+.sendButton:focus {
+  border-color: rgba(140, 176, 240, 0.75);
+  box-shadow: 0 0 0 3px rgba(82, 118, 196, 0.35);
+  outline: none;
+  transform: translateY(-1px);
 }
 
 .sendIcon {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 28px;
-  height: 28px;
-  color: #86a8ff;
 }
 
-.sendSvg {
-  width: 18px;
-  height: 18px;
-  fill: currentColor;
+.sendIcon svg {
+  width: 16px;
+  height: 16px;
+  stroke: currentColor;
+  fill: none;
 }

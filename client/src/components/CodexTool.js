@@ -16,15 +16,27 @@ export default function CodexTool() {
     });
   };
 
+  const handleSubmitPrompt = () => {
+    if (!prompt.trim()) {
+      return;
+    }
+
+    console.info("Codex prompt submitted:", prompt.trim());
+    setPrompt("");
+  };
+
   return (
-    <aside className={`${styles.codexTool} ${isExpanded ? styles.expanded : ""}`} role="complementary">
+    <aside
+      className={`${styles.codexTool} ${isExpanded ? styles.expanded : styles.collapsed}`}
+      role="complementary"
+    >
       <button
         type="button"
         className={styles.trigger}
         onClick={handleToggle}
         aria-expanded={isExpanded}
       >
-        <span className={styles.triggerLabel}>Codex Help</span>
+        <span className={styles.triggerLabel}>Need Help?</span>
         <span className={styles.triggerIcons}>
           <span className={`${styles.caret} ${isExpanded ? styles.caretOpen : ""}`} aria-hidden />
           {isExpanded && (
@@ -63,12 +75,32 @@ export default function CodexTool() {
                 aria-label="Ask our chatbot"
                 value={prompt}
                 onChange={(event) => setPrompt(event.target.value)}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter") {
+                    event.preventDefault();
+                    handleSubmitPrompt();
+                  }
+                }}
               />
-              <span className={styles.sendIcon} aria-hidden>
-                <svg viewBox="0 0 24 24" focusable="false" className={styles.sendSvg}>
-                  <path d="M3.4 20.6 21 12 3.4 3.4 3 10l10 2-10 2z" />
-                </svg>
-              </span>
+              <button
+                type="button"
+                className={styles.sendButton}
+                onClick={handleSubmitPrompt}
+                aria-label="Submit Codex prompt"
+              >
+                <span className={styles.sendIcon} aria-hidden>
+                  <svg viewBox="0 0 24 24" role="presentation" focusable="false">
+                    <polyline
+                      points="8 4 16 12 8 20"
+                      stroke="currentColor"
+                      strokeWidth="3"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      fill="none"
+                    />
+                  </svg>
+                </span>
+              </button>
             </div>
           </div>
         </div>
