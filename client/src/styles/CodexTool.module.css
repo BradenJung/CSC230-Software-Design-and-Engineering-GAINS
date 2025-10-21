@@ -1,0 +1,16 @@
+.codexTool {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  padding: 14px 18px;
+  background: rgba(31, 31, 31, 0.9);
+  color: #ffffff;
+  border: 1px solid #4a9eff;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.35);
+  z-index: 1000;
+}
