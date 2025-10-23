@@ -277,3 +277,53 @@
   stroke: currentColor;
   fill: none;
 }
+
+.history {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-height: 220px;
+  padding: 12px;
+  border-radius: 12px;
+  background: rgba(16, 21, 34, 0.78);
+  border: 1px solid rgba(53, 70, 102, 0.55);
+  overflow-y: auto;
+}
+
+.messageUser {
+  align-self: flex-end;
+  max-width: 80%;
+  padding: 10px 14px;
+  border-radius: 14px 14px 2px 14px;
+  background: linear-gradient(135deg, rgba(79, 134, 255, 0.9), rgba(56, 96, 191, 0.9));
+  color: #f8faff;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.messageAssistant {
+  align-self: flex-start;
+  max-width: 80%;
+  padding: 10px 14px;
+  border-radius: 14px 14px 14px 2px;
+  background: linear-gradient(135deg, rgba(32, 42, 62, 0.9), rgba(23, 31, 49, 0.9));
+  color: rgba(214, 222, 241, 0.9);
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.error {
+  margin: 0;
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: rgba(216, 55, 91, 0.14);
+  border: 1px solid rgba(236, 84, 118, 0.35);
+  color: #ff9fb4;
+  font-size: 12px;
+}
+
+.input:disabled,
+.sendButton:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}

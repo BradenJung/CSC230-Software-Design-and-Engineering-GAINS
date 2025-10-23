@@ -11,6 +11,7 @@
     "framer-motion": "^12.23.24",
     "next": "15.5.2",
     "papaparse": "^5.5.3",
+    "openai": "^4.67.3",
     "react": "19.1.0",
     "react-dom": "19.1.0",
     "recharts": "^3.2.1"
