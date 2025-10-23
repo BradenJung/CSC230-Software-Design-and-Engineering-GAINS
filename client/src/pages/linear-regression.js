@@ -21,7 +21,10 @@ const TOOL_ID_TO_STORAGE_VALUE = {
   "line-chart": "LineChart",
   "bar-chart": "BarChart",
   "dot-plot": "DotPlot",
-  "pie-chart": "PieChart"
+  "pie-chart": "PieChart",
+  "histogram": "Histogram",
+  "density-plot": "DensityPlot",
+  "box-plot": "BoxPlot"
 };
 // Normalize stored values back into kebab-case ids
 const TOOL_STORAGE_VALUE_TO_ID = {
@@ -29,7 +32,10 @@ const TOOL_STORAGE_VALUE_TO_ID = {
   LineChart: "line-chart",
   BarChart: "bar-chart",
   DotPlot: "dot-plot",
-  PieChart: "pie-chart"
+  PieChart: "pie-chart",
+  Histogram: "histogram",
+  DensityPlot: "density-plot",
+  BoxPlot: "box-plot"
 };
 
 // Normalize any persisted tool identifier, legacy or current, back into the canonical id.
@@ -590,6 +596,12 @@ export default function linear() {
         return xColumn && yColumn;
       case 'pie-chart':
         return categoryColumn && valueColumn;
+      case 'histogram':
+        return valueColumn;
+      case 'density-plot':
+        return valueColumn;
+      case 'box-plot':
+        return valueColumn;
       default:
         return false;
     }
@@ -737,6 +749,12 @@ export default function linear() {
         return `Generated R code for dot plot using ${xColumn} on the x-axis and ${yColumn} on the y-axis.`;
       case 'pie-chart':
         return `Generated R code for pie chart using ${categoryColumn} as categories and ${valueColumn} as values.`;
+      case 'histogram':
+        return `Generated R code for histogram using ${valueColumn} as the data variable.`;
+      case 'density-plot':
+        return `Generated R code for density plot using ${valueColumn} as the data variable.`;
+      case 'box-plot':
+        return `Generated R code for box plot using ${valueColumn} as the data variable.`;
       default:
         return 'Generated R code based on your data and selections.';
     }
@@ -982,6 +1000,133 @@ dev.off()`,
         { name: "Colors", value: "white", readOnly: false },
         { name: "Title Color", value: "darkgreen", readOnly: false }
       ]
+    },
+    {
+      id: "histogram",
+      name: "Histogram",
+      description: "Display the distribution of a single numeric variable using bars.",
+      icon: "📊",
+      color: "#8e44ad",
+      chartIcon: "📊",
+      rCode: `# Initialize data
+values <- c(12, 15, 18, 22, 25, 23, 28, 32, 30, 35, 18, 22, 25, 28, 30)
+
+# Create histogram
+hist(
+  values,
+  main = "Histogram Example",
+  xlab = "Values",
+  ylab = "Frequency",
+  col = "lightblue",
+  border = "black",
+  breaks = 10
+)`,
+      codeDescription: "Creates a histogram showing the distribution of numeric values.",
+      sampleData: [
+        { value: 12 },
+        { value: 15 },
+        { value: 18 },
+        { value: 22 },
+        { value: 25 },
+        { value: 23 },
+        { value: 28 },
+        { value: 32 },
+        { value: 30 },
+        { value: 35 }
+      ],
+      arguments: [
+        { name: "Values", value: "12, 15, 18, 22, 25, 23, 28, 32, 30, 35", readOnly: false },
+        { name: "Main Title", value: "Histogram Example", readOnly: false },
+        { name: "X-axis Label", value: "Values", readOnly: false },
+        { name: "Y-axis Label", value: "Frequency", readOnly: false },
+        { name: "Color", value: "lightblue", readOnly: false },
+        { name: "Number of Bins", value: "10", readOnly: false }
+      ]
+    },
+    {
+      id: "density-plot",
+      name: "Density Plot",
+      description: "Display the probability density function of a numeric variable.",
+      icon: "📈",
+      color: "#27ae60",
+      chartIcon: "📈",
+      rCode: `# Initialize data
+values <- c(12, 15, 18, 22, 25, 23, 28, 32, 30, 35, 18, 22, 25, 28, 30)
+
+# Create density plot
+plot(
+  density(values),
+  main = "Density Plot Example",
+  xlab = "Values",
+  ylab = "Density",
+  col = "blue",
+  lwd = 2
+)
+
+# Add polygon for filled area
+polygon(density(values), col = "lightblue", border = "blue")`,
+      codeDescription: "Creates a density plot showing the probability distribution of numeric values.",
+      sampleData: [
+        { value: 12 },
+        { value: 15 },
+        { value: 18 },
+        { value: 22 },
+        { value: 25 },
+        { value: 23 },
+        { value: 28 },
+        { value: 32 },
+        { value: 30 },
+        { value: 35 }
+      ],
+      arguments: [
+        { name: "Values", value: "12, 15, 18, 22, 25, 23, 28, 32, 30, 35", readOnly: false },
+        { name: "Main Title", value: "Density Plot Example", readOnly: false },
+        { name: "X-axis Label", value: "Values", readOnly: false },
+        { name: "Y-axis Label", value: "Density", readOnly: false },
+        { name: "Line Color", value: "blue", readOnly: false },
+        { name: "Line Width", value: "2", readOnly: false }
+      ]
+    },
+    {
+      id: "box-plot",
+      name: "Box Plot",
+      description: "Display the distribution of data using quartiles and outliers.",
+      icon: "📦",
+      color: "#e67e22",
+      chartIcon: "📦",
+      rCode: `# Initialize data
+values <- c(12, 15, 18, 22, 25, 23, 28, 32, 30, 35, 18, 22, 25, 28, 30)
+
+# Create box plot
+boxplot(
+  values,
+  main = "Box Plot Example",
+  ylab = "Values",
+  col = "lightgreen",
+  border = "darkgreen",
+  horizontal = FALSE
+)`,
+      codeDescription: "Creates a box plot showing quartiles, median, and outliers of numeric values.",
+      sampleData: [
+        { value: 12 },
+        { value: 15 },
+        { value: 18 },
+        { value: 22 },
+        { value: 25 },
+        { value: 23 },
+        { value: 28 },
+        { value: 32 },
+        { value: 30 },
+        { value: 35 }
+      ],
+      arguments: [
+        { name: "Values", value: "12, 15, 18, 22, 25, 23, 28, 32, 30, 35", readOnly: false },
+        { name: "Main Title", value: "Box Plot Example", readOnly: false },
+        { name: "Y-axis Label", value: "Values", readOnly: false },
+        { name: "Color", value: "lightgreen", readOnly: false },
+        { name: "Border Color", value: "darkgreen", readOnly: false },
+        { name: "Horizontal", value: "FALSE", readOnly: false }
+      ]
     }
   ];
 
@@ -1128,6 +1273,21 @@ dev.off()`,
                 {selectedTool === 'pie-chart' && (
                   <>
                     <p><strong>Category Column:</strong> {categoryColumn || 'None selected'}</p>
+                    <p><strong>Value Column:</strong> {valueColumn || 'None selected'}</p>
+                  </>
+                )}
+                {selectedTool === 'histogram' && (
+                  <>
+                    <p><strong>Value Column:</strong> {valueColumn || 'None selected'}</p>
+                  </>
+                )}
+                {selectedTool === 'density-plot' && (
+                  <>
+                    <p><strong>Value Column:</strong> {valueColumn || 'None selected'}</p>
+                  </>
+                )}
+                {selectedTool === 'box-plot' && (
+                  <>
                     <p><strong>Value Column:</strong> {valueColumn || 'None selected'}</p>
                   </>
                 )}

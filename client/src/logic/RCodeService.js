@@ -84,6 +84,12 @@ export class RCodeService {
         return this.generateDotPlotCode(data, selections.xColumn, selections.yColumn);
       case 'pie-chart':
         return this.generatePieChartCode(data, selections.categoryColumn, selections.valueColumn);
+      case 'histogram':
+        return this.generateHistogramCode(data, selections.valueColumn);
+      case 'density-plot':
+        return this.generateDensityPlotCode(data, selections.valueColumn);
+      case 'box-plot':
+        return this.generateBoxPlotCode(data, selections.valueColumn);
       default:
         return this.getDefaultCode(toolId);
     }
@@ -341,6 +347,97 @@ dev.off()`;
   }
 
   /**
+   * Generate R code for histogram based on data
+   * @param {Array<Object>} data - Parsed CSV data
+   * @param {string} valueColumn - Name of the value column
+   * @returns {string} Generated R code
+   */
+  static generateHistogramCode(data, valueColumn) {
+    if (!data || data.length === 0 || !valueColumn) {
+      return this.getDefaultHistogramCode();
+    }
+
+    const values = data.map(row => row[valueColumn]).filter(val => val !== '');
+
+    const rCode = `# Initialize data
+values <- c(${values.join(', ')})
+
+# Create histogram
+hist(
+  values,
+  main = "Histogram",
+  xlab = "${valueColumn || 'Values'}",
+  ylab = "Frequency",
+  col = "lightblue",
+  border = "black",
+  breaks = 10
+)`;
+
+    return rCode;
+  }
+
+  /**
+   * Generate R code for density plot based on data
+   * @param {Array<Object>} data - Parsed CSV data
+   * @param {string} valueColumn - Name of the value column
+   * @returns {string} Generated R code
+   */
+  static generateDensityPlotCode(data, valueColumn) {
+    if (!data || data.length === 0 || !valueColumn) {
+      return this.getDefaultDensityPlotCode();
+    }
+
+    const values = data.map(row => row[valueColumn]).filter(val => val !== '');
+
+    const rCode = `# Initialize data
+values <- c(${values.join(', ')})
+
+# Create density plot
+plot(
+  density(values),
+  main = "Density Plot",
+  xlab = "${valueColumn || 'Values'}",
+  ylab = "Density",
+  col = "blue",
+  lwd = 2
+)
+
+# Add polygon for filled area
+polygon(density(values), col = "lightblue", border = "blue")`;
+
+    return rCode;
+  }
+
+  /**
+   * Generate R code for box plot based on data
+   * @param {Array<Object>} data - Parsed CSV data
+   * @param {string} valueColumn - Name of the value column
+   * @returns {string} Generated R code
+   */
+  static generateBoxPlotCode(data, valueColumn) {
+    if (!data || data.length === 0 || !valueColumn) {
+      return this.getDefaultBoxPlotCode();
+    }
+
+    const values = data.map(row => row[valueColumn]).filter(val => val !== '');
+
+    const rCode = `# Initialize data
+values <- c(${values.join(', ')})
+
+# Create box plot
+boxplot(
+  values,
+  main = "Box Plot",
+  ylab = "${valueColumn || 'Values'}",
+  col = "lightgreen",
+  border = "darkgreen",
+  horizontal = FALSE
+)`;
+
+    return rCode;
+  }
+
+  /**
    * Get default code for a specific tool when no data is available
    * @param {string} toolId - Tool identifier
    * @returns {string} Default R code
@@ -357,6 +454,12 @@ dev.off()`;
         return this.getDefaultDotPlotCode();
       case 'pie-chart':
         return this.getDefaultPieChartCode();
+      case 'histogram':
+        return this.getDefaultHistogramCode();
+      case 'density-plot':
+        return this.getDefaultDensityPlotCode();
+      case 'box-plot':
+        return this.getDefaultBoxPlotCode();
       default:
         return this.getDefaultLinearRegressionCode();
     }
@@ -511,6 +614,67 @@ dev.off()`;
   }
 
   /**
+   * Get default histogram code when no data is available
+   * @returns {string} Default R code
+   */
+  static getDefaultHistogramCode() {
+    return `# Initialize data
+values <- c(12, 15, 18, 22, 25, 23, 28, 32, 30, 35, 18, 22, 25, 28, 30)
+
+# Create histogram
+hist(
+  values,
+  main = "Histogram Example",
+  xlab = "Values",
+  ylab = "Frequency",
+  col = "lightblue",
+  border = "black",
+  breaks = 10
+)`;
+  }
+
+  /**
+   * Get default density plot code when no data is available
+   * @returns {string} Default R code
+   */
+  static getDefaultDensityPlotCode() {
+    return `# Initialize data
+values <- c(12, 15, 18, 22, 25, 23, 28, 32, 30, 35, 18, 22, 25, 28, 30)
+
+# Create density plot
+plot(
+  density(values),
+  main = "Density Plot Example",
+  xlab = "Values",
+  ylab = "Density",
+  col = "blue",
+  lwd = 2
+)
+
+# Add polygon for filled area
+polygon(density(values), col = "lightblue", border = "blue")`;
+  }
+
+  /**
+   * Get default box plot code when no data is available
+   * @returns {string} Default R code
+   */
+  static getDefaultBoxPlotCode() {
+    return `# Initialize data
+values <- c(12, 15, 18, 22, 25, 23, 28, 32, 30, 35, 18, 22, 25, 28, 30)
+
+# Create box plot
+boxplot(
+  values,
+  main = "Box Plot Example",
+  ylab = "Values",
+  col = "lightgreen",
+  border = "darkgreen",
+  horizontal = FALSE
+)`;
+  }
+
+  /**
    * Generate arguments configuration based on tool type and data
    * @param {string} toolId - Tool identifier
    * @param {Array<Object>} data - Parsed CSV data
@@ -529,6 +693,12 @@ dev.off()`;
         return this.generateDotPlotArguments(data, selections.xColumn, selections.yColumn);
       case 'pie-chart':
         return this.generatePieChartArguments(data, selections.categoryColumn, selections.valueColumn);
+      case 'histogram':
+        return this.generateHistogramArguments(data, selections.valueColumn);
+      case 'density-plot':
+        return this.generateDensityPlotArguments(data, selections.valueColumn);
+      case 'box-plot':
+        return this.generateBoxPlotArguments(data, selections.valueColumn);
       default:
         return this.getDefaultArguments(toolId);
     }
@@ -678,6 +848,75 @@ dev.off()`;
   }
 
   /**
+   * Generate arguments configuration for histogram
+   * @param {Array<Object>} data - Parsed CSV data
+   * @param {string} valueColumn - Name of the value column
+   * @returns {Array<Object>} Arguments configuration
+   */
+  static generateHistogramArguments(data, valueColumn) {
+    if (!data || data.length === 0 || !valueColumn) {
+      return this.getDefaultArguments('histogram');
+    }
+
+    const values = data.map(row => row[valueColumn]).filter(val => val !== '');
+
+    return [
+      { name: "Values", value: values.join(', '), readOnly: true },
+      { name: "Main Title", value: "Histogram", readOnly: false },
+      { name: "X-axis Label", value: valueColumn || "Values", readOnly: false },
+      { name: "Y-axis Label", value: "Frequency", readOnly: false },
+      { name: "Color", value: "lightblue", readOnly: false },
+      { name: "Number of Bins", value: "10", readOnly: false }
+    ];
+  }
+
+  /**
+   * Generate arguments configuration for density plot
+   * @param {Array<Object>} data - Parsed CSV data
+   * @param {string} valueColumn - Name of the value column
+   * @returns {Array<Object>} Arguments configuration
+   */
+  static generateDensityPlotArguments(data, valueColumn) {
+    if (!data || data.length === 0 || !valueColumn) {
+      return this.getDefaultArguments('density-plot');
+    }
+
+    const values = data.map(row => row[valueColumn]).filter(val => val !== '');
+
+    return [
+      { name: "Values", value: values.join(', '), readOnly: true },
+      { name: "Main Title", value: "Density Plot", readOnly: false },
+      { name: "X-axis Label", value: valueColumn || "Values", readOnly: false },
+      { name: "Y-axis Label", value: "Density", readOnly: false },
+      { name: "Line Color", value: "blue", readOnly: false },
+      { name: "Line Width", value: "2", readOnly: false }
+    ];
+  }
+
+  /**
+   * Generate arguments configuration for box plot
+   * @param {Array<Object>} data - Parsed CSV data
+   * @param {string} valueColumn - Name of the value column
+   * @returns {Array<Object>} Arguments configuration
+   */
+  static generateBoxPlotArguments(data, valueColumn) {
+    if (!data || data.length === 0 || !valueColumn) {
+      return this.getDefaultArguments('box-plot');
+    }
+
+    const values = data.map(row => row[valueColumn]).filter(val => val !== '');
+
+    return [
+      { name: "Values", value: values.join(', '), readOnly: true },
+      { name: "Main Title", value: "Box Plot", readOnly: false },
+      { name: "Y-axis Label", value: valueColumn || "Values", readOnly: false },
+      { name: "Color", value: "lightgreen", readOnly: false },
+      { name: "Border Color", value: "darkgreen", readOnly: false },
+      { name: "Horizontal", value: "FALSE", readOnly: false }
+    ];
+  }
+
+  /**
    * Get default arguments when no data is available
    * @param {string} toolId - Tool identifier
    * @returns {Array<Object>} Default arguments
@@ -734,6 +973,33 @@ dev.off()`;
           { name: "Colors", value: "white", readOnly: false },
           { name: "Title Color", value: "darkgreen", readOnly: false }
         ];
+      case 'histogram':
+        return [
+          { name: "Values", value: "12, 15, 18, 22, 25, 23, 28, 32, 30, 35", readOnly: false },
+          { name: "Main Title", value: "Histogram Example", readOnly: false },
+          { name: "X-axis Label", value: "Values", readOnly: false },
+          { name: "Y-axis Label", value: "Frequency", readOnly: false },
+          { name: "Color", value: "lightblue", readOnly: false },
+          { name: "Number of Bins", value: "10", readOnly: false }
+        ];
+      case 'density-plot':
+        return [
+          { name: "Values", value: "12, 15, 18, 22, 25, 23, 28, 32, 30, 35", readOnly: false },
+          { name: "Main Title", value: "Density Plot Example", readOnly: false },
+          { name: "X-axis Label", value: "Values", readOnly: false },
+          { name: "Y-axis Label", value: "Density", readOnly: false },
+          { name: "Line Color", value: "blue", readOnly: false },
+          { name: "Line Width", value: "2", readOnly: false }
+        ];
+      case 'box-plot':
+        return [
+          { name: "Values", value: "12, 15, 18, 22, 25, 23, 28, 32, 30, 35", readOnly: false },
+          { name: "Main Title", value: "Box Plot Example", readOnly: false },
+          { name: "Y-axis Label", value: "Values", readOnly: false },
+          { name: "Color", value: "lightgreen", readOnly: false },
+          { name: "Border Color", value: "darkgreen", readOnly: false },
+          { name: "Horizontal", value: "FALSE", readOnly: false }
+        ];
       default:
         return [
           { name: "Formula", value: "y ~ x1 + x2", readOnly: true },
@@ -783,11 +1049,12 @@ dev.off()`;
   }
 
   /**
-   * Validate data for linear regression
+   * Validate data based on tool type
    * @param {Array<Object>} data - Dataset to validate
+   * @param {string} toolId - Tool identifier
    * @returns {Object} Validation result with isValid and errors
    */
-  static validateDataForLinearRegression(data) {
+  static validateData(data, toolId) {
     if (!data || data.length === 0) {
       return { isValid: false, errors: ['No data available'] };
     }
@@ -795,11 +1062,38 @@ dev.off()`;
     const errors = [];
     const columns = this.getColumnNames(data);
 
-    if (columns.length < 2) {
-      errors.push('At least 2 columns are required for linear regression');
+    switch (toolId) {
+      case 'linear-regression':
+        if (columns.length < 2) {
+          errors.push('At least 2 columns are required for linear regression');
+        }
+        break;
+      case 'bar-chart':
+      case 'line-chart':
+      case 'pie-chart':
+        if (columns.length < 2) {
+          errors.push('At least 2 columns are required for this chart type');
+        }
+        break;
+      case 'dot-plot':
+        if (columns.length < 2) {
+          errors.push('At least 2 columns are required for dot plot');
+        }
+        break;
+      case 'histogram':
+      case 'density-plot':
+      case 'box-plot':
+        if (columns.length < 1) {
+          errors.push('At least 1 column is required for this plot type');
+        }
+        break;
+      default:
+        if (columns.length < 2) {
+          errors.push('At least 2 columns are required');
+        }
     }
 
-    // Check for numeric data
+    // Check for numeric data in relevant columns
     columns.forEach(col => {
       const values = data.map(row => row[col]).filter(val => val !== '');
       const numericValues = values.filter(val => !isNaN(parseFloat(val)));
@@ -813,5 +1107,14 @@ dev.off()`;
       isValid: errors.length === 0,
       errors
     };
+  }
+
+  /**
+   * Validate data for linear regression (legacy method)
+   * @param {Array<Object>} data - Dataset to validate
+   * @returns {Object} Validation result with isValid and errors
+   */
+  static validateDataForLinearRegression(data) {
+    return this.validateData(data, 'linear-regression');
   }
 }
