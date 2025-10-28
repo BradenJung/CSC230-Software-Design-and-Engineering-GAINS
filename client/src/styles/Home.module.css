@@ -444,6 +444,15 @@
   padding: 48px clamp(24px, 6vw, 72px) 72px;
 }
 
+.chatMain {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+  min-height: 0;
+  overflow: hidden;
+}
+
 .pageCard {
   background: linear-gradient(135deg, #2d2d2d 0%, #000005 100%);
   border: 1px solid #191d27;
@@ -1247,6 +1256,11 @@
   color: #f1f4f9;
   display: flex;
   flex-direction: column;
+}
+
+.chatHome {
+  height: 100vh;
+  overflow: hidden;
 }
 
 /* Vertical stack that spaces the home sections with generous padding */

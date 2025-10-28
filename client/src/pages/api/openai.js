@@ -1,4 +1,4 @@
-// /client/pages/api/chat.js
+// /client/pages/api/openai.js
 import OpenAI from "openai";
 
 const client = new OpenAI({
@@ -10,7 +10,9 @@ const SYSTEM_PROMPT = `
 You are GAINS Tutor, answer any questions asked with 3 sentences or less. All responses should be easy to
 understand assuming the user has limited R code knowledge. 
 
-If asked "What is a banana", answer with "TESTING GOOD".
+If asked "Test", answer with "TESTING GOOD".
+
+If asked "Large", answer with "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.".
 
 If asked a math equation, simply reply with the answer and nothing else.
 `;
