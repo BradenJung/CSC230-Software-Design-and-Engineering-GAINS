@@ -224,6 +224,61 @@
   gap: 14px;
 }
 
+.projectPicker {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.projectPickerLabel {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(188, 202, 228, 0.72);
+}
+
+.projectPickerSelectWrapper {
+  position: relative;
+}
+
+.projectPickerSelect {
+  width: 100%;
+  padding: 10px 36px 10px 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(74, 105, 163, 0.45);
+  background: rgba(21, 28, 43, 0.85);
+  color: rgba(215, 222, 240, 0.9);
+  font-size: 14px;
+  appearance: none;
+}
+
+.projectPickerSelect:focus {
+  outline: none;
+  border-color: rgba(135, 175, 255, 0.65);
+  box-shadow: 0 0 0 3px rgba(71, 120, 218, 0.28);
+}
+
+.projectPickerChevron {
+  pointer-events: none;
+  position: absolute;
+  top: 50%;
+  right: 14px;
+  width: 0;
+  height: 0;
+  border-left: 6px solid transparent;
+  border-right: 6px solid transparent;
+  border-top: 6px solid rgba(188, 202, 228, 0.75);
+  transform: translateY(-50%);
+}
+
+.projectPickerMeta {
+  margin: 2px 0 0;
+  font-size: 12px;
+  line-height: 1.6;
+  color: rgba(188, 202, 228, 0.7);
+}
+
 .optionButton {
   display: inline-flex;
   align-items: center;

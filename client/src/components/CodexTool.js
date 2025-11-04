@@ -1,6 +1,106 @@
 import Link from "next/link";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import styles from "../styles/CodexTool.module.css";
+
+const STORAGE_KEY = "gains-projects";
+const ACTIVE_ACCOUNT_KEY = "gains.activeAccount";
+const ACTIVE_PROJECTS_KEY = "gains.activeProjects";
+const IMPORTED_CSV_DATA_KEY = "importedCsvData";
+const PROJECT_CONTEXT_ROW_LIMIT = 25;
+const DEFAULT_ACCOUNT_KEY = "__guest__";
+
+const normalizeAccountKey = (accountName) => {
+  if (!accountName || typeof accountName !== "string") {
+    return DEFAULT_ACCOUNT_KEY;
+  }
+  const normalized = accountName.trim().toLowerCase();
+  return normalized || DEFAULT_ACCOUNT_KEY;
+};
+
+const parseStoredProjects = (raw) => {
+  const base = { accounts: {} };
+  if (!raw) {
+    return base;
+  }
+
+  try {
+    const data = JSON.parse(raw);
+    if (Array.isArray(data?.projects)) {
+      base.accounts[DEFAULT_ACCOUNT_KEY] = {
+        projects: data.projects,
+        nextIndex:
+          typeof data.nextIndex === "number"
+            ? data.nextIndex
+            : data.projects.length + 1
+      };
+      return base;
+    }
+
+    if (data && typeof data === "object" && data.accounts && typeof data.accounts === "object") {
+      const normalizedAccounts = {};
+      Object.entries(data.accounts).forEach(([key, value]) => {
+        if (Array.isArray(value?.projects)) {
+          normalizedAccounts[normalizeAccountKey(key)] = {
+            projects: value.projects,
+            nextIndex:
+              typeof value.nextIndex === "number"
+                ? value.nextIndex
+                : value.projects.length + 1
+          };
+        }
+      });
+      return { accounts: normalizedAccounts };
+    }
+  } catch (error) {
+    console.error("Failed to parse project storage snapshot", error);
+  }
+
+  return base;
+};
+
+const parseActiveProjects = (raw) => {
+  if (!raw) {
+    return {};
+  }
+  try {
+    const data = JSON.parse(raw);
+    if (data && typeof data === "object") {
+      return data;
+    }
+  } catch (error) {
+    console.error("Failed to parse active project selection snapshot", error);
+  }
+  return {};
+};
+
+const parseProjectId = (value) => {
+  if (Array.isArray(value)) {
+    return parseProjectId(value[0]);
+  }
+  if (value === null || value === undefined) {
+    return null;
+  }
+  const numeric = Number(value);
+  if (Number.isNaN(numeric)) {
+    return null;
+  }
+  return numeric;
+};
+
+const resolveColumnNames = (rows) => {
+  const columnSet = new Set();
+  rows.forEach((row) => {
+    if (!row || typeof row !== "object") {
+      return;
+    }
+    Object.keys(row).forEach((key) => {
+      if (typeof key === "string" && key.trim()) {
+        columnSet.add(key);
+      }
+    });
+  });
+  return Array.from(columnSet);
+};
 
 export default function CodexTool({ variant = "floating" }) {
   const isFullscreen = variant === "fullscreen";
@@ -9,7 +109,11 @@ export default function CodexTool({ variant = "floating" }) {
   const [messages, setMessages] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [projectContext, setProjectContext] = useState(null);
+  const [availableProjects, setAvailableProjects] = useState([]);
+  const [selectedProjectId, setSelectedProjectId] = useState(null);
   const historyRef = useRef(null);
+  const selectionInitializedRef = useRef(false);
 
   const handleToggle = () => {
     if (isFullscreen) {
@@ -23,6 +127,150 @@ export default function CodexTool({ variant = "floating" }) {
       historyRef.current.scrollTop = historyRef.current.scrollHeight;
     }
   }, [messages, isLoading]);
+
+  const activeProjectSummary = useMemo(() => {
+    if (selectedProjectId === null) {
+      return null;
+    }
+    return availableProjects.find((project) => project.id === selectedProjectId) || null;
+  }, [availableProjects, selectedProjectId]);
+
+  const selectId = isFullscreen ? "codex-project-picker-fullscreen" : "codex-project-picker";
+  const showProjectPicker = availableProjects.length > 0;
+  const showProjectCta =
+    availableProjects.length === 0 ||
+    availableProjects.every((project) => !project.totalRows);
+
+  useEffect(() => {
+    setProjectContext(activeProjectSummary);
+  }, [activeProjectSummary]);
+
+  const hydrateProjectContext = useCallback(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    try {
+      const storage = window.localStorage;
+      const snapshot = parseStoredProjects(storage.getItem(STORAGE_KEY));
+      const normalizedAccount = normalizeAccountKey(storage.getItem(ACTIVE_ACCOUNT_KEY));
+      const accountState = snapshot.accounts[normalizedAccount];
+
+      if (!accountState || !Array.isArray(accountState.projects) || accountState.projects.length === 0) {
+        setAvailableProjects([]);
+        setSelectedProjectId(null);
+        selectionInitializedRef.current = false;
+        return;
+      }
+
+      const activeProjectsSnapshot = parseActiveProjects(storage.getItem(ACTIVE_PROJECTS_KEY));
+      const activeProjectId = parseProjectId(activeProjectsSnapshot[normalizedAccount]);
+
+      const safeProjects = accountState.projects
+        .map((project) => {
+          const projectId = parseProjectId(project?.id);
+          if (projectId === null) {
+            return null;
+          }
+
+          const projectName =
+            typeof project.name === "string" && project.name.trim()
+              ? project.name.trim()
+              : `Project ${projectId}`;
+
+          const importedRows = Array.isArray(project[IMPORTED_CSV_DATA_KEY])
+            ? project[IMPORTED_CSV_DATA_KEY]
+            : Array.isArray(project.importedRows)
+              ? project.importedRows
+              : [];
+
+          const limitedRows = importedRows.slice(0, PROJECT_CONTEXT_ROW_LIMIT);
+          const columnNames = resolveColumnNames(limitedRows);
+
+          return {
+            id: projectId,
+            name: projectName,
+            projectName,
+            importedRows: limitedRows,
+            totalRows: importedRows.length,
+            columnNames,
+            previewRowCount: limitedRows.length
+          };
+        })
+        .filter(Boolean);
+
+      setAvailableProjects(safeProjects);
+
+      if (safeProjects.length === 0) {
+        setSelectedProjectId(null);
+        selectionInitializedRef.current = false;
+        return;
+      }
+
+      setSelectedProjectId((prevSelected) => {
+        const prevIsValid =
+          prevSelected !== null &&
+          safeProjects.some((project) => project.id === prevSelected);
+
+        if (prevIsValid) {
+          return prevSelected;
+        }
+
+        const activeIsValid =
+          activeProjectId !== null &&
+          safeProjects.some((project) => project.id === activeProjectId);
+
+        if (!selectionInitializedRef.current) {
+          selectionInitializedRef.current = true;
+          if (activeIsValid) {
+            return activeProjectId;
+          }
+          return safeProjects[0].id;
+        }
+
+        if (prevSelected === null) {
+          return null;
+        }
+
+        if (activeIsValid) {
+          return activeProjectId;
+        }
+
+        return safeProjects[0].id;
+      });
+    } catch (err) {
+      console.error("Failed to hydrate project context for Codex", err);
+      setAvailableProjects([]);
+      setSelectedProjectId(null);
+      selectionInitializedRef.current = false;
+    }
+  }, [selectionInitializedRef]);
+
+  useEffect(() => {
+    hydrateProjectContext();
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    const handleStorageChange = (event) => {
+      if (
+        !event ||
+        !event.key ||
+        event.key === STORAGE_KEY ||
+        event.key === ACTIVE_ACCOUNT_KEY ||
+        event.key === ACTIVE_PROJECTS_KEY
+      ) {
+        hydrateProjectContext();
+      }
+    };
+
+    window.addEventListener("storage", handleStorageChange);
+    window.addEventListener("focus", hydrateProjectContext);
+    return () => {
+      window.removeEventListener("storage", handleStorageChange);
+      window.removeEventListener("focus", hydrateProjectContext);
+    };
+  }, [hydrateProjectContext]);
 
   const handleSubmitPrompt = async () => {
     if (!prompt.trim()) {
@@ -41,7 +289,10 @@ export default function CodexTool({ variant = "floating" }) {
       const response = await fetch("/api/openai", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ messages: nextMessages }),
+        body: JSON.stringify({
+          messages: nextMessages,
+          ...(projectContext ? { projectContext } : {})
+        }),
       });
 
       if (!response.ok) {
@@ -69,11 +320,55 @@ export default function CodexTool({ variant = "floating" }) {
           </div>
         </div>
 
-        <div className={styles.optionList}>
-          <Link href="/project" className={styles.optionButton}>
-            Get started with a project!
-          </Link>
-        </div>
+        {showProjectCta && (
+          <div className={styles.optionList}>
+            <Link href="/project" className={styles.optionButton}>
+              Get started with a project!
+            </Link>
+          </div>
+        )}
+
+        {showProjectPicker && (
+          <div className={styles.projectPicker}>
+            <label className={styles.projectPickerLabel} htmlFor={selectId}>
+              Project context
+            </label>
+            <div className={styles.projectPickerSelectWrapper}>
+              <select
+                id={selectId}
+                className={styles.projectPickerSelect}
+                value={selectedProjectId ?? ""}
+                onChange={(event) => {
+                  const { value } = event.target;
+                  if (value === "") {
+                    setSelectedProjectId(null);
+                    return;
+                  }
+                  const parsedId = parseProjectId(value);
+                  setSelectedProjectId(parsedId === null ? null : parsedId);
+                }}
+              >
+                <option value="">No project context</option>
+                {availableProjects.map((project) => (
+                  <option key={project.id} value={project.id}>
+                    {project.name}
+                  </option>
+                ))}
+              </select>
+              <span className={styles.projectPickerChevron} aria-hidden />
+            </div>
+            {activeProjectSummary && (
+              <p className={styles.projectPickerMeta}>
+                {activeProjectSummary.totalRows > 0
+                  ? `Previewing ${activeProjectSummary.previewRowCount} of ${activeProjectSummary.totalRows} row(s).`
+                  : "No imported data shared with Codex yet."}
+                {activeProjectSummary.columnNames.length > 0
+                  ? ` Columns: ${activeProjectSummary.columnNames.join(", ")}.`
+                  : ""}
+              </p>
+            )}
+          </div>
+        )}
 
         {(messages.length > 0 || isFullscreen) && (
           <div
