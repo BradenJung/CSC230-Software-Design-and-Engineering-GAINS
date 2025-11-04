@@ -287,74 +287,116 @@
 
 /* Left Panel - Tool Selection */
 .leftPanel {
-  background: #1e1e1e;
-  border-right: 1px solid #333;
-  padding: 24px;
+  background: #1a1a1a;
+  border-right: 1px solid #2a2a2a;
+  padding: 24px 16px;
   overflow-y: auto;
   height: 100%;
 }
 
+.panelHeader {
+  padding: 0 8px;
+  margin-bottom: 24px;
+}
+
 .panelHeader h2 {
-  font-size: 18px;
+  font-size: 24px;
   font-weight: 600;
-  margin-bottom: 8px;
+  margin: 0 0 8px 0;
   color: #ffffff;
 }
 
 .panelHeader p {
   font-size: 14px;
-  color: #888;
-  margin-bottom: 24px;
+  color: #8a8a8a;
+  margin: 0;
+  line-height: 1.4;
 }
 
 .toolList {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 16px;
 }
 
 .toolCard {
-  background: #2a2a2a;
-  border: 1px solid #333;
-  border-radius: 8px;
-  padding: 16px;
+  background: #242424;
+  border: 2px solid #2a2a2a;
+  border-radius: 12px;
+  padding: 0;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   display: flex;
-  align-items: center;
-  gap: 12px;
+  flex-direction: column;
+  overflow: hidden;
+  position: relative;
 }
 
 .toolCard:hover {
-  background: #333;
-  border-color: #444;
+  border-color: #3a3a3a;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
 }
 
 .toolCard.selected {
-  background: #1e3a5f;
   border-color: #4a9eff;
+  background: #1e1e1e;
+  box-shadow: 0 0 0 1px rgba(74, 158, 255, 0.2);
 }
 
-.toolIcon {
-  font-size: 24px;
-  width: 32px;
-  height: 32px;
+.toolCardVisual {
+  background: #1a1a1a;
+  padding: 32px 24px;
   display: flex;
   align-items: center;
   justify-content: center;
+  min-height: 140px;
+  position: relative;
 }
 
-.toolInfo h3 {
-  font-size: 14px;
+.toolCard.selected .toolCardVisual {
+  background: #0f0f0f;
+}
+
+.toolVisualization {
+  font-size: 64px;
+  opacity: 0.9;
+  transition: transform 0.3s ease, opacity 0.3s ease;
+}
+
+.toolCard:hover .toolVisualization {
+  transform: scale(1.05);
+  opacity: 1;
+}
+
+.toolCardContent {
+  padding: 16px 20px 20px;
+  background: #242424;
+  border-top: 1px solid #2a2a2a;
+}
+
+.toolCard.selected .toolCardContent {
+  background: #1e1e1e;
+  border-top-color: #333;
+}
+
+.toolCardContent h3 {
+  font-size: 16px;
   font-weight: 600;
-  margin-bottom: 4px;
+  margin: 0 0 6px 0;
   color: #ffffff;
+  line-height: 1.2;
 }
 
-.toolInfo p {
-  font-size: 12px;
-  color: #aaa;
-  line-height: 1.4;
+.toolCardContent p {
+  font-size: 13px;
+  color: #8a8a8a;
+  line-height: 1.5;
+  margin: 0;
+}
+
+.toolCard.selected .toolCardContent p {
+  color: #a0a0a0;
 }
 
 /* Center Panel - Tool Details */
@@ -912,60 +954,93 @@
 
 /* Validation and Column Selection Styles */
 .validationErrors {
-  background: rgba(255, 69, 58, 0.1);
-  border: 1px solid rgba(255, 69, 58, 0.3);
+  background: #2a2a2a;
+  border: 1px solid #3a3a3a;
+  border-left: 3px solid #ff453a;
   border-radius: 8px;
-  padding: 16px;
+  padding: 14px 18px;
   margin-top: 16px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
 }
 
 .validationErrors h4 {
-  color: #ff453a;
-  margin: 0 0 8px 0;
-  font-size: 14px;
+  color: #ffffff;
+  margin: 0 0 10px 0;
+  font-size: 13px;
   font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.validationErrors h4::before {
+  content: "⚠";
+  color: #ff453a;
+  font-size: 16px;
 }
 
 .validationErrors ul {
   margin: 0;
   padding-left: 20px;
-  color: #ff6b6b;
+  color: #c7c7c7;
   font-size: 13px;
+  line-height: 1.6;
 }
 
 .validationErrors li {
-  margin-bottom: 4px;
+  margin-bottom: 6px;
 }
 
 .columnSelectionInfo {
-  background: rgba(52, 199, 89, 0.1);
-  border: 1px solid rgba(52, 199, 89, 0.3);
+  background: #2a2a2a;
+  border: 1px solid #3a3a3a;
+  border-left: 3px solid #4a9eff;
   border-radius: 8px;
-  padding: 16px;
+  padding: 14px 18px;
   margin-top: 16px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
 }
 
 .columnSelectionInfo h4 {
-  color: #34c759;
-  margin: 0 0 8px 0;
-  font-size: 14px;
+  color: #ffffff;
+  margin: 0 0 10px 0;
+  font-size: 13px;
   font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.columnSelectionInfo h4::before {
+  content: "✓";
+  color: #4a9eff;
+  font-size: 16px;
+  font-weight: bold;
 }
 
 .columnSelectionInfo p {
-  margin: 4px 0;
+  margin: 6px 0;
   font-size: 13px;
-  color: #ffffff;
+  color: #c7c7c7;
+  line-height: 1.5;
 }
 
 .columnSelectionInfo strong {
-  color: #34c759;
+  color: #4a9eff;
+  font-weight: 600;
 }
 
 .columnSelectionHint {
-  color: #aaa !important;
+  color: #888 !important;
   font-style: italic;
-  margin-top: 8px !important;
+  margin-top: 10px !important;
+  font-size: 12px !important;
+  padding-top: 8px;
+  border-top: 1px solid #3a3a3a;
 }
 
 /* Empty state placeholder for data table */

@@ -282,6 +282,9 @@ export default function linear() {
   // Changing the version triggers the regression hook to rebuild its internal state.
   const projectVersion = projectHydrated ? currentProject?.id ?? activeProjectId : null;
 
+  // State for custom arguments - must be declared before useMemo that uses it
+  const [customArguments, setCustomArguments] = useState({});
+
   const {
     selectedTool,
     importedRows,
@@ -293,7 +296,7 @@ export default function linear() {
     xColumn,
     yColumn,
     isRightPanelVisible,
-    generatedRCode,
+    generatedRCode: baseGeneratedRCode,
     generatedArguments,
     availableColumns,
     validation,
@@ -307,6 +310,31 @@ export default function linear() {
     initialTool: resolvedSelectedTool,
     projectVersion
   });
+
+  // Generate R code with custom arguments if available
+  const generatedRCode = useMemo(() => {
+    // Always try to apply custom arguments if any exist
+    const hasCustomArgs = Object.keys(customArguments).length > 0;
+    
+    console.log('Generating R code, custom args:', hasCustomArgs, customArguments);
+    
+    if (!hasCustomArgs) {
+      console.log('Using base R code');
+      return baseGeneratedRCode;
+    }
+    
+    // Apply custom arguments to the R code
+    console.log('Applying custom arguments to R code');
+    const customCode = RCodeService.generateCodeWithCustomArguments(
+      selectedTool,
+      importedRows,
+      { responseColumn, predictorColumns, categoryColumn, valueColumn, timeColumn, xColumn, yColumn },
+      customArguments
+    );
+    
+    console.log('Generated custom code length:', customCode.length);
+    return customCode;
+  }, [baseGeneratedRCode, customArguments, selectedTool, importedRows, responseColumn, predictorColumns, categoryColumn, valueColumn, timeColumn, xColumn, yColumn]);
   // Tracks the most recent project/tool combo we wrote so we can avoid redundant storage churn.
   const lastPersistedToolRef = useRef({ projectId: null, toolId: null });
   const copyToastTimerRef = useRef(null);
@@ -543,9 +571,23 @@ export default function linear() {
       });
 
       persistSelectedTool(normalizedToolId);
+      // Reset custom arguments when switching tools
+      setCustomArguments({});
     },
     [handleToolChange, persistSelectedTool]
   );
+
+  const handleArgumentChange = useCallback((argName, newValue) => {
+    setCustomArguments(prev => {
+      const updated = {
+        ...prev,
+        [argName]: newValue
+      };
+      console.log('Argument changed:', argName, '=', newValue);
+      console.log('All custom arguments:', updated);
+      return updated;
+    });
+  }, []);
 
   useEffect(() => {
     if (!projectHydrated || activeProjectId === null) {
@@ -1177,8 +1219,8 @@ boxplot(
           {/* Left Panel - Tool Selection */}
           <div className={styles.leftPanel}>
             <div className={styles.panelHeader}>
-              <h2>Select R Tool</h2>
-              <p>Select one of the provided RStudio tools.</p>
+              <h2>Add R Tool</h2>
+              <p>Select an RStudio tool from the list.</p>
             </div>
             
             <div className={styles.toolList}>
@@ -1188,10 +1230,12 @@ boxplot(
                   className={`${styles.toolCard} ${selectedTool === tool.id ? styles.selected : ''}`}
                   onClick={() => handleToolSelection(tool.id)}
                 >
-                  <div className={styles.toolIcon} style={{ color: tool.color }}>
-                    {tool.icon}
+                  <div className={styles.toolCardVisual}>
+                    <div className={styles.toolVisualization} style={{ color: tool.color }}>
+                      {tool.chartIcon}
+                    </div>
                   </div>
-                  <div className={styles.toolInfo}>
+                  <div className={styles.toolCardContent}>
                     <h3>{tool.name}</h3>
                     <p>{tool.description}</p>
                   </div>
@@ -1245,50 +1289,50 @@ boxplot(
             {/* Column Selection Info */}
             {importedRows.length > 0 && (
               <div className={styles.columnSelectionInfo}>
-                <h4>Column Selection:</h4>
+                <h4>Column Selection</h4>
                 {selectedTool === 'linear-regression' && (
                   <>
-                    <p><strong>Response Variable:</strong> {responseColumn || 'None selected'}</p>
-                    <p><strong>Predictor Variables:</strong> {predictorColumns.length > 0 ? predictorColumns.join(', ') : 'None selected'}</p>
+                    <p><strong>Response Variable:</strong> {responseColumn || <span style={{color: '#888'}}>None selected</span>}</p>
+                    <p><strong>Predictor Variables:</strong> {predictorColumns.length > 0 ? predictorColumns.join(', ') : <span style={{color: '#888'}}>None selected</span>}</p>
                   </>
                 )}
                 {selectedTool === 'bar-chart' && (
                   <>
-                    <p><strong>Category Column:</strong> {categoryColumn || 'None selected'}</p>
-                    <p><strong>Value Column:</strong> {valueColumn || 'None selected'}</p>
+                    <p><strong>Category Column:</strong> {categoryColumn || <span style={{color: '#888'}}>None selected</span>}</p>
+                    <p><strong>Value Column:</strong> {valueColumn || <span style={{color: '#888'}}>None selected</span>}</p>
                   </>
                 )}
                 {selectedTool === 'line-chart' && (
                   <>
-                    <p><strong>Time Column:</strong> {timeColumn || 'None selected'}</p>
-                    <p><strong>Value Column:</strong> {valueColumn || 'None selected'}</p>
+                    <p><strong>Time Column:</strong> {timeColumn || <span style={{color: '#888'}}>None selected</span>}</p>
+                    <p><strong>Value Column:</strong> {valueColumn || <span style={{color: '#888'}}>None selected</span>}</p>
                   </>
                 )}
                 {selectedTool === 'dot-plot' && (
                   <>
-                    <p><strong>X Column:</strong> {xColumn || 'None selected'}</p>
-                    <p><strong>Y Column:</strong> {yColumn || 'None selected'}</p>
+                    <p><strong>X Column:</strong> {xColumn || <span style={{color: '#888'}}>None selected</span>}</p>
+                    <p><strong>Y Column:</strong> {yColumn || <span style={{color: '#888'}}>None selected</span>}</p>
                   </>
                 )}
                 {selectedTool === 'pie-chart' && (
                   <>
-                    <p><strong>Category Column:</strong> {categoryColumn || 'None selected'}</p>
-                    <p><strong>Value Column:</strong> {valueColumn || 'None selected'}</p>
+                    <p><strong>Category Column:</strong> {categoryColumn || <span style={{color: '#888'}}>None selected</span>}</p>
+                    <p><strong>Value Column:</strong> {valueColumn || <span style={{color: '#888'}}>None selected</span>}</p>
                   </>
                 )}
                 {selectedTool === 'histogram' && (
                   <>
-                    <p><strong>Value Column:</strong> {valueColumn || 'None selected'}</p>
+                    <p><strong>Value Column:</strong> {valueColumn || <span style={{color: '#888'}}>None selected</span>}</p>
                   </>
                 )}
                 {selectedTool === 'density-plot' && (
                   <>
-                    <p><strong>Value Column:</strong> {valueColumn || 'None selected'}</p>
+                    <p><strong>Value Column:</strong> {valueColumn || <span style={{color: '#888'}}>None selected</span>}</p>
                   </>
                 )}
                 {selectedTool === 'box-plot' && (
                   <>
-                    <p><strong>Value Column:</strong> {valueColumn || 'None selected'}</p>
+                    <p><strong>Value Column:</strong> {valueColumn || <span style={{color: '#888'}}>None selected</span>}</p>
                   </>
                 )}
                 <p className={styles.columnSelectionHint}>
@@ -1334,12 +1378,20 @@ boxplot(
                       {arg.data?.map((dataItem, dataIndex) => (
                         <div key={dataIndex} className={styles.dataInput}>
                           <label>{dataItem.label}</label>
-                          <input type="text" value={dataItem.value} readOnly />
+                          <input 
+                            type="text" 
+                            value={customArguments[`${arg.name}_${dataItem.label}`] ?? dataItem.value}
+                            onChange={(e) => handleArgumentChange(`${arg.name}_${dataItem.label}`, e.target.value)}
+                          />
                         </div>
                       ))}
                     </div>
                   ) : (
-                    <input type="text" value={arg.value} readOnly={arg.readOnly} />
+                    <input 
+                      type="text" 
+                      value={customArguments[arg.name] ?? arg.value}
+                      onChange={(e) => handleArgumentChange(arg.name, e.target.value)}
+                    />
                   )}
                 </div>
               ))}

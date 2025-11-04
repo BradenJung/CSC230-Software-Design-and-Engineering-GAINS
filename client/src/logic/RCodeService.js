@@ -95,6 +95,36 @@ export class RCodeService {
     }
   }
 
+   /**
+   * Generate R code with custom arguments
+   * @param {string} toolId - Tool identifier
+   * @param {Array<Object>} data - Parsed CSV data
+   * @param {Object} selections - Tool-specific selections
+   * @param {Object} customArgs - Custom argument values from user
+   * @returns {string} Generated R code with custom arguments
+   */
+  static generateCodeWithCustomArguments(toolId, data, selections = {}, customArgs = {}) {
+    switch (toolId) {
+      case 'linear-regression':
+        return this.generateLinearRegressionCodeWithCustomArgs(data, selections.responseColumn, selections.predictorColumns, customArgs);
+      case 'bar-chart':
+        return this.generateBarChartCodeWithCustomArgs(data, selections.categoryColumn, selections.valueColumn, customArgs);
+      case 'line-chart':
+        return this.generateLineChartCodeWithCustomArgs(data, selections.timeColumn, selections.valueColumn, customArgs);
+      case 'dot-plot':
+        return this.generateDotPlotCodeWithCustomArgs(data, selections.xColumn, selections.yColumn, customArgs);
+      case 'pie-chart':
+        return this.generatePieChartCodeWithCustomArgs(data, selections.categoryColumn, selections.valueColumn, customArgs);
+      case 'histogram':
+        return this.generateHistogramCodeWithCustomArgs(data, selections.valueColumn, customArgs);
+      case 'density-plot':
+        return this.generateDensityPlotCodeWithCustomArgs(data, selections.valueColumn, customArgs);
+      case 'box-plot':
+        return this.generateBoxPlotCodeWithCustomArgs(data, selections.valueColumn, customArgs);
+      default:
+        return this.generateCode(toolId, data, selections);
+    }
+  }
   /**
    * Generate R code for linear regression based on data
    * @param {Array<Object>} data - Parsed CSV data
@@ -435,6 +465,330 @@ boxplot(
 )`;
 
     return rCode;
+  }
+
+  /**
+   * Generate histogram code with custom arguments
+   * @param {Array<Object>} data - Parsed CSV data
+   * @param {string} valueColumn - Name of the value column
+   * @param {Object} customArgs - Custom argument values
+   * @returns {string} Generated R code
+   */
+  static generateHistogramCodeWithCustomArgs(data, valueColumn, customArgs) {
+    if (!data || data.length === 0 || !valueColumn) {
+      return this.getDefaultHistogramCode();
+    }
+
+    const values = data.map(row => row[valueColumn]).filter(val => val !== '');
+    const mainTitle = customArgs['Main Title'] || 'Histogram';
+    const xLabel = customArgs['X-axis Label'] || valueColumn || 'Values';
+    const yLabel = customArgs['Y-axis Label'] || 'Frequency';
+    const color = customArgs['Color'] || 'lightblue';
+    const bins = customArgs['Number of Bins'] || '10';
+
+    const rCode = `# Initialize data
+values <- c(${values.join(', ')})
+
+# Create histogram
+hist(
+  values,
+  main = "${mainTitle}",
+  xlab = "${xLabel}",
+  ylab = "${yLabel}",
+  col = "${color}",
+  border = "black",
+  breaks = ${bins}
+)`;
+
+    return rCode;
+  }
+
+  /**
+   * Generate density plot code with custom arguments
+   * @param {Array<Object>} data - Parsed CSV data
+   * @param {string} valueColumn - Name of the value column
+   * @param {Object} customArgs - Custom argument values
+   * @returns {string} Generated R code
+   */
+  static generateDensityPlotCodeWithCustomArgs(data, valueColumn, customArgs) {
+    if (!data || data.length === 0 || !valueColumn) {
+      return this.getDefaultDensityPlotCode();
+    }
+
+    const values = data.map(row => row[valueColumn]).filter(val => val !== '');
+    const mainTitle = customArgs['Main Title'] || 'Density Plot';
+    const xLabel = customArgs['X-axis Label'] || valueColumn || 'Values';
+    const yLabel = customArgs['Y-axis Label'] || 'Density';
+    const lineColor = customArgs['Line Color'] || 'blue';
+    const lineWidth = customArgs['Line Width'] || '2';
+
+    const rCode = `# Initialize data
+values <- c(${values.join(', ')})
+
+# Create density plot
+plot(
+  density(values),
+  main = "${mainTitle}",
+  xlab = "${xLabel}",
+  ylab = "${yLabel}",
+  col = "${lineColor}",
+  lwd = ${lineWidth}
+)
+
+# Add polygon for filled area
+polygon(density(values), col = "lightblue", border = "${lineColor}")`;
+
+    return rCode;
+  }
+
+  /**
+   * Generate box plot code with custom arguments
+   * @param {Array<Object>} data - Parsed CSV data
+   * @param {string} valueColumn - Name of the value column
+   * @param {Object} customArgs - Custom argument values
+   * @returns {string} Generated R code
+   */
+  static generateBoxPlotCodeWithCustomArgs(data, valueColumn, customArgs) {
+    if (!data || data.length === 0 || !valueColumn) {
+      return this.getDefaultBoxPlotCode();
+    }
+
+    const values = data.map(row => row[valueColumn]).filter(val => val !== '');
+    const mainTitle = customArgs['Main Title'] || 'Box Plot';
+    const yLabel = customArgs['Y-axis Label'] || valueColumn || 'Values';
+    const color = customArgs['Color'] || 'lightgreen';
+    const borderColor = customArgs['Border Color'] || 'darkgreen';
+    const horizontal = customArgs['Horizontal'] || 'FALSE';
+
+    const rCode = `# Initialize data
+values <- c(${values.join(', ')})
+
+# Create box plot
+boxplot(
+  values,
+  main = "${mainTitle}",
+  ylab = "${yLabel}",
+  col = "${color}",
+  border = "${borderColor}",
+  horizontal = ${horizontal}
+)`;
+
+    return rCode;
+  }
+
+  /**
+   * Generate bar chart code with custom arguments
+   * @param {Array<Object>} data - Parsed CSV data
+   * @param {string} categoryColumn - Name of the category column
+   * @param {string} valueColumn - Name of the value column
+   * @param {Object} customArgs - Custom argument values
+   * @returns {string} Generated R code
+   */
+  static generateBarChartCodeWithCustomArgs(data, categoryColumn, valueColumn, customArgs) {
+    if (!data || data.length === 0) {
+      return this.getDefaultBarChartCode();
+    }
+
+    const categories = data.map(row => row[categoryColumn]).filter(val => val !== '');
+    const values = data.map(row => row[valueColumn]).filter(val => val !== '');
+    const mainTitle = customArgs['Main Title'] || 'Bar Chart';
+    const xLabel = customArgs['X-axis Label'] || 'Categories';
+    const yLabel = customArgs['Y-axis Label'] || 'Values';
+
+    const rCode = `# Initialize data
+categories <- c(${categories.map(cat => `"${cat}"`).join(', ')})
+values <- c(${values.join(', ')})
+
+# Create data frame
+df <- data.frame(
+  category = categories,
+  value = values
+)
+
+# Create bar chart
+barplot(
+  height = df$value,
+  names.arg = df$category,
+  main = "${mainTitle}",
+  xlab = "${xLabel}",
+  ylab = "${yLabel}",
+  col = rainbow(length(categories)),
+  border = "black"
+)`;
+
+    return rCode;
+  }
+
+  /**
+   * Generate line chart code with custom arguments
+   * @param {Array<Object>} data - Parsed CSV data
+   * @param {string} timeColumn - Name of the time/index column
+   * @param {string} valueColumn - Name of the value column
+   * @param {Object} customArgs - Custom argument values
+   * @returns {string} Generated R code
+   */
+  static generateLineChartCodeWithCustomArgs(data, timeColumn, valueColumn, customArgs) {
+    if (!data || data.length === 0) {
+      return this.getDefaultLineChartCode();
+    }
+
+    const timePoints = data.map(row => row[timeColumn]).filter(val => val !== '');
+    const values = data.map(row => row[valueColumn]).filter(val => val !== '');
+    const mainTitle = customArgs['Main Title'] || 'Line Chart';
+    const xLabel = customArgs['X-axis Label'] || 'Time Points';
+    const yLabel = customArgs['Y-axis Label'] || 'Values';
+    const lineColor = customArgs['Line Color'] || 'blue';
+
+    const rCode = `# Initialize data
+time_points <- c(${timePoints.join(', ')})
+values <- c(${values.join(', ')})
+
+# Create data frame
+df <- data.frame(
+  time = time_points,
+  value = values
+)
+
+# Create line chart
+plot(
+  x = df$time,
+  y = df$value,
+  type = "l",
+  main = "${mainTitle}",
+  xlab = "${xLabel}",
+  ylab = "${yLabel}",
+  col = "${lineColor}",
+  lwd = 2,
+  pch = 16
+)
+
+# Add points
+points(df$time, df$value, col = "red", pch = 16)`;
+
+    return rCode;
+  }
+
+  /**
+   * Generate dot plot code with custom arguments
+   * @param {Array<Object>} data - Parsed CSV data
+   * @param {string} xColumn - Name of the x-axis column
+   * @param {string} yColumn - Name of the y-axis column
+   * @param {Object} customArgs - Custom argument values
+   * @returns {string} Generated R code
+   */
+  static generateDotPlotCodeWithCustomArgs(data, xColumn, yColumn, customArgs) {
+    if (!data || data.length === 0) {
+      return this.getDefaultDotPlotCode();
+    }
+
+    const formatValues = (values) =>
+      values
+        .map((value) => {
+          if (value === null || value === undefined || value === '') {
+            return 'NA';
+          }
+          const numericValue = Number(value);
+          if (!Number.isNaN(numericValue) && Number.isFinite(numericValue)) {
+            return `${numericValue}`;
+          }
+          const escaped = String(value).replace(/"/g, '\\"');
+          return `"${escaped}"`;
+        })
+        .join(', ');
+
+    const xValues = data.map(row => row[xColumn]).filter(val => val !== undefined && val !== null && val !== '');
+    const yValues = data.map(row => row[yColumn]).filter(val => val !== undefined && val !== null && val !== '');
+
+    if (!xValues.length || !yValues.length) {
+      return this.getDefaultDotPlotCode();
+    }
+
+    const formattedX = formatValues(xValues);
+    const formattedY = formatValues(yValues);
+    const mainTitle = customArgs['Main Title'] || 'Dot Plot';
+    const xLabel = customArgs['X-axis Label'] || xColumn || 'X Values';
+    const yLabel = customArgs['Y-axis Label'] || yColumn || 'Y Values';
+    const pointColor = customArgs['Point Color'] || 'darkgreen';
+
+    const rCode = `# Initialize data
+x_values <- c(${formattedX})
+y_values <- c(${formattedY})
+
+# Create data frame
+df <- data.frame(
+  x = x_values,
+  y = y_values
+)
+
+# Create dot plot / scatter plot
+plot(
+  x = df$x,
+  y = df$y,
+  main = "${mainTitle}",
+  xlab = "${xLabel}",
+  ylab = "${yLabel}",
+  pch = 19,
+  col = "${pointColor}"
+)
+
+# Add grid for readability
+grid(col = "lightgray")`;
+
+    return rCode;
+  }
+
+  /**
+   * Generate pie chart code with custom arguments
+   * @param {Array<Object>} data - Parsed CSV data
+   * @param {string} categoryColumn - Name of the category column
+   * @param {string} valueColumn - Name of the value column
+   * @param {Object} customArgs - Custom argument values
+   * @returns {string} Generated R code
+   */
+  static generatePieChartCodeWithCustomArgs(data, categoryColumn, valueColumn, customArgs) {
+    if (!data || data.length === 0) {
+      return this.getDefaultPieChartCode();
+    }
+
+    const categories = data.map(row => row[categoryColumn]).filter(val => val !== '');
+    const values = data.map(row => row[valueColumn]).filter(val => val !== '');
+    const mainTitle = customArgs['Main Title'] || 'Pie Chart';
+    const outputFile = customArgs['Output File'] || 'piechart.png';
+    const colors = customArgs['Colors'] || 'white';
+    const titleColor = customArgs['Title Color'] || 'darkgreen';
+
+    const rCode = `# Define the data vector with values
+x <- c(${values.join(', ')})
+
+# Define labels for each value in x
+names(x) <- c(${categories.map(cat => `"${cat}"`).join(', ')})
+
+# Set the output to be a PNG file
+png(file = "${outputFile}")
+
+# Create the pie chart
+pie(x, labels = names(x), col = "${colors}",
+    main = "${mainTitle}", radius = -1,
+    col.main = "${titleColor}")
+
+# Save the file
+dev.off()`;
+
+    return rCode;
+  }
+
+  /**
+   * Generate linear regression code with custom arguments
+   * @param {Array<Object>} data - Parsed CSV data
+   * @param {string} responseColumn - Name of the response variable column
+   * @param {Array<string>} predictorColumns - Names of predictor variable columns
+   * @param {Object} customArgs - Custom argument values
+   * @returns {string} Generated R code
+   */
+  static generateLinearRegressionCodeWithCustomArgs(data, responseColumn, predictorColumns, customArgs) {
+    // For linear regression, the formula and data initialization are typically not customized
+    // So we'll just return the regular code for now
+    return this.generateLinearRegressionCode(data, responseColumn, predictorColumns);
   }
 
   /**
