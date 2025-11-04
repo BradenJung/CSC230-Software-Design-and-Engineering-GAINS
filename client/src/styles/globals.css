@@ -1,6 +1,7 @@
 :root {
   --background: #1a1a1a;
   --foreground: #ffffff;
+  --header-height: 46px;
 }
 
 html,
@@ -16,6 +17,7 @@ body {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  padding-top: var(--header-height);
 }
 
 * {
