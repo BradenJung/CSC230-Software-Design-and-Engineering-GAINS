@@ -341,6 +341,8 @@ export default function linear() {
   const [copyToastVisible, setCopyToastVisible] = useState(false);
   const [copyToastMessage, setCopyToastMessage] = useState('');
   const [copyToastTone, setCopyToastTone] = useState('success');
+  const [appearanceStyle, setAppearanceStyle] = useState(0);
+  const [infoTooltipVisible, setInfoTooltipVisible] = useState(null);
 
   const showCopyToast = useCallback((message, tone = 'success') => {
     setCopyToastMessage(message);
@@ -587,6 +589,59 @@ export default function linear() {
       console.log('All custom arguments:', updated);
       return updated;
     });
+  }, []);
+
+  const handleColorChange = useCallback((argName, color) => {
+    setCustomArguments(prev => ({
+      ...prev,
+      [argName]: color
+    }));
+  }, []);
+
+  // Helper to convert color name to hex for color picker
+  const getColorHex = useCallback((colorValue) => {
+    if (!colorValue) return '#4a9eff';
+    // If it's already a hex color, return it
+    if (colorValue.match(/^#[0-9A-Fa-f]{6}$/)) {
+      return colorValue;
+    }
+    // Try to convert color name to hex
+    const colorMap = {
+      'blue': '#0000ff',
+      'red': '#ff0000',
+      'green': '#008000',
+      'yellow': '#ffff00',
+      'orange': '#ffa500',
+      'purple': '#800080',
+      'pink': '#ffc0cb',
+      'black': '#000000',
+      'white': '#ffffff',
+      'darkgreen': '#006400',
+      'lightblue': '#add8e6',
+      'lightgreen': '#90ee90',
+      'darkblue': '#00008b',
+    };
+    const lowerColor = colorValue.toLowerCase().trim();
+    return colorMap[lowerColor] || '#4a9eff';
+  }, []);
+
+  const toggleAppearanceStyle = useCallback(() => {
+    setAppearanceStyle(prev => (prev + 1) % 4);
+  }, []);
+
+  const isDatasetArgument = useCallback((argName) => {
+    // Check if argument is dataset-related (like X1, X2, Y, Categories, Values, Time Points, etc.)
+    const datasetKeywords = ['x1', 'x2', 'y', 'categories', 'values', 'time points', 'x values', 'y values', 'formula'];
+    const lowerName = argName.toLowerCase();
+    return datasetKeywords.some(keyword => lowerName.includes(keyword)) || 
+           argName.includes(':') || // Data inputs like "y:", "x1:"
+           argName.toLowerCase().includes('initialize data');
+  }, []);
+
+  const isColorArgument = useCallback((argName) => {
+    const colorKeywords = ['color', 'colour', 'line color', 'point color', 'border color', 'title color', 'colors'];
+    const lowerName = argName.toLowerCase();
+    return colorKeywords.some(keyword => lowerName.includes(keyword));
   }, []);
 
   useEffect(() => {
@@ -1347,8 +1402,20 @@ boxplot(
             <div className={styles.rightPanel}>
             <div className={styles.panelHeader}>
               <div className={styles.headerActions}>
-                <div className={styles.vrIcon}>VR</div>
-                <button className={styles.switchBtn}>Switch R Tool</button>
+                <button 
+                  className={styles.copyRCodeBtn}
+                  onClick={handleCopyRCode}
+                  title="Copy R Code"
+                >
+                  Copy R Code
+                </button>
+                <button 
+                  className={`${styles.switchBtn} ${styles[`appearanceStyle${appearanceStyle}`]}`}
+                  onClick={toggleAppearanceStyle}
+                  title="Change Appearance"
+                >
+                  Switch R Tool
+                </button>
               </div>
             </div>
 
@@ -1370,31 +1437,107 @@ boxplot(
 
             <div className={styles.argumentsSection}>
               <h3>Arguments</h3>
-              {generatedArguments?.map((arg, index) => (
-                <div key={index} className={styles.argumentGroup}>
-                  <label>{arg.name}</label>
-                  {arg.type === "data" ? (
-                    <div className={styles.dataInputs}>
-                      {arg.data?.map((dataItem, dataIndex) => (
-                        <div key={dataIndex} className={styles.dataInput}>
-                          <label>{dataItem.label}</label>
-                          <input 
-                            type="text" 
-                            value={customArguments[`${arg.name}_${dataItem.label}`] ?? dataItem.value}
-                            onChange={(e) => handleArgumentChange(`${arg.name}_${dataItem.label}`, e.target.value)}
-                          />
+              {generatedArguments?.map((arg, index) => {
+                const isDataset = isDatasetArgument(arg.name);
+                const isColor = isColorArgument(arg.name);
+                const isReadOnly = arg.readOnly || isDataset;
+                
+                return (
+                  <div key={index} className={`${styles.argumentGroup} ${isDataset ? styles.datasetArgument : ''}`}>
+                    <div className={styles.argumentLabelRow}>
+                      <label>{arg.name}</label>
+                      {isDataset && (
+                        <div className={styles.infoIconContainer}>
+                          <span 
+                            className={styles.infoIcon}
+                            onMouseEnter={() => setInfoTooltipVisible(index)}
+                            onMouseLeave={() => setInfoTooltipVisible(null)}
+                          >
+                            ℹ️
+                          </span>
+                          {infoTooltipVisible === index && (
+                            <div className={styles.infoTooltip}>
+                              Arguments for dataset can only be changed through the table or only through importing a new dataset.
+                            </div>
+                          )}
                         </div>
-                      ))}
+                      )}
                     </div>
-                  ) : (
-                    <input 
-                      type="text" 
-                      value={customArguments[arg.name] ?? arg.value}
-                      onChange={(e) => handleArgumentChange(arg.name, e.target.value)}
-                    />
-                  )}
-                </div>
-              ))}
+                    {arg.type === "data" ? (
+                      <div className={styles.dataInputs}>
+                        {arg.data?.map((dataItem, dataIndex) => {
+                          const dataItemKey = `${arg.name}_${dataItem.label}`;
+                          const isDataItemDataset = isDatasetArgument(dataItem.label);
+                          return (
+                            <div key={dataIndex} className={`${styles.dataInput} ${isDataItemDataset ? styles.datasetInput : ''}`}>
+                              <label>{dataItem.label}</label>
+                              <div className={styles.dataInputWrapper}>
+                                <input 
+                                  type="text" 
+                                  value={customArguments[dataItemKey] ?? dataItem.value}
+                                  onChange={(e) => handleArgumentChange(dataItemKey, e.target.value)}
+                                  disabled={isDataItemDataset}
+                                  readOnly={isDataItemDataset}
+                                />
+                                {isDataItemDataset && (
+                                  <div className={styles.infoIconContainer}>
+                                    <span 
+                                      className={styles.infoIcon}
+                                      onMouseEnter={() => setInfoTooltipVisible(`${index}_${dataIndex}`)}
+                                      onMouseLeave={() => setInfoTooltipVisible(null)}
+                                    >
+                                      ℹ️
+                                    </span>
+                                    {infoTooltipVisible === `${index}_${dataIndex}` && (
+                                      <div className={styles.infoTooltip}>
+                                        Arguments for dataset can only be changed through the table or only through importing a new dataset.
+                                      </div>
+                                    )}
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    ) : isColor ? (
+                      <div className={styles.colorInputWrapper}>
+                        <input 
+                          type="color" 
+                          value={getColorHex(customArguments[arg.name] ?? arg.value)}
+                          onChange={(e) => {
+                            handleColorChange(arg.name, e.target.value);
+                            handleArgumentChange(arg.name, e.target.value);
+                          }}
+                          className={styles.colorPicker}
+                        />
+                        <input 
+                          type="text" 
+                          value={customArguments[arg.name] ?? arg.value}
+                          onChange={(e) => {
+                            handleArgumentChange(arg.name, e.target.value);
+                            // Try to update color picker if it's a valid hex
+                            const hexMatch = e.target.value.match(/^#[0-9A-Fa-f]{6}$/);
+                            if (hexMatch) {
+                              handleColorChange(arg.name, e.target.value);
+                            }
+                          }}
+                          className={styles.colorTextInput}
+                          placeholder="Enter color name or hex"
+                        />
+                      </div>
+                    ) : (
+                      <input 
+                        type="text" 
+                        value={customArguments[arg.name] ?? arg.value}
+                        onChange={(e) => handleArgumentChange(arg.name, e.target.value)}
+                        disabled={isReadOnly}
+                        readOnly={isReadOnly}
+                      />
+                    )}
+                  </div>
+                );
+              })}
             </div>
             </div>
           )}

@@ -1131,7 +1131,7 @@
 .leftPanel::-webkit-scrollbar,
 .centerPanel::-webkit-scrollbar,
 .rightPanel::-webkit-scrollbar {
-  width: 8px;
+  width: 4px;
 }
 
 .leftPanel::-webkit-scrollbar-track,
@@ -1161,17 +1161,29 @@
   margin-bottom: 24px;
 }
 
-.vrIcon {
-  width: 32px;
-  height: 32px;
+.copyRCodeBtn {
   background: #4a9eff;
   color: #ffffff;
-  border-radius: 50%;
+  border: none;
+  border-radius: 6px;
+  padding: 8px 16px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+  transition: all 0.2s;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 12px;
-  font-weight: 600;
+}
+
+.copyRCodeBtn:hover {
+  background: #5da8ff;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(74, 158, 255, 0.3);
+}
+
+.copyRCodeBtn:active {
+  transform: translateY(0);
 }
 
 .switchBtn {
@@ -1182,11 +1194,39 @@
   border-radius: 4px;
   cursor: pointer;
   font-size: 12px;
-  transition: all 0.2s;
+  transition: all 0.3s;
 }
 
 .switchBtn:hover {
   background: #333;
+}
+
+/* Four appearance styles for Switch R Tool button */
+.appearanceStyle0 {
+  background: #2a2a2a;
+  border: 1px solid #333;
+  color: #ffffff;
+}
+
+.appearanceStyle1 {
+  background: linear-gradient(135deg, #4a9eff 0%, #275fbe 100%);
+  border: 1px solid #4a9eff;
+  color: #ffffff;
+  font-weight: 600;
+}
+
+.appearanceStyle2 {
+  background: transparent;
+  border: 2px solid #4a9eff;
+  color: #4a9eff;
+  font-weight: 600;
+}
+
+.appearanceStyle3 {
+  background: #1a1a1a;
+  border: 1px solid #4a9eff;
+  color: #4a9eff;
+  box-shadow: 0 0 8px rgba(74, 158, 255, 0.4);
 }
 
 .codeSection {
@@ -1265,6 +1305,132 @@
 }
 
 .argumentGroup input:focus {
+  outline: none;
+  border-color: #4a9eff;
+}
+
+.argumentGroup input:disabled,
+.argumentGroup input[readonly] {
+  background: #1a1a1a;
+  color: #666;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.datasetArgument {
+  opacity: 0.7;
+}
+
+.datasetArgument label {
+  color: #888;
+}
+
+.argumentLabelRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.argumentLabelRow label {
+  flex: 1;
+}
+
+.infoIconContainer {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+.infoIcon {
+  font-size: 14px;
+  cursor: help;
+  opacity: 0.7;
+  transition: opacity 0.2s;
+}
+
+.infoIcon:hover {
+  opacity: 1;
+}
+
+.infoTooltip {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  margin-top: 8px;
+  background: #1a1a1a;
+  border: 1px solid #4a9eff;
+  border-radius: 6px;
+  padding: 10px 12px;
+  color: #ffffff;
+  font-size: 12px;
+  line-height: 1.4;
+  white-space: nowrap;
+  z-index: 1000;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+  max-width: 280px;
+  white-space: normal;
+}
+
+.infoTooltip::before {
+  content: '';
+  position: absolute;
+  bottom: 100%;
+  right: 12px;
+  border: 6px solid transparent;
+  border-bottom-color: #4a9eff;
+}
+
+.dataInputWrapper {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+}
+
+.datasetInput input {
+  background: #1a1a1a !important;
+  color: #666 !important;
+  opacity: 0.6;
+}
+
+.colorInputWrapper {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.colorPicker {
+  width: 50px;
+  height: 36px;
+  border: 1px solid #333;
+  border-radius: 4px;
+  cursor: pointer;
+  background: transparent;
+  padding: 0;
+}
+
+.colorPicker::-webkit-color-swatch-wrapper {
+  padding: 0;
+}
+
+.colorPicker::-webkit-color-swatch {
+  border: 1px solid #333;
+  border-radius: 4px;
+}
+
+.colorTextInput {
+  flex: 1;
+  background: #2a2a2a;
+  border: 1px solid #333;
+  color: #ffffff;
+  padding: 8px 12px;
+  border-radius: 4px;
+  font-size: 14px;
+}
+
+.colorTextInput:focus {
   outline: none;
   border-color: #4a9eff;
 }
