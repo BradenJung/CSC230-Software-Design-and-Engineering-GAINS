@@ -173,6 +173,27 @@ export const EditableDataTable = ({
           }
         }
         break;
+      case 'histogram':
+        if (valueColumn === columnName) {
+          onColumnSelectionChange('value', null);
+        } else {
+          onColumnSelectionChange('value', columnName);
+        }
+        break;
+      case 'density-plot':
+        if (valueColumn === columnName) {
+          onColumnSelectionChange('value', null);
+        } else {
+          onColumnSelectionChange('value', columnName);
+        }
+        break;
+      case 'box-plot':
+        if (valueColumn === columnName) {
+          onColumnSelectionChange('value', null);
+        } else {
+          onColumnSelectionChange('value', columnName);
+        }
+        break;
     }
   };
 
@@ -213,6 +234,21 @@ export const EditableDataTable = ({
         if (categoryColumn === columnName) {
           className += ` ${styles.categoryColumn}`;
         } else if (valueColumn === columnName) {
+          className += ` ${styles.valueColumn}`;
+        }
+        break;
+      case 'histogram':
+        if (valueColumn === columnName) {
+          className += ` ${styles.valueColumn}`;
+        }
+        break;
+      case 'density-plot':
+        if (valueColumn === columnName) {
+          className += ` ${styles.valueColumn}`;
+        }
+        break;
+      case 'box-plot':
+        if (valueColumn === columnName) {
           className += ` ${styles.valueColumn}`;
         }
         break;
@@ -264,6 +300,21 @@ export const EditableDataTable = ({
           return 'Click to deselect as value column';
         }
         return 'Click to select as category or value column';
+      case 'histogram':
+        if (valueColumn === columnName) {
+          return 'Click to deselect as value column';
+        }
+        return 'Click to select as value column';
+      case 'density-plot':
+        if (valueColumn === columnName) {
+          return 'Click to deselect as value column';
+        }
+        return 'Click to select as value column';
+      case 'box-plot':
+        if (valueColumn === columnName) {
+          return 'Click to deselect as value column';
+        }
+        return 'Click to select as value column';
       default:
         return 'Click to toggle column selection';
     }
@@ -312,6 +363,15 @@ export const EditableDataTable = ({
                     <span className={styles.columnBadge}>Category</span>
                   )}
                   {selectedTool === 'pie-chart' && valueColumn === columnName && (
+                    <span className={styles.columnBadge}>Value</span>
+                  )}
+                  {selectedTool === 'histogram' && valueColumn === columnName && (
+                    <span className={styles.columnBadge}>Value</span>
+                  )}
+                  {selectedTool === 'density-plot' && valueColumn === columnName && (
+                    <span className={styles.columnBadge}>Value</span>
+                  )}
+                  {selectedTool === 'box-plot' && valueColumn === columnName && (
                     <span className={styles.columnBadge}>Value</span>
                   )}
                 </div>

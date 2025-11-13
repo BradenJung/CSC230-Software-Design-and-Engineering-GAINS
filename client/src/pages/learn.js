@@ -536,7 +536,7 @@ is_even(7)  # FALSE`}</code></pre>
       <div className={styles.learnContainer}>
         <div className={styles.bookContainer}>
           <div className={styles.tableOfContents}>
-            <h2>📖 Table of Contents</h2>
+            <h2>Table of Contents</h2>
             <ul>
               {chapters.map((chapter, index) => (
                 <li key={chapter.id}>
@@ -544,11 +544,13 @@ is_even(7)  # FALSE`}</code></pre>
                     className={styles.chapterButton}
                     onClick={() => toggleChapter(chapter.id)}
                   >
-                    <span className={styles.chapterNumber}>{index + 1}</span>
-                    <span className={styles.chapterTitle}>{chapter.title}</span>
-                    <span className={`${styles.expandIcon} ${expandedChapters[chapter.id] ? styles.expanded : ''}`}>
-                      ▼
-                    </span>
+                    <div className={styles.chapterButtonContent}>
+                      <span className={styles.chapterNumber}>{index + 1}</span>
+                      <span className={styles.chapterTitle}>{chapter.title}</span>
+                      <span className={`${styles.expandIcon} ${expandedChapters[chapter.id] ? styles.expanded : ''}`}>
+                        ▼
+                      </span>
+                    </div>
                   </button>
                 </li>
               ))}

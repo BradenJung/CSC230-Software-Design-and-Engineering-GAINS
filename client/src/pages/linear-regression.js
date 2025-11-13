@@ -21,7 +21,10 @@ const TOOL_ID_TO_STORAGE_VALUE = {
   "line-chart": "LineChart",
   "bar-chart": "BarChart",
   "dot-plot": "DotPlot",
-  "pie-chart": "PieChart"
+  "pie-chart": "PieChart",
+  "histogram": "Histogram",
+  "density-plot": "DensityPlot",
+  "box-plot": "BoxPlot"
 };
 // Normalize stored values back into kebab-case ids
 const TOOL_STORAGE_VALUE_TO_ID = {
@@ -29,7 +32,10 @@ const TOOL_STORAGE_VALUE_TO_ID = {
   LineChart: "line-chart",
   BarChart: "bar-chart",
   DotPlot: "dot-plot",
-  PieChart: "pie-chart"
+  PieChart: "pie-chart",
+  Histogram: "histogram",
+  DensityPlot: "density-plot",
+  BoxPlot: "box-plot"
 };
 
 // Turn whatever tool id we stored earlier back into the format this page expects.
@@ -309,6 +315,9 @@ export default function linear() {
   const projectVersion = projectHydrated ? currentProject?.id ?? activeProjectId : null;
 
   // This hook handles table edits and R code generation.
+  // State for custom arguments - must be declared before useMemo that uses it
+  const [customArguments, setCustomArguments] = useState({});
+
   const {
     selectedTool,
     importedRows,
@@ -320,7 +329,7 @@ export default function linear() {
     xColumn,
     yColumn,
     isRightPanelVisible,
-    generatedRCode,
+    generatedRCode: baseGeneratedRCode,
     generatedArguments,
     availableColumns,
     validation,
@@ -334,12 +343,39 @@ export default function linear() {
     initialTool: resolvedSelectedTool,
     projectVersion
   });
+
+  // Generate R code with custom arguments if available
+  const generatedRCode = useMemo(() => {
+    // Always try to apply custom arguments if any exist
+    const hasCustomArgs = Object.keys(customArguments).length > 0;
+    
+    console.log('Generating R code, custom args:', hasCustomArgs, customArguments);
+    
+    if (!hasCustomArgs) {
+      console.log('Using base R code');
+      return baseGeneratedRCode;
+    }
+    
+    // Apply custom arguments to the R code
+    console.log('Applying custom arguments to R code');
+    const customCode = RCodeService.generateCodeWithCustomArguments(
+      selectedTool,
+      importedRows,
+      { responseColumn, predictorColumns, categoryColumn, valueColumn, timeColumn, xColumn, yColumn },
+      customArguments
+    );
+    
+    console.log('Generated custom code length:', customCode.length);
+    return customCode;
+  }, [baseGeneratedRCode, customArguments, selectedTool, importedRows, responseColumn, predictorColumns, categoryColumn, valueColumn, timeColumn, xColumn, yColumn]);
   // Tracks the most recent project/tool combo we wrote so we can avoid redundant storage churn.
   const lastPersistedToolRef = useRef({ projectId: null, toolId: null });
   const copyToastTimerRef = useRef(null);
   const [copyToastVisible, setCopyToastVisible] = useState(false);
   const [copyToastMessage, setCopyToastMessage] = useState('');
   const [copyToastTone, setCopyToastTone] = useState('success');
+  const [appearanceStyle, setAppearanceStyle] = useState(0);
+  const [infoTooltipVisible, setInfoTooltipVisible] = useState(null);
 
   // Show a quick message when we copy code or fail to do so.
   const showCopyToast = useCallback((message, tone = 'success') => {
@@ -590,11 +626,78 @@ export default function linear() {
 
       // Save the choice so we load the same tool next time.
       persistSelectedTool(normalizedToolId);
+      // Reset custom arguments when switching tools
+      setCustomArguments({});
     },
     [handleToolChange, persistSelectedTool]
   );
 
   // Once data is loaded, keep storage in sync with the current tool.
+  const handleArgumentChange = useCallback((argName, newValue) => {
+    setCustomArguments(prev => {
+      const updated = {
+        ...prev,
+        [argName]: newValue
+      };
+      console.log('Argument changed:', argName, '=', newValue);
+      console.log('All custom arguments:', updated);
+      return updated;
+    });
+  }, []);
+
+  const handleColorChange = useCallback((argName, color) => {
+    setCustomArguments(prev => ({
+      ...prev,
+      [argName]: color
+    }));
+  }, []);
+
+  // Helper to convert color name to hex for color picker
+  const getColorHex = useCallback((colorValue) => {
+    if (!colorValue) return '#4a9eff';
+    // If it's already a hex color, return it
+    if (colorValue.match(/^#[0-9A-Fa-f]{6}$/)) {
+      return colorValue;
+    }
+    // Try to convert color name to hex
+    const colorMap = {
+      'blue': '#0000ff',
+      'red': '#ff0000',
+      'green': '#008000',
+      'yellow': '#ffff00',
+      'orange': '#ffa500',
+      'purple': '#800080',
+      'pink': '#ffc0cb',
+      'black': '#000000',
+      'white': '#ffffff',
+      'darkgreen': '#006400',
+      'lightblue': '#add8e6',
+      'lightgreen': '#90ee90',
+      'darkblue': '#00008b',
+    };
+    const lowerColor = colorValue.toLowerCase().trim();
+    return colorMap[lowerColor] || '#4a9eff';
+  }, []);
+
+  const toggleAppearanceStyle = useCallback(() => {
+    setAppearanceStyle(prev => (prev + 1) % 4);
+  }, []);
+
+  const isDatasetArgument = useCallback((argName) => {
+    // Check if argument is dataset-related (like X1, X2, Y, Categories, Values, Time Points, etc.)
+    const datasetKeywords = ['x1', 'x2', 'y', 'categories', 'values', 'time points', 'x values', 'y values', 'formula'];
+    const lowerName = argName.toLowerCase();
+    return datasetKeywords.some(keyword => lowerName.includes(keyword)) || 
+           argName.includes(':') || // Data inputs like "y:", "x1:"
+           argName.toLowerCase().includes('initialize data');
+  }, []);
+
+  const isColorArgument = useCallback((argName) => {
+    const colorKeywords = ['color', 'colour', 'line color', 'point color', 'border color', 'title color', 'colors'];
+    const lowerName = argName.toLowerCase();
+    return colorKeywords.some(keyword => lowerName.includes(keyword));
+  }, []);
+
   useEffect(() => {
     if (!projectHydrated || activeProjectId === null) {
       return;
@@ -651,6 +754,12 @@ export default function linear() {
         return xColumn && yColumn;
       case 'pie-chart':
         return categoryColumn && valueColumn;
+      case 'histogram':
+        return valueColumn;
+      case 'density-plot':
+        return valueColumn;
+      case 'box-plot':
+        return valueColumn;
       default:
         return false;
     }
@@ -809,6 +918,12 @@ export default function linear() {
         return `Generated R code for dot plot using ${xColumn} on the x-axis and ${yColumn} on the y-axis.`;
       case 'pie-chart':
         return `Generated R code for pie chart using ${categoryColumn} as categories and ${valueColumn} as values.`;
+      case 'histogram':
+        return `Generated R code for histogram using ${valueColumn} as the data variable.`;
+      case 'density-plot':
+        return `Generated R code for density plot using ${valueColumn} as the data variable.`;
+      case 'box-plot':
+        return `Generated R code for box plot using ${valueColumn} as the data variable.`;
       default:
         return 'Generated R code based on your data and selections.';
     }
@@ -1054,6 +1169,133 @@ dev.off()`,
         { name: "Colors", value: "white", readOnly: false },
         { name: "Title Color", value: "darkgreen", readOnly: false }
       ]
+    },
+    {
+      id: "histogram",
+      name: "Histogram",
+      description: "Display the distribution of a single numeric variable using bars.",
+      icon: "📊",
+      color: "#8e44ad",
+      chartIcon: "📊",
+      rCode: `# Initialize data
+values <- c(12, 15, 18, 22, 25, 23, 28, 32, 30, 35, 18, 22, 25, 28, 30)
+
+# Create histogram
+hist(
+  values,
+  main = "Histogram Example",
+  xlab = "Values",
+  ylab = "Frequency",
+  col = "lightblue",
+  border = "black",
+  breaks = 10
+)`,
+      codeDescription: "Creates a histogram showing the distribution of numeric values.",
+      sampleData: [
+        { value: 12 },
+        { value: 15 },
+        { value: 18 },
+        { value: 22 },
+        { value: 25 },
+        { value: 23 },
+        { value: 28 },
+        { value: 32 },
+        { value: 30 },
+        { value: 35 }
+      ],
+      arguments: [
+        { name: "Values", value: "12, 15, 18, 22, 25, 23, 28, 32, 30, 35", readOnly: false },
+        { name: "Main Title", value: "Histogram Example", readOnly: false },
+        { name: "X-axis Label", value: "Values", readOnly: false },
+        { name: "Y-axis Label", value: "Frequency", readOnly: false },
+        { name: "Color", value: "lightblue", readOnly: false },
+        { name: "Number of Bins", value: "10", readOnly: false }
+      ]
+    },
+    {
+      id: "density-plot",
+      name: "Density Plot",
+      description: "Display the probability density function of a numeric variable.",
+      icon: "📈",
+      color: "#27ae60",
+      chartIcon: "📈",
+      rCode: `# Initialize data
+values <- c(12, 15, 18, 22, 25, 23, 28, 32, 30, 35, 18, 22, 25, 28, 30)
+
+# Create density plot
+plot(
+  density(values),
+  main = "Density Plot Example",
+  xlab = "Values",
+  ylab = "Density",
+  col = "blue",
+  lwd = 2
+)
+
+# Add polygon for filled area
+polygon(density(values), col = "lightblue", border = "blue")`,
+      codeDescription: "Creates a density plot showing the probability distribution of numeric values.",
+      sampleData: [
+        { value: 12 },
+        { value: 15 },
+        { value: 18 },
+        { value: 22 },
+        { value: 25 },
+        { value: 23 },
+        { value: 28 },
+        { value: 32 },
+        { value: 30 },
+        { value: 35 }
+      ],
+      arguments: [
+        { name: "Values", value: "12, 15, 18, 22, 25, 23, 28, 32, 30, 35", readOnly: false },
+        { name: "Main Title", value: "Density Plot Example", readOnly: false },
+        { name: "X-axis Label", value: "Values", readOnly: false },
+        { name: "Y-axis Label", value: "Density", readOnly: false },
+        { name: "Line Color", value: "blue", readOnly: false },
+        { name: "Line Width", value: "2", readOnly: false }
+      ]
+    },
+    {
+      id: "box-plot",
+      name: "Box Plot",
+      description: "Display the distribution of data using quartiles and outliers.",
+      icon: "📦",
+      color: "#e67e22",
+      chartIcon: "📦",
+      rCode: `# Initialize data
+values <- c(12, 15, 18, 22, 25, 23, 28, 32, 30, 35, 18, 22, 25, 28, 30)
+
+# Create box plot
+boxplot(
+  values,
+  main = "Box Plot Example",
+  ylab = "Values",
+  col = "lightgreen",
+  border = "darkgreen",
+  horizontal = FALSE
+)`,
+      codeDescription: "Creates a box plot showing quartiles, median, and outliers of numeric values.",
+      sampleData: [
+        { value: 12 },
+        { value: 15 },
+        { value: 18 },
+        { value: 22 },
+        { value: 25 },
+        { value: 23 },
+        { value: 28 },
+        { value: 32 },
+        { value: 30 },
+        { value: 35 }
+      ],
+      arguments: [
+        { name: "Values", value: "12, 15, 18, 22, 25, 23, 28, 32, 30, 35", readOnly: false },
+        { name: "Main Title", value: "Box Plot Example", readOnly: false },
+        { name: "Y-axis Label", value: "Values", readOnly: false },
+        { name: "Color", value: "lightgreen", readOnly: false },
+        { name: "Border Color", value: "darkgreen", readOnly: false },
+        { name: "Horizontal", value: "FALSE", readOnly: false }
+      ]
     }
   ];
 
@@ -1104,8 +1346,8 @@ dev.off()`,
           {/* Left Panel - Tool Selection */}
           <div className={styles.leftPanel}>
             <div className={styles.panelHeader}>
-              <h2>Select R Tool</h2>
-              <p>Select one of the provided RStudio tools.</p>
+              <h2>Add R Tool</h2>
+              <p>Select an RStudio tool from the list.</p>
             </div>
             
             <div className={styles.toolList}>
@@ -1115,10 +1357,12 @@ dev.off()`,
                   className={`${styles.toolCard} ${selectedTool === tool.id ? styles.selected : ''}`}
                   onClick={() => handleToolSelection(tool.id)}
                 >
-                  <div className={styles.toolIcon} style={{ color: tool.color }}>
-                    {tool.icon}
+                  <div className={styles.toolCardVisual}>
+                    <div className={styles.toolVisualization} style={{ color: tool.color }}>
+                      {tool.chartIcon}
+                    </div>
                   </div>
-                  <div className={styles.toolInfo}>
+                  <div className={styles.toolCardContent}>
                     <h3>{tool.name}</h3>
                     <p>{tool.description}</p>
                   </div>
@@ -1172,35 +1416,50 @@ dev.off()`,
             {/* Column Selection Info */}
             {importedRows.length > 0 && (
               <div className={styles.columnSelectionInfo}>
-                <h4>Column Selection:</h4>
+                <h4>Column Selection</h4>
                 {selectedTool === 'linear-regression' && (
                   <>
-                    <p><strong>Response Variable:</strong> {responseColumn || 'None selected'}</p>
-                    <p><strong>Predictor Variables:</strong> {predictorColumns.length > 0 ? predictorColumns.join(', ') : 'None selected'}</p>
+                    <p><strong>Response Variable:</strong> {responseColumn || <span style={{color: '#888'}}>None selected</span>}</p>
+                    <p><strong>Predictor Variables:</strong> {predictorColumns.length > 0 ? predictorColumns.join(', ') : <span style={{color: '#888'}}>None selected</span>}</p>
                   </>
                 )}
                 {selectedTool === 'bar-chart' && (
                   <>
-                    <p><strong>Category Column:</strong> {categoryColumn || 'None selected'}</p>
-                    <p><strong>Value Column:</strong> {valueColumn || 'None selected'}</p>
+                    <p><strong>Category Column:</strong> {categoryColumn || <span style={{color: '#888'}}>None selected</span>}</p>
+                    <p><strong>Value Column:</strong> {valueColumn || <span style={{color: '#888'}}>None selected</span>}</p>
                   </>
                 )}
                 {selectedTool === 'line-chart' && (
                   <>
-                    <p><strong>Time Column:</strong> {timeColumn || 'None selected'}</p>
-                    <p><strong>Value Column:</strong> {valueColumn || 'None selected'}</p>
+                    <p><strong>Time Column:</strong> {timeColumn || <span style={{color: '#888'}}>None selected</span>}</p>
+                    <p><strong>Value Column:</strong> {valueColumn || <span style={{color: '#888'}}>None selected</span>}</p>
                   </>
                 )}
                 {selectedTool === 'dot-plot' && (
                   <>
-                    <p><strong>X Column:</strong> {xColumn || 'None selected'}</p>
-                    <p><strong>Y Column:</strong> {yColumn || 'None selected'}</p>
+                    <p><strong>X Column:</strong> {xColumn || <span style={{color: '#888'}}>None selected</span>}</p>
+                    <p><strong>Y Column:</strong> {yColumn || <span style={{color: '#888'}}>None selected</span>}</p>
                   </>
                 )}
                 {selectedTool === 'pie-chart' && (
                   <>
-                    <p><strong>Category Column:</strong> {categoryColumn || 'None selected'}</p>
-                    <p><strong>Value Column:</strong> {valueColumn || 'None selected'}</p>
+                    <p><strong>Category Column:</strong> {categoryColumn || <span style={{color: '#888'}}>None selected</span>}</p>
+                    <p><strong>Value Column:</strong> {valueColumn || <span style={{color: '#888'}}>None selected</span>}</p>
+                  </>
+                )}
+                {selectedTool === 'histogram' && (
+                  <>
+                    <p><strong>Value Column:</strong> {valueColumn || <span style={{color: '#888'}}>None selected</span>}</p>
+                  </>
+                )}
+                {selectedTool === 'density-plot' && (
+                  <>
+                    <p><strong>Value Column:</strong> {valueColumn || <span style={{color: '#888'}}>None selected</span>}</p>
+                  </>
+                )}
+                {selectedTool === 'box-plot' && (
+                  <>
+                    <p><strong>Value Column:</strong> {valueColumn || <span style={{color: '#888'}}>None selected</span>}</p>
                   </>
                 )}
                 <p className={styles.columnSelectionHint}>
@@ -1215,8 +1474,20 @@ dev.off()`,
             <div className={styles.rightPanel}>
             <div className={styles.panelHeader}>
               <div className={styles.headerActions}>
-                <div className={styles.vrIcon}>VR</div>
-                <button className={styles.switchBtn}>Switch R Tool</button>
+                <button 
+                  className={styles.copyRCodeBtn}
+                  onClick={handleCopyRCode}
+                  title="Copy R Code"
+                >
+                  Copy R Code
+                </button>
+                <button 
+                  className={`${styles.switchBtn} ${styles[`appearanceStyle${appearanceStyle}`]}`}
+                  onClick={toggleAppearanceStyle}
+                  title="Change Appearance"
+                >
+                  Switch R Tool
+                </button>
               </div>
             </div>
 
@@ -1238,23 +1509,107 @@ dev.off()`,
 
             <div className={styles.argumentsSection}>
               <h3>Arguments</h3>
-              {generatedArguments?.map((arg, index) => (
-                <div key={index} className={styles.argumentGroup}>
-                  <label>{arg.name}</label>
-                  {arg.type === "data" ? (
-                    <div className={styles.dataInputs}>
-                      {arg.data?.map((dataItem, dataIndex) => (
-                        <div key={dataIndex} className={styles.dataInput}>
-                          <label>{dataItem.label}</label>
-                          <input type="text" value={dataItem.value} readOnly />
+              {generatedArguments?.map((arg, index) => {
+                const isDataset = isDatasetArgument(arg.name);
+                const isColor = isColorArgument(arg.name);
+                const isReadOnly = arg.readOnly || isDataset;
+                
+                return (
+                  <div key={index} className={`${styles.argumentGroup} ${isDataset ? styles.datasetArgument : ''}`}>
+                    <div className={styles.argumentLabelRow}>
+                      <label>{arg.name}</label>
+                      {isDataset && (
+                        <div className={styles.infoIconContainer}>
+                          <span 
+                            className={styles.infoIcon}
+                            onMouseEnter={() => setInfoTooltipVisible(index)}
+                            onMouseLeave={() => setInfoTooltipVisible(null)}
+                          >
+                            ℹ️
+                          </span>
+                          {infoTooltipVisible === index && (
+                            <div className={styles.infoTooltip}>
+                              Arguments for dataset can only be changed through the table or only through importing a new dataset.
+                            </div>
+                          )}
                         </div>
-                      ))}
+                      )}
                     </div>
-                  ) : (
-                    <input type="text" value={arg.value} readOnly={arg.readOnly} />
-                  )}
-                </div>
-              ))}
+                    {arg.type === "data" ? (
+                      <div className={styles.dataInputs}>
+                        {arg.data?.map((dataItem, dataIndex) => {
+                          const dataItemKey = `${arg.name}_${dataItem.label}`;
+                          const isDataItemDataset = isDatasetArgument(dataItem.label);
+                          return (
+                            <div key={dataIndex} className={`${styles.dataInput} ${isDataItemDataset ? styles.datasetInput : ''}`}>
+                              <label>{dataItem.label}</label>
+                              <div className={styles.dataInputWrapper}>
+                                <input 
+                                  type="text" 
+                                  value={customArguments[dataItemKey] ?? dataItem.value}
+                                  onChange={(e) => handleArgumentChange(dataItemKey, e.target.value)}
+                                  disabled={isDataItemDataset}
+                                  readOnly={isDataItemDataset}
+                                />
+                                {isDataItemDataset && (
+                                  <div className={styles.infoIconContainer}>
+                                    <span 
+                                      className={styles.infoIcon}
+                                      onMouseEnter={() => setInfoTooltipVisible(`${index}_${dataIndex}`)}
+                                      onMouseLeave={() => setInfoTooltipVisible(null)}
+                                    >
+                                      ℹ️
+                                    </span>
+                                    {infoTooltipVisible === `${index}_${dataIndex}` && (
+                                      <div className={styles.infoTooltip}>
+                                        Arguments for dataset can only be changed through the table or only through importing a new dataset.
+                                      </div>
+                                    )}
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    ) : isColor ? (
+                      <div className={styles.colorInputWrapper}>
+                        <input 
+                          type="color" 
+                          value={getColorHex(customArguments[arg.name] ?? arg.value)}
+                          onChange={(e) => {
+                            handleColorChange(arg.name, e.target.value);
+                            handleArgumentChange(arg.name, e.target.value);
+                          }}
+                          className={styles.colorPicker}
+                        />
+                        <input 
+                          type="text" 
+                          value={customArguments[arg.name] ?? arg.value}
+                          onChange={(e) => {
+                            handleArgumentChange(arg.name, e.target.value);
+                            // Try to update color picker if it's a valid hex
+                            const hexMatch = e.target.value.match(/^#[0-9A-Fa-f]{6}$/);
+                            if (hexMatch) {
+                              handleColorChange(arg.name, e.target.value);
+                            }
+                          }}
+                          className={styles.colorTextInput}
+                          placeholder="Enter color name or hex"
+                        />
+                      </div>
+                    ) : (
+                      <input 
+                        type="text" 
+                        value={customArguments[arg.name] ?? arg.value}
+                        onChange={(e) => handleArgumentChange(arg.name, e.target.value)}
+                        disabled={isReadOnly}
+                        readOnly={isReadOnly}
+                      />
+                    )}
+                  </div>
+                );
+              })}
             </div>
             </div>
           )}

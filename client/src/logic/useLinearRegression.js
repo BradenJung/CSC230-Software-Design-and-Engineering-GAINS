@@ -65,6 +65,18 @@ export const useLinearRegression = ({
         setValueColumn(columns[1] ?? '');
         break;
       }
+      case 'histogram': {
+        setValueColumn(columns[0] ?? '');
+        break;
+      }
+      case 'density-plot': {
+        setValueColumn(columns[0] ?? '');
+        break;
+      }
+      case 'box-plot': {
+        setValueColumn(columns[0] ?? '');
+        break;
+      }
       default:
         break;
     }
@@ -187,6 +199,21 @@ export const useLinearRegression = ({
           setValueColumn(columnName);
         }
         break;
+      case 'histogram':
+        if (type === 'value') {
+          setValueColumn(columnName);
+        }
+        break;
+      case 'density-plot':
+        if (type === 'value') {
+          setValueColumn(columnName);
+        }
+        break;
+      case 'box-plot':
+        if (type === 'value') {
+          setValueColumn(columnName);
+        }
+        break;
       default:
         break;
     }
@@ -205,6 +232,12 @@ export const useLinearRegression = ({
         return { xColumn, yColumn };
       case 'pie-chart':
         return { categoryColumn, valueColumn };
+      case 'histogram':
+        return { valueColumn };
+      case 'density-plot':
+        return { valueColumn };
+      case 'box-plot':
+        return { valueColumn };
       default:
         return { responseColumn, predictorColumns };
     }
@@ -234,8 +267,8 @@ export const useLinearRegression = ({
 
   // Validate current data
   const validation = useMemo(() => {
-    return RCodeService.validateDataForLinearRegression(importedRows);
-  }, [importedRows]);
+    return RCodeService.validateData(importedRows, selectedTool);
+  }, [importedRows, selectedTool]);
 
   return {
     // State

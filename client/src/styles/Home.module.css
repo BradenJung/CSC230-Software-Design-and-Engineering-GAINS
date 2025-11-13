@@ -9,6 +9,13 @@
   background: #2a2a2a;
   padding: 12px 24px;
   border-bottom: 1px solid #333;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .navLinks {
@@ -270,91 +277,135 @@
 .mainContent {
   display: grid;
   grid-template-columns: 400px 1fr 400px;
-  height: calc(100vh - 60px);
+  height: calc(100vh - var(--header-height));
   gap: 0;
   transition: grid-template-columns 0.3s ease-in-out;
   overflow: hidden;
+  padding-top: var(--header-height);
 }
 
 .mainContentNoRightPanel {
   display: grid;
   grid-template-columns: 400px 1fr;
-  height: calc(100vh - 60px);
+  height: calc(100vh - var(--header-height));
   gap: 0;
   transition: grid-template-columns 0.3s ease-in-out;
   overflow: hidden;
+  padding-top: var(--header-height);
 }
 
 /* Left Panel - Tool Selection */
 .leftPanel {
-  background: #1e1e1e;
-  border-right: 1px solid #333;
-  padding: 24px;
+  background: #1a1a1a;
+  border-right: 1px solid #2a2a2a;
+  padding: 24px 16px;
   overflow-y: auto;
   height: 100%;
 }
 
+.panelHeader {
+  padding: 0 8px;
+  margin-bottom: 24px;
+}
+
 .panelHeader h2 {
-  font-size: 18px;
+  font-size: 24px;
   font-weight: 600;
-  margin-bottom: 8px;
+  margin: 0 0 8px 0;
   color: #ffffff;
 }
 
 .panelHeader p {
   font-size: 14px;
-  color: #888;
-  margin-bottom: 24px;
+  color: #8a8a8a;
+  margin: 0;
+  line-height: 1.4;
 }
 
 .toolList {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 16px;
 }
 
 .toolCard {
-  background: #2a2a2a;
-  border: 1px solid #333;
-  border-radius: 8px;
-  padding: 16px;
+  background: #242424;
+  border: 2px solid #2a2a2a;
+  border-radius: 12px;
+  padding: 0;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   display: flex;
-  align-items: center;
-  gap: 12px;
+  flex-direction: column;
+  overflow: hidden;
+  position: relative;
 }
 
 .toolCard:hover {
-  background: #333;
-  border-color: #444;
+  border-color: #3a3a3a;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
 }
 
 .toolCard.selected {
-  background: #1e3a5f;
   border-color: #4a9eff;
+  background: #1e1e1e;
+  box-shadow: 0 0 0 1px rgba(74, 158, 255, 0.2);
 }
 
-.toolIcon {
-  font-size: 24px;
-  width: 32px;
-  height: 32px;
+.toolCardVisual {
+  background: #1a1a1a;
+  padding: 32px 24px;
   display: flex;
   align-items: center;
   justify-content: center;
+  min-height: 140px;
+  position: relative;
 }
 
-.toolInfo h3 {
-  font-size: 14px;
+.toolCard.selected .toolCardVisual {
+  background: #0f0f0f;
+}
+
+.toolVisualization {
+  font-size: 64px;
+  opacity: 0.9;
+  transition: transform 0.3s ease, opacity 0.3s ease;
+}
+
+.toolCard:hover .toolVisualization {
+  transform: scale(1.05);
+  opacity: 1;
+}
+
+.toolCardContent {
+  padding: 16px 20px 20px;
+  background: #242424;
+  border-top: 1px solid #2a2a2a;
+}
+
+.toolCard.selected .toolCardContent {
+  background: #1e1e1e;
+  border-top-color: #333;
+}
+
+.toolCardContent h3 {
+  font-size: 16px;
   font-weight: 600;
-  margin-bottom: 4px;
+  margin: 0 0 6px 0;
   color: #ffffff;
+  line-height: 1.2;
 }
 
-.toolInfo p {
-  font-size: 12px;
-  color: #aaa;
-  line-height: 1.4;
+.toolCardContent p {
+  font-size: 13px;
+  color: #8a8a8a;
+  line-height: 1.5;
+  margin: 0;
+}
+
+.toolCard.selected .toolCardContent p {
+  color: #a0a0a0;
 }
 
 /* Center Panel - Tool Details */
@@ -921,60 +972,93 @@
 
 /* Validation and Column Selection Styles */
 .validationErrors {
-  background: rgba(255, 69, 58, 0.1);
-  border: 1px solid rgba(255, 69, 58, 0.3);
+  background: #2a2a2a;
+  border: 1px solid #3a3a3a;
+  border-left: 3px solid #ff453a;
   border-radius: 8px;
-  padding: 16px;
+  padding: 14px 18px;
   margin-top: 16px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
 }
 
 .validationErrors h4 {
-  color: #ff453a;
-  margin: 0 0 8px 0;
-  font-size: 14px;
+  color: #ffffff;
+  margin: 0 0 10px 0;
+  font-size: 13px;
   font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.validationErrors h4::before {
+  content: "⚠";
+  color: #ff453a;
+  font-size: 16px;
 }
 
 .validationErrors ul {
   margin: 0;
   padding-left: 20px;
-  color: #ff6b6b;
+  color: #c7c7c7;
   font-size: 13px;
+  line-height: 1.6;
 }
 
 .validationErrors li {
-  margin-bottom: 4px;
+  margin-bottom: 6px;
 }
 
 .columnSelectionInfo {
-  background: rgba(52, 199, 89, 0.1);
-  border: 1px solid rgba(52, 199, 89, 0.3);
+  background: #2a2a2a;
+  border: 1px solid #3a3a3a;
+  border-left: 3px solid #4a9eff;
   border-radius: 8px;
-  padding: 16px;
+  padding: 14px 18px;
   margin-top: 16px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
 }
 
 .columnSelectionInfo h4 {
-  color: #34c759;
-  margin: 0 0 8px 0;
-  font-size: 14px;
+  color: #ffffff;
+  margin: 0 0 10px 0;
+  font-size: 13px;
   font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.columnSelectionInfo h4::before {
+  content: "✓";
+  color: #4a9eff;
+  font-size: 16px;
+  font-weight: bold;
 }
 
 .columnSelectionInfo p {
-  margin: 4px 0;
+  margin: 6px 0;
   font-size: 13px;
-  color: #ffffff;
+  color: #c7c7c7;
+  line-height: 1.5;
 }
 
 .columnSelectionInfo strong {
-  color: #34c759;
+  color: #4a9eff;
+  font-weight: 600;
 }
 
 .columnSelectionHint {
-  color: #aaa !important;
+  color: #888 !important;
   font-style: italic;
-  margin-top: 8px !important;
+  margin-top: 10px !important;
+  font-size: 12px !important;
+  padding-top: 8px;
+  border-top: 1px solid #3a3a3a;
 }
 
 /* Empty state placeholder for data table */
@@ -1056,7 +1140,7 @@
 .leftPanel::-webkit-scrollbar,
 .centerPanel::-webkit-scrollbar,
 .rightPanel::-webkit-scrollbar {
-  width: 8px;
+  width: 4px;
 }
 
 .leftPanel::-webkit-scrollbar-track,
@@ -1086,17 +1170,29 @@
   margin-bottom: 24px;
 }
 
-.vrIcon {
-  width: 32px;
-  height: 32px;
+.copyRCodeBtn {
   background: #4a9eff;
   color: #ffffff;
-  border-radius: 50%;
+  border: none;
+  border-radius: 6px;
+  padding: 8px 16px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+  transition: all 0.2s;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 12px;
-  font-weight: 600;
+}
+
+.copyRCodeBtn:hover {
+  background: #5da8ff;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(74, 158, 255, 0.3);
+}
+
+.copyRCodeBtn:active {
+  transform: translateY(0);
 }
 
 .switchBtn {
@@ -1107,11 +1203,39 @@
   border-radius: 4px;
   cursor: pointer;
   font-size: 12px;
-  transition: all 0.2s;
+  transition: all 0.3s;
 }
 
 .switchBtn:hover {
   background: #333;
+}
+
+/* Four appearance styles for Switch R Tool button */
+.appearanceStyle0 {
+  background: #2a2a2a;
+  border: 1px solid #333;
+  color: #ffffff;
+}
+
+.appearanceStyle1 {
+  background: linear-gradient(135deg, #4a9eff 0%, #275fbe 100%);
+  border: 1px solid #4a9eff;
+  color: #ffffff;
+  font-weight: 600;
+}
+
+.appearanceStyle2 {
+  background: transparent;
+  border: 2px solid #4a9eff;
+  color: #4a9eff;
+  font-weight: 600;
+}
+
+.appearanceStyle3 {
+  background: #1a1a1a;
+  border: 1px solid #4a9eff;
+  color: #4a9eff;
+  box-shadow: 0 0 8px rgba(74, 158, 255, 0.4);
 }
 
 .codeSection {
@@ -1190,6 +1314,132 @@
 }
 
 .argumentGroup input:focus {
+  outline: none;
+  border-color: #4a9eff;
+}
+
+.argumentGroup input:disabled,
+.argumentGroup input[readonly] {
+  background: #1a1a1a;
+  color: #666;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.datasetArgument {
+  opacity: 0.7;
+}
+
+.datasetArgument label {
+  color: #888;
+}
+
+.argumentLabelRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.argumentLabelRow label {
+  flex: 1;
+}
+
+.infoIconContainer {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+.infoIcon {
+  font-size: 14px;
+  cursor: help;
+  opacity: 0.7;
+  transition: opacity 0.2s;
+}
+
+.infoIcon:hover {
+  opacity: 1;
+}
+
+.infoTooltip {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  margin-top: 8px;
+  background: #1a1a1a;
+  border: 1px solid #4a9eff;
+  border-radius: 6px;
+  padding: 10px 12px;
+  color: #ffffff;
+  font-size: 12px;
+  line-height: 1.4;
+  white-space: nowrap;
+  z-index: 1000;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+  max-width: 280px;
+  white-space: normal;
+}
+
+.infoTooltip::before {
+  content: '';
+  position: absolute;
+  bottom: 100%;
+  right: 12px;
+  border: 6px solid transparent;
+  border-bottom-color: #4a9eff;
+}
+
+.dataInputWrapper {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+}
+
+.datasetInput input {
+  background: #1a1a1a !important;
+  color: #666 !important;
+  opacity: 0.6;
+}
+
+.colorInputWrapper {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.colorPicker {
+  width: 50px;
+  height: 36px;
+  border: 1px solid #333;
+  border-radius: 4px;
+  cursor: pointer;
+  background: transparent;
+  padding: 0;
+}
+
+.colorPicker::-webkit-color-swatch-wrapper {
+  padding: 0;
+}
+
+.colorPicker::-webkit-color-swatch {
+  border: 1px solid #333;
+  border-radius: 4px;
+}
+
+.colorTextInput {
+  flex: 1;
+  background: #2a2a2a;
+  border: 1px solid #333;
+  color: #ffffff;
+  padding: 8px 12px;
+  border-radius: 4px;
+  font-size: 14px;
+}
+
+.colorTextInput:focus {
   outline: none;
   border-color: #4a9eff;
 }
@@ -2136,18 +2386,21 @@
 
 /* Learn Page Styles */
 .learnContainer {
-  min-height: 100vh;
-  background: linear-gradient(135deg, #1a1a1a 0%, #2a2a2a 100%);
+  min-height: calc(100vh - var(--header-height));
+  background: #1a1a1a;
   color: #ffffff;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
   padding: 0;
+  display: flex;
+  flex-direction: column;
+  padding-top: var(--header-height);
 }
 
 .learnHeader {
-  background: linear-gradient(135deg, #3a3a3a 0%, #4a4a4a 100%);
+  background: #1f1f1f;
   padding: 60px 24px;
   text-align: center;
-  border-bottom: 2px solid #555;
+  border-bottom: 1px solid #333;
 }
 
 .learnHeader h1 {
@@ -2172,63 +2425,89 @@
   display: grid;
   grid-template-columns: 300px 1fr;
   gap: 0;
-  min-height: calc(100vh - 200px);
+  flex: 1;
   max-width: 1400px;
-  margin: 0 auto;
+  margin: 0;
+  width: 100%;
+  min-height: calc(100vh - var(--header-height));
+  height: calc(100vh - var(--header-height));
 }
 
 .tableOfContents {
-  background: #2a2a2a;
-  border-right: 2px solid #444;
-  padding: 24px;
+  background: #1a1a1a;
+  border-right: 1px solid #2a2a2a;
+  padding: 24px 16px;
   overflow-y: auto;
-  max-height: calc(100vh - 200px);
-  margin-left: -140px;
+  height: 100%;
+  width: 100%;
+  box-sizing: border-box;
+  margin-left: 0;
 }
 
 .tableOfContents h2 {
-  font-size: 1.5rem;
+  font-size: 24px;
+  font-weight: 600;
+  margin: 0 0 8px 0;
+  color: #ffffff;
+  padding: 0 8px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.tableOfContents p {
+  font-size: 14px;
+  color: #8a8a8a;
   margin: 0 0 24px 0;
-  color: #4a9eff;
-  border-bottom: 2px solid #444;
-  padding-bottom: 12px;
+  padding: 0 8px;
+  line-height: 1.4;
 }
 
 .tableOfContents ul {
   list-style: none;
   padding: 0;
   margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
 }
 
 .tableOfContents li {
-  margin-bottom: 8px;
+  margin: 0;
 }
 
 .chapterButton {
   width: 100%;
-  background: transparent;
-  border: 1px solid #444;
-  color: #ffffff;
-  padding: 12px 16px;
-  border-radius: 8px;
+  background: #242424;
+  border: 2px solid #2a2a2a;
+  border-radius: 12px;
+  padding: 16px 20px 20px;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   display: flex;
-  align-items: center;
-  gap: 12px;
+  flex-direction: column;
+  overflow: hidden;
+  position: relative;
   text-align: left;
   font-family: inherit;
+  box-sizing: border-box;
 }
 
 .chapterButton:hover {
-  background: #3a3a3a;
-  border-color: #4a9eff;
-  transform: translateX(4px);
+  border-color: #3a3a3a;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
 }
 
 .chapterButton:focus {
   outline: 2px solid #4a9eff;
   outline-offset: 2px;
+}
+
+.chapterButtonContent {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
 }
 
 .chapterNumber {
@@ -2247,8 +2526,15 @@
 
 .chapterTitle {
   flex: 1;
-  font-size: 0.9rem;
-  line-height: 1.3;
+  font-size: 16px;
+  font-weight: 600;
+  color: #ffffff;
+  line-height: 1.2;
+  margin: 0;
+}
+
+.chapterButton .expandIcon {
+  margin-left: auto;
 }
 
 .expandIcon {
@@ -2264,21 +2550,24 @@
 .chaptersContainer {
   padding: 24px;
   overflow-y: auto;
-  max-height: calc(100vh - 200px);
+  height: 100%;
+  width: 100%;
+  background: #1a1a1a;
+  box-sizing: border-box;
 }
 
 .chapterSection {
   margin-bottom: 32px;
-  border: 1px solid #444;
+  border: 1px solid #333;
   border-radius: 12px;
   overflow: hidden;
-  background: #2a2a2a;
+  background: #1f1f1f;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
 }
 
 .chapterHeader {
   width: 100%;
-  background: linear-gradient(135deg, #3a3a3a 0%, #4a4a4a 100%);
+  background: #2a2a2a;
   border: none;
   color: #ffffff;
   padding: 20px 24px;
@@ -2292,7 +2581,7 @@
 }
 
 .chapterHeader:hover {
-  background: linear-gradient(135deg, #4a4a4a 0%, #5a5a5a 100%);
+  background: #333;
 }
 
 .chapterHeader h2 {
@@ -2300,6 +2589,7 @@
   font-size: 1.4rem;
   font-weight: 600;
   flex: 1;
+  color: #ffffff;
 }
 
 .chapterHeader .chapterNumber {
@@ -2334,15 +2624,15 @@
 }
 
 .chapterContent h3 {
-  color: #4a9eff;
+  color: #ffffff;
   font-size: 1.5rem;
   margin: 24px 0 16px 0;
-  border-bottom: 2px solid #444;
+  border-bottom: 1px solid #333;
   padding-bottom: 8px;
 }
 
 .chapterContent h4 {
-  color: #8fbfff;
+  color: #ffffff;
   font-size: 1.2rem;
   margin: 20px 0 12px 0;
 }
@@ -2380,8 +2670,8 @@
 }
 
 .codeExample {
-  background: #1e1e1e;
-  border: 1px solid #444;
+  background: #1f1f1f;
+  border: 1px solid #333;
   border-radius: 8px;
   padding: 16px;
   margin: 16px 0;
@@ -2418,10 +2708,12 @@
 }
 
 .learnFooter {
-  background: #2a2a2a;
+  background: #1f1f1f;
   padding: 40px 24px;
   text-align: center;
-  border-top: 2px solid #444;
+  border-top: 1px solid #333;
+  margin-top: auto;
+  flex-shrink: 0;
 }
 
 .learnFooter h3 {
@@ -2487,12 +2779,14 @@
   
   .tableOfContents {
     border-right: none;
-    border-bottom: 2px solid #444;
-    max-height: none;
+    border-bottom: 1px solid #333;
+    max-height: 300px;
+    overflow-y: auto;
   }
   
   .chaptersContainer {
-    max-height: none;
+    height: auto;
+    min-height: 400px;
   }
 }
 
