@@ -1,14 +1,14 @@
 .dashboard {
-  background: #1a1a1a;
-  color: #ffffff;
+  background: var(--surface-primary);
+  color: var(--foreground);
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
 }
 
 /* Navigation Bar */
 .navbar {
-  background: #2a2a2a;
+  background: var(--surface-secondary);
   padding: 12px 24px;
-  border-bottom: 1px solid #333;
+  border-bottom: 1px solid var(--border-muted);
   position: fixed;
   top: 0;
   left: 0;
@@ -44,7 +44,7 @@
 }
 
 .navLink {
-  color: #ffffff;
+  color: var(--foreground);
   text-decoration: none;
   font-size: 14px;
   font-weight: 500;
@@ -68,13 +68,13 @@
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  background: #1f1f1f;
+  background: var(--surface-tertiary);
   border: 1px solid #4a9eff;
   border-radius: 999px;
   padding: 4px 12px;
   font-size: 12px;
   font-weight: 600;
-  color: #ffffff;
+  color: var(--foreground);
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
 }
 
@@ -88,7 +88,7 @@
 .currentProjectName {
   font-size: 13px;
   font-weight: 600;
-  color: #ffffff;
+  color: var(--foreground);
 }
 
 .projectNameRow {
@@ -110,7 +110,7 @@
 
 .projectRenameTrigger:hover,
 .projectRenameTrigger:focus {
-  color: #ffffff;
+  color: var(--foreground);
   background: rgba(79, 158, 255, 0.2);
   outline: none;
 }
@@ -122,8 +122,8 @@
 }
 
 .projectRenameInput {
-  background: #1a1a1a;
-  color: #ffffff;
+  background: var(--surface-primary);
+  color: var(--foreground);
   border: 1px solid #4a9eff;
   border-radius: 8px;
   padding: 6px 10px;
@@ -144,10 +144,10 @@
 
 .projectRenameButton,
 .projectRenameButtonSecondary {
-  background: #2a2a2a;
+  background: var(--surface-secondary);
   border-radius: 8px;
-  border: 1px solid #333;
-  color: #ffffff;
+  border: 1px solid var(--border-muted);
+  color: var(--foreground);
   padding: 5px 10px;
   font-size: 12px;
   font-weight: 600;
@@ -172,7 +172,7 @@
 
 .navButton {
   background: #4a9eff;
-  color: #ffffff;
+  color: var(--on-accent);
   border-radius: 4px;
   text-decoration: none;
   font-size: 14px;
@@ -195,9 +195,9 @@
   flex-direction: column;
   align-items: flex-start;
   gap: 2px;
-  background: #1f1f1f;
-  color: #ffffff;
-  border: 1px solid #363636;
+  background: var(--surface-tertiary);
+  color: var(--foreground);
+  border: 1px solid var(--border-muted);
   border-radius: 12px;
   padding: 8px 14px;
   cursor: pointer;
@@ -208,7 +208,7 @@
 .accountButton:hover,
 .accountButton:focus {
   border-color: #4a9eff;
-  background: #2a2a2a;
+  background: var(--surface-secondary);
   outline: none;
 }
 
@@ -223,15 +223,15 @@
 .accountName {
   font-size: 14px;
   font-weight: 600;
-  color: #ffffff;
+  color: var(--foreground);
 }
 
 .accountDropdown {
   position: absolute;
   top: calc(100% + 10px);
   right: 0;
-  background: #1a1a1a;
-  border: 1px solid #333;
+  background: var(--surface-primary);
+  border: 1px solid var(--border-muted);
   border-radius: 12px;
   padding: 16px;
   display: flex;
@@ -249,7 +249,7 @@
 }
 
 .accountDropdownText strong {
-  color: #ffffff;
+  color: var(--foreground);
 }
 
 .signOutButton {
@@ -296,8 +296,8 @@
 
 /* Left Panel - Tool Selection */
 .leftPanel {
-  background: #1a1a1a;
-  border-right: 1px solid #2a2a2a;
+  background: var(--surface-primary);
+  border-right: 1px solid var(--surface-secondary);
   padding: 24px 16px;
   overflow-y: auto;
   height: 100%;
@@ -312,7 +312,7 @@
   font-size: 24px;
   font-weight: 600;
   margin: 0 0 8px 0;
-  color: #ffffff;
+  color: var(--foreground);
 }
 
 .panelHeader p {
@@ -330,7 +330,7 @@
 
 .toolCard {
   background: #242424;
-  border: 2px solid #2a2a2a;
+  border: 2px solid var(--surface-secondary);
   border-radius: 12px;
   padding: 0;
   cursor: pointer;
@@ -354,7 +354,7 @@
 }
 
 .toolCardVisual {
-  background: #1a1a1a;
+  background: var(--surface-primary);
   padding: 32px 24px;
   display: flex;
   align-items: center;
@@ -381,7 +381,7 @@
 .toolCardContent {
   padding: 16px 20px 20px;
   background: #242424;
-  border-top: 1px solid #2a2a2a;
+  border-top: 1px solid var(--surface-secondary);
 }
 
 .toolCard.selected .toolCardContent {
@@ -393,7 +393,7 @@
   font-size: 16px;
   font-weight: 600;
   margin: 0 0 6px 0;
-  color: #ffffff;
+  color: var(--foreground);
   line-height: 1.2;
 }
 
@@ -410,7 +410,7 @@
 
 /* Center Panel - Tool Details */
 .centerPanel {
-  background: #1a1a1a;
+  background: var(--surface-primary);
   padding: 24px;
   display: flex;
   flex-direction: column;
@@ -431,7 +431,7 @@
   font-size: 24px;
   font-weight: 600;
   margin-bottom: 8px;
-  color: #ffffff;
+  color: var(--foreground);
 }
 
 .toolHeader p {
@@ -445,9 +445,9 @@
   justify-content: center;
   width: 200px;
   height: 120px;
-  background: #2a2a2a;
+  background: var(--surface-secondary);
   border-radius: 12px;
-  border: 1px solid #333;
+  border: 1px solid var(--border-muted);
 }
 
 .chartIcon {
@@ -460,9 +460,9 @@
 }
 
 .actionBtn {
-  background: #2a2a2a;
-  border: 1px solid #333;
-  color: #ffffff;
+  background: var(--surface-secondary);
+  border: 1px solid var(--border-muted);
+  color: var(--foreground);
   padding: 8px 16px;
   border-radius: 6px;
   cursor: pointer;
@@ -506,7 +506,7 @@
 
 .pageCard {
   background: linear-gradient(135deg, #2d2d2d 0%, #000005 100%);
-  border: 1px solid #191d27;
+  border: 1px solid var(--border-strong);
   border-radius: 16px;
   box-shadow: 0 20px 48px rgba(0, 0, 0, 0.35);
   padding: clamp(28px, 4vw, 44px);
@@ -563,7 +563,7 @@
 
 .authIntro {
   background: #1e1e1e;
-  border: 1px solid #333;
+  border: 1px solid var(--border-muted);
   border-radius: 16px;
   padding: 40px;
   display: flex;
@@ -609,8 +609,8 @@
 }
 
 .authCard {
-  background: #202227;
-  border: 1px solid #333b45;
+  background: var(--surface-secondary);
+  border: 1px solid var(--border-muted)b45;
   border-radius: 16px;
   padding: 36px;
   box-shadow: 0 20px 45px rgba(0, 0, 0, 0.35);
@@ -638,7 +638,7 @@
   background: #13171d;
   border: 1px solid #2a2f3b;
   border-radius: 12px;
-  color: #ffffff;
+  color: var(--foreground);
   padding: 14px;
   font-size: 14px;
   transition: border-color 0.2s, box-shadow 0.2s;
@@ -654,7 +654,7 @@
   background: linear-gradient(135deg, #4a9eff 0%, #275fbe 100%);
   border: none;
   border-radius: 12px;
-  color: #ffffff;
+  color: var(--on-accent);
   cursor: pointer;
   font-size: 15px;
   font-weight: 600;
@@ -760,8 +760,8 @@
 
 /* Data Table */
 .dataTable {
-  background: #2a2a2a;
-  border: 1px solid #333;
+  background: var(--surface-secondary);
+  border: 1px solid var(--border-muted);
   border-radius: 8px;
   overflow: hidden;
   display: flex;
@@ -781,7 +781,7 @@
 
 .dataTable th {
   background: #333;
-  color: #ffffff;
+  color: var(--foreground);
   padding: 12px 16px;
   text-align: left;
   font-size: 14px;
@@ -791,9 +791,9 @@
 
 .dataTable td {
   padding: 12px 16px;
-  color: #ffffff;
+  color: var(--foreground);
   font-size: 14px;
-  border-bottom: 1px solid #333;
+  border-bottom: 1px solid var(--border-muted);
 }
 
 .dataTable tr:last-child td {
@@ -832,10 +832,10 @@
   top: 92px;
   right: 32px;
   background: rgba(26, 26, 26, 0.95);
-  color: #ffffff;
+  color: var(--foreground);
   border-radius: 10px;
   padding: 12px 18px;
-  border: 1px solid #333;
+  border: 1px solid var(--border-muted);
   border-left-width: 3px;
   display: flex;
   align-items: center;
@@ -872,7 +872,7 @@
 
 .responseColumn .columnBadge {
   background: #ff453a;
-  color: #ffffff;
+  color: var(--foreground);
 }
 
 .predictorColumn {
@@ -882,7 +882,7 @@
 
 .predictorColumn .columnBadge {
   background: #34c759;
-  color: #ffffff;
+  color: var(--foreground);
 }
 
 .categoryColumn {
@@ -902,7 +902,7 @@
 
 .valueColumn .columnBadge {
   background: #6f42c1;
-  color: #ffffff;
+  color: var(--foreground);
 }
 
 .timeColumn {
@@ -923,7 +923,7 @@
 
 .xColumn .columnBadge {
   background: #198754;
-  color: #ffffff;
+  color: var(--foreground);
 }
 
 .yColumn {
@@ -933,7 +933,7 @@
 
 .yColumn .columnBadge {
   background: #dc3545;
-  color: #ffffff;
+  color: var(--foreground);
 }
 
 .editableCell {
@@ -951,9 +951,9 @@
 
 .cellInput {
   width: 100%;
-  background: #1a1a1a;
+  background: var(--surface-primary);
   border: 2px solid #4a9eff;
-  color: #ffffff;
+  color: var(--foreground);
   padding: 8px 12px;
   font-size: 14px;
   border-radius: 4px;
@@ -972,7 +972,7 @@
 
 /* Validation and Column Selection Styles */
 .validationErrors {
-  background: #2a2a2a;
+  background: var(--surface-secondary);
   border: 1px solid #3a3a3a;
   border-left: 3px solid #ff453a;
   border-radius: 8px;
@@ -982,7 +982,7 @@
 }
 
 .validationErrors h4 {
-  color: #ffffff;
+  color: var(--foreground);
   margin: 0 0 10px 0;
   font-size: 13px;
   font-weight: 600;
@@ -1012,7 +1012,7 @@
 }
 
 .columnSelectionInfo {
-  background: #2a2a2a;
+  background: var(--surface-secondary);
   border: 1px solid #3a3a3a;
   border-left: 3px solid #4a9eff;
   border-radius: 8px;
@@ -1022,7 +1022,7 @@
 }
 
 .columnSelectionInfo h4 {
-  color: #ffffff;
+  color: var(--foreground);
   margin: 0 0 10px 0;
   font-size: 13px;
   font-weight: 600;
@@ -1130,7 +1130,7 @@
 /* Right Panel - Code and Arguments */
 .rightPanel {
   background: #1e1e1e;
-  border-left: 1px solid #333;
+  border-left: 1px solid var(--border-muted);
   padding: 24px;
   overflow-y: auto;
   height: 100%;
@@ -1146,7 +1146,7 @@
 .leftPanel::-webkit-scrollbar-track,
 .centerPanel::-webkit-scrollbar-track,
 .rightPanel::-webkit-scrollbar-track {
-  background: #2a2a2a;
+  background: var(--surface-secondary);
   border-radius: 4px;
 }
 
@@ -1172,7 +1172,7 @@
 
 .copyRCodeBtn {
   background: #4a9eff;
-  color: #ffffff;
+  color: var(--foreground);
   border: none;
   border-radius: 6px;
   padding: 8px 16px;
@@ -1196,9 +1196,9 @@
 }
 
 .switchBtn {
-  background: #2a2a2a;
-  border: 1px solid #333;
-  color: #ffffff;
+  background: var(--surface-secondary);
+  border: 1px solid var(--border-muted);
+  color: var(--foreground);
   padding: 6px 12px;
   border-radius: 4px;
   cursor: pointer;
@@ -1212,15 +1212,15 @@
 
 /* Four appearance styles for Switch R Tool button */
 .appearanceStyle0 {
-  background: #2a2a2a;
-  border: 1px solid #333;
-  color: #ffffff;
+  background: var(--surface-secondary);
+  border: 1px solid var(--border-muted);
+  color: var(--foreground);
 }
 
 .appearanceStyle1 {
   background: linear-gradient(135deg, #4a9eff 0%, #275fbe 100%);
   border: 1px solid #4a9eff;
-  color: #ffffff;
+  color: var(--foreground);
   font-weight: 600;
 }
 
@@ -1232,7 +1232,7 @@
 }
 
 .appearanceStyle3 {
-  background: #1a1a1a;
+  background: var(--surface-primary);
   border: 1px solid #4a9eff;
   color: #4a9eff;
   box-shadow: 0 0 8px rgba(74, 158, 255, 0.4);
@@ -1252,7 +1252,7 @@
 .sectionHeader h3 {
   font-size: 16px;
   font-weight: 600;
-  color: #ffffff;
+  color: var(--foreground);
 }
 
 .expandIcon {
@@ -1263,7 +1263,7 @@
 
 .codeBlock {
   background: #0d1117;
-  border: 1px solid #333;
+  border: 1px solid var(--border-muted);
   border-radius: 6px;
   padding: 16px;
   margin-bottom: 12px;
@@ -1287,7 +1287,7 @@
 .argumentsSection h3 {
   font-size: 16px;
   font-weight: 600;
-  color: #ffffff;
+  color: var(--foreground);
   margin-bottom: 16px;
 }
 
@@ -1299,15 +1299,15 @@
   display: block;
   font-size: 14px;
   font-weight: 500;
-  color: #ffffff;
+  color: var(--foreground);
   margin-bottom: 8px;
 }
 
 .argumentGroup input {
   width: 100%;
-  background: #2a2a2a;
-  border: 1px solid #333;
-  color: #ffffff;
+  background: var(--surface-secondary);
+  border: 1px solid var(--border-muted);
+  color: var(--foreground);
   padding: 8px 12px;
   border-radius: 4px;
   font-size: 14px;
@@ -1320,7 +1320,7 @@
 
 .argumentGroup input:disabled,
 .argumentGroup input[readonly] {
-  background: #1a1a1a;
+  background: var(--surface-primary);
   color: #666;
   cursor: not-allowed;
   opacity: 0.6;
@@ -1368,11 +1368,11 @@
   top: 100%;
   right: 0;
   margin-top: 8px;
-  background: #1a1a1a;
+  background: var(--surface-primary);
   border: 1px solid #4a9eff;
   border-radius: 6px;
   padding: 10px 12px;
-  color: #ffffff;
+  color: var(--foreground);
   font-size: 12px;
   line-height: 1.4;
   white-space: nowrap;
@@ -1399,7 +1399,7 @@
 }
 
 .datasetInput input {
-  background: #1a1a1a !important;
+  background: var(--surface-primary) !important;
   color: #666 !important;
   opacity: 0.6;
 }
@@ -1413,7 +1413,7 @@
 .colorPicker {
   width: 50px;
   height: 36px;
-  border: 1px solid #333;
+  border: 1px solid var(--border-muted);
   border-radius: 4px;
   cursor: pointer;
   background: transparent;
@@ -1425,15 +1425,15 @@
 }
 
 .colorPicker::-webkit-color-swatch {
-  border: 1px solid #333;
+  border: 1px solid var(--border-muted);
   border-radius: 4px;
 }
 
 .colorTextInput {
   flex: 1;
-  background: #2a2a2a;
-  border: 1px solid #333;
-  color: #ffffff;
+  background: var(--surface-secondary);
+  border: 1px solid var(--border-muted);
+  color: var(--foreground);
   padding: 8px 12px;
   border-radius: 4px;
   font-size: 14px;
@@ -1470,7 +1470,7 @@
 }
 
 .link {
-  color: #ffffff;
+  color: var(--foreground);
   text-decoration: none;
   font-size: 14px;
   font-weight: 500;
@@ -1494,7 +1494,7 @@
   .leftPanel,
   .rightPanel {
     border: none;
-    border-bottom: 1px solid #333;
+    border-bottom: 1px solid var(--border-muted);
   }
 }
 
@@ -1502,8 +1502,8 @@
 /* Outer wrapper for the home screen; mirrors dashboard charcoal backdrop */
 .home {
   min-height: 100vh;
-  background: linear-gradient(135deg, #191919 0%, #020202 100%);
-  color: #f1f4f9;
+  background: linear-gradient(135deg, var(--home-gradient-start) 0%, var(--home-gradient-end) 100%);
+  color: var(--foreground);
   display: flex;
   flex-direction: column;
 }
@@ -1524,8 +1524,8 @@
 
 /* Top hero panel with muted card styling and responsive two-column layout */
 .heroSection {
-  background: linear-gradient(135deg, #2d2d2d 0%, #000005 100%);
-  border: 1px solid #191d27;
+  background: linear-gradient(135deg, var(--hero-gradient-start) 0%, var(--hero-gradient-end) 100%);
+  border: 1px solid var(--border-strong);
   border-radius: 16px;
   display: grid;
   gap: clamp(28px, 4vw, 48px);
@@ -1556,13 +1556,13 @@
   font-weight: 600;
   line-height: 1.2;
   margin: 0;
-  color: #ffffff;
+  color: var(--foreground);
 }
 
 /* Supporting blurb capped in width with soft blue-grey tone */
 .heroSubtitle {
   margin: 0;
-  color: #aeb0b6;
+  color: var(--text-muted);
   font-size: 16px;
   line-height: 1.6;
   max-width: 520px;
@@ -1573,7 +1573,7 @@
   font-weight: 300;
   line-height: 1.2;
   margin: 0;
-  color: #9c9c9c;
+  color: var(--text-muted);
 }
 
 /* Row of CTA buttons that wraps on small viewports */
@@ -1604,20 +1604,20 @@
   background: linear-gradient(135deg, #4a9eff 0%, #275fbe 100%);
   border: none;
   border-radius: 12px;
-  color: #ffffff;
+  color: var(--on-accent);
 }
 
 /* Slight hover lift via brighter blue border and fill */
 .primaryButton:hover {
   background: #5da8ff;
   border-color: #5da8ff;
-  color: #ffffff;
+  color: var(--on-accent);
 }
 
 /* Outline pill button for supporting actions */
 .secondaryButton {
   background: transparent;
-  color: #d4ddf0;
+  color: var(--foreground);
   border: 1px solid #3a4150;
   border-radius: 12px;
 }
@@ -1625,13 +1625,13 @@
 /* Hover state that borrows the GAINS blue edge and bright text */
 .secondaryButton:hover {
   border-color: #4a9eff;
-  color: #ffffff;
+  color: var(--foreground);
 }
 
 /* Right-side hero visual placeholder styled as a subdued card */
 .heroIllustration {
-  background: #181c24;
-  border: 1px solid #2a303a;
+  background: var(--surface-card);
+  border: 1px solid var(--border-strong);
   border-radius: 14px;
   padding: 24px;
   display: flex;
@@ -1676,13 +1676,13 @@
 .chartPlaceholder {
   flex: 1;
   min-width: 200px;
-  background: #1f2430;
+  background: var(--surface-tertiary);
   border-radius: 12px;
   padding: 20px;
   display: flex;
   flex-direction: column;
   gap: 18px;
-  border: 1px solid #2d3442;
+  border: 1px solid var(--border-strong);
 }
 
 /* Vertical bars sized inline to hint at data visualization */
@@ -1730,7 +1730,7 @@
   font-size: 12px;
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  color: #8d96a7;
+  color: var(--text-muted);
   margin: 0;
 }
 
@@ -1738,7 +1738,7 @@
 .chartMetricValue {
   font-size: 16px;
   font-weight: 600;
-  color: #ffffff;
+  color: var(--foreground);
   margin: 0;
 }
 
@@ -1756,13 +1756,13 @@
   font-size: clamp(24px, 3vw, 30px);
   font-weight: 600;
   margin: 0;
-  color: #f4f7ff;
+  color: var(--foreground);
 }
 
 /* Subtitle copy in muted blue-grey for context */
 .sectionSubtitle {
   margin: 0;
-  color: #9aa3b5;
+  color: var(--text-muted);
   font-size: 15px;
   line-height: 1.6;
   max-width: 520px;
@@ -1778,8 +1778,8 @@
 
 /* Individual metric card styled like the dashboard tool list */
 .metricCard {
-  background: linear-gradient(135deg, #292929 0%, #222222 100%);
-  border: 1px solid #212326;
+  background: var(--surface-secondary);
+  border: 1px solid var(--border-strong);
   border-radius: 14px;
   padding: 24px;
   display: flex;
@@ -1791,7 +1791,7 @@
 .metricValue {
   font-size: 24px;
   font-weight: 600;
-  color: #ffffff;
+  color: var(--foreground);
   margin: 0;
 }
 
@@ -1800,7 +1800,7 @@
   font-size: 12px;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: #868fa3;
+  color: var(--text-muted);
   margin: 0;
 }
 
@@ -1829,8 +1829,8 @@
 
 /* Feature capsule mirroring left-panel cards */
 .featureCard {
-  background: linear-gradient(135deg, #292929 0%, #222222 100%);
-  border: 1px solid #1b1e22;
+  background: var(--surface-secondary);
+  border: 1px solid var(--border-strong);
   border-radius: 14px;
   padding: 24px;
   display: flex;
@@ -1857,13 +1857,13 @@
   font-size: 18px;
   font-weight: 600;
   margin: 0;
-  color: #f5f8ff;
+  color: var(--foreground);
 }
 
 /* Feature description copy */
 .featureDescription {
   margin: 0;
-  color: #a8b3c6;
+  color: var(--text-muted);
   font-size: 14px;
   line-height: 1.6;
 }
@@ -1873,8 +1873,8 @@
   display: grid;
   grid-template-columns: minmax(240px, 1fr) minmax(320px, 420px);
   gap: 28px;
-  background: linear-gradient(135deg, #292929 0%, #222222 100%);
-  border: 1px solid #17181a;
+  background: var(--surface-secondary);
+  border: 1px solid var(--border-strong);
   border-radius: 16px;
   padding: clamp(24px, 4vw, 40px);
   align-items: center;
@@ -1901,7 +1901,7 @@
 .previewList li {
   position: relative;
   padding-left: 18px;
-  color: #bec6d5;
+  color: var(--text-muted);
   font-size: 14px;
   line-height: 1.5;
 }
@@ -1932,8 +1932,8 @@
 
 /* Card showing the three step walkthrough */
 .previewCard {
-  background: #1b1f27;
-  border: 1px solid #2a3038;
+  background: var(--surface-card);
+  border: 1px solid var(--border-strong);
   border-radius: 14px;
   padding: 24px;
   display: flex;
@@ -1965,7 +1965,7 @@
 .previewTitle {
   font-size: 16px;
   font-weight: 600;
-  color: #f5f8ff;
+  color: var(--foreground);
 }
 
 /* Column of step rows */
@@ -1980,10 +1980,10 @@
   display: flex;
   gap: 12px;
   align-items: center;
-  background: linear-gradient(135deg, #151515 0%, #01010f 100%);
+  background: var(--surface-tertiary);
   border-radius: 12px;
   padding: 14px 16px;
-  border: 1px solid #2b313a;
+  border: 1px solid var(--border-strong);
 }
 
 /* Numbered badge for each workflow step */
@@ -2003,7 +2003,7 @@
 /* Step title text */
 .stepLabel {
   margin: 0;
-  color: #f0f3f9;
+  color: var(--foreground);
   font-weight: 600;
   font-size: 15px;
 }
@@ -2011,13 +2011,13 @@
 /* Step detail copy */
 .stepDescription {
   margin: 2px 0 0;
-  color: #9ea7bb;
+  color: var(--text-muted);
   font-size: 13px;
 }
 
 /* Final call-to-action panel matching other cards */
 .ctaSection {
-  background: linear-gradient(135deg, #151515 0%, #01010f 100%);
+  background: var(--surface-secondary);
   border: 1px solid #18191d;
   border-radius: 16px;
   padding: clamp(24px, 4vw, 40px);
@@ -2066,16 +2066,16 @@
 }
 
 .dashboardMockup {
-  background: #1a1a1a;
+  background: var(--surface-primary);
   border-radius: 8px;
   overflow: hidden;
   font-size: 12px;
 }
 
 .mockupHeader {
-  background: #2a2a2a;
+  background: var(--surface-secondary);
   padding: 8px 12px;
-  border-bottom: 1px solid #333;
+  border-bottom: 1px solid var(--border-muted);
 }
 
 .mockupNav {
@@ -2084,7 +2084,7 @@
 }
 
 .mockupNav span {
-  color: #ffffff;
+  color: var(--foreground);
   font-size: 11px;
   font-weight: 500;
 }
@@ -2097,18 +2097,18 @@
 
 .mockupLeftPanel {
   background: #1e1e1e;
-  border-right: 1px solid #333;
+  border-right: 1px solid var(--border-muted);
   padding: 12px;
 }
 
 .mockupRightPanel {
   background: #1e1e1e;
-  border-left: 1px solid #333;
+  border-left: 1px solid var(--border-muted);
   padding: 12px;
 }
 
 .mockupCenterPanel {
-  background: #1a1a1a;
+  background: var(--surface-primary);
   padding: 12px;
   display: flex;
   flex-direction: column;
@@ -2119,14 +2119,14 @@
 .mockupPanelHeader h4 {
   font-size: 12px;
   font-weight: 600;
-  color: #ffffff;
+  color: var(--foreground);
   margin: 0 0 8px 0;
 }
 
 .mockupDataCard,
 .mockupToolCard {
-  background: #2a2a2a;
-  border: 1px solid #333;
+  background: var(--surface-secondary);
+  border: 1px solid var(--border-muted);
   border-radius: 6px;
   padding: 8px;
   margin-bottom: 6px;
@@ -2149,7 +2149,7 @@
 .mockupToolInfo h5 {
   font-size: 11px;
   font-weight: 600;
-  color: #ffffff;
+  color: var(--foreground);
   margin: 0;
 }
 
@@ -2161,8 +2161,8 @@
 }
 
 .mockupDataTable {
-  background: #2a2a2a;
-  border: 1px solid #333;
+  background: var(--surface-secondary);
+  border: 1px solid var(--border-muted);
   border-radius: 6px;
   overflow: hidden;
   width: 100%;
@@ -2179,7 +2179,7 @@
 .mockupTableHeader span {
   font-size: 10px;
   font-weight: 600;
-  color: #ffffff;
+  color: var(--foreground);
   text-align: center;
 }
 
@@ -2187,7 +2187,7 @@
   display: grid;
   grid-template-columns: 1fr 1fr 1fr;
   padding: 4px 6px;
-  border-bottom: 1px solid #333;
+  border-bottom: 1px solid var(--border-muted);
 }
 
 .mockupTableRow:last-child {
@@ -2196,7 +2196,7 @@
 
 .mockupTableRow span {
   font-size: 10px;
-  color: #ffffff;
+  color: var(--foreground);
   text-align: center;
 }
 
@@ -2207,7 +2207,7 @@
 .mockupToolDetails h4 {
   font-size: 14px;
   font-weight: 600;
-  color: #ffffff;
+  color: var(--foreground);
   margin: 0 0 8px 0;
 }
 
@@ -2224,9 +2224,9 @@
 }
 
 .mockupActionButtons button {
-  background: #2a2a2a;
-  border: 1px solid #333;
-  color: #ffffff;
+  background: var(--surface-secondary);
+  border: 1px solid var(--border-muted);
+  color: var(--foreground);
   padding: 4px 8px;
   border-radius: 4px;
   cursor: pointer;
@@ -2236,13 +2236,13 @@
 .mockupCodeSection h4 {
   font-size: 12px;
   font-weight: 600;
-  color: #ffffff;
+  color: var(--foreground);
   margin: 0 0 8px 0;
 }
 
 .mockupCodeBlock {
   background: #0d1117;
-  border: 1px solid #333;
+  border: 1px solid var(--border-muted);
   border-radius: 6px;
   padding: 8px;
   max-width: 300px;
@@ -2260,7 +2260,7 @@
 .mockupArguments h4 {
   font-size: 12px;
   font-weight: 600;
-  color: #ffffff;
+  color: var(--foreground);
   margin: 0 0 8px 0;
 }
 
@@ -2272,15 +2272,15 @@
   display: block;
   font-size: 10px;
   font-weight: 500;
-  color: #ffffff;
+  color: var(--foreground);
   margin-bottom: 2px;
 }
 
 .mockupArgGroup input {
   width: 100%;
-  background: #2a2a2a;
-  border: 1px solid #333;
-  color: #ffffff;
+  background: var(--surface-secondary);
+  border: 1px solid var(--border-muted);
+  color: var(--foreground);
   padding: 4px 6px;
   border-radius: 4px;
   font-size: 9px;
@@ -2296,15 +2296,15 @@
 }
 
 .faqItem {
-  background: linear-gradient(135deg, #292929 0%, #222222 100%);
-  border: 1px solid #1b1e22;
+  background: var(--surface-secondary);
+  border: 1px solid var(--border-strong);
   border-radius: 12px;
   overflow: hidden;
   transition: all 0.3s ease;
 }
 
 .faqItem:hover {
-  border-color: #2a3038;
+  border-color: var(--accent-primary);
 }
 
 .faqQuestion {
@@ -2321,13 +2321,13 @@
 }
 
 .faqQuestion:hover {
-  background: rgba(255, 255, 255, 0.02);
+  background: var(--surface-tertiary);
 }
 
 .faqQuestionText {
   font-size: 16px;
   font-weight: 600;
-  color: #f5f8ff;
+  color: var(--foreground);
   margin: 0;
   flex: 1;
   padding-right: 16px;
@@ -2336,7 +2336,7 @@
 .faqIcon {
   font-size: 20px;
   font-weight: 300;
-  color: #4a9eff;
+  color: var(--accent-primary);
   transition: transform 0.3s ease;
   width: 24px;
   height: 24px;
@@ -2349,14 +2349,14 @@
 
 .faqIconOpen {
   transform: rotate(45deg);
-  background: rgba(74, 158, 255, 0.2);
+  background: var(--accent-primary-soft);
 }
 
 .faqAnswer {
   max-height: 0;
   overflow: hidden;
   transition: max-height 0.3s ease, padding 0.3s ease;
-  background: rgba(0, 0, 0, 0.1);
+  background: var(--surface-secondary);
 }
 
 .faqAnswerOpen {
@@ -2366,7 +2366,7 @@
 
 .faqAnswer p {
   margin: 0;
-  color: #a8b3c6;
+  color: var(--text-muted);
   font-size: 15px;
   line-height: 1.6;
   padding-top: 8px;
@@ -2387,8 +2387,8 @@
 /* Learn Page Styles */
 .learnContainer {
   min-height: calc(100vh - var(--header-height));
-  background: #1a1a1a;
-  color: #ffffff;
+  background: var(--surface-primary);
+  color: var(--foreground);
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
   padding: 0;
   display: flex;
@@ -2397,10 +2397,10 @@
 }
 
 .learnHeader {
-  background: #1f1f1f;
+  background: var(--surface-tertiary);
   padding: 60px 24px;
   text-align: center;
-  border-bottom: 1px solid #333;
+  border-bottom: 1px solid var(--border-muted);
 }
 
 .learnHeader h1 {
@@ -2415,7 +2415,7 @@
 
 .learnHeader p {
   font-size: 1.2rem;
-  color: #cccccc;
+  color: var(--text-muted);
   margin: 0;
   max-width: 600px;
   margin: 0 auto;
@@ -2434,8 +2434,8 @@
 }
 
 .tableOfContents {
-  background: #1a1a1a;
-  border-right: 1px solid #2a2a2a;
+  background: var(--surface-primary);
+  border-right: 1px solid var(--surface-secondary);
   padding: 24px 16px;
   overflow-y: auto;
   height: 100%;
@@ -2448,7 +2448,7 @@
   font-size: 24px;
   font-weight: 600;
   margin: 0 0 8px 0;
-  color: #ffffff;
+  color: var(--foreground);
   padding: 0 8px;
   width: 100%;
   box-sizing: border-box;
@@ -2456,7 +2456,7 @@
 
 .tableOfContents p {
   font-size: 14px;
-  color: #8a8a8a;
+  color: var(--text-muted);
   margin: 0 0 24px 0;
   padding: 0 8px;
   line-height: 1.4;
@@ -2477,8 +2477,8 @@
 
 .chapterButton {
   width: 100%;
-  background: #242424;
-  border: 2px solid #2a2a2a;
+  background: var(--surface-secondary);
+  border: 1px solid var(--border-strong);
   border-radius: 12px;
   padding: 16px 20px 20px;
   cursor: pointer;
@@ -2493,9 +2493,9 @@
 }
 
 .chapterButton:hover {
-  border-color: #3a3a3a;
+  border-color: var(--accent-primary);
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 4px 12px var(--shadow-color, rgba(0, 0, 0, 0.3));
 }
 
 .chapterButton:focus {
@@ -2511,8 +2511,8 @@
 }
 
 .chapterNumber {
-  background: #4a9eff;
-  color: #ffffff;
+  background: var(--accent-primary);
+  color: var(--on-accent);
   width: 24px;
   height: 24px;
   border-radius: 50%;
@@ -2528,7 +2528,7 @@
   flex: 1;
   font-size: 16px;
   font-weight: 600;
-  color: #ffffff;
+  color: var(--foreground);
   line-height: 1.2;
   margin: 0;
 }
@@ -2540,7 +2540,7 @@
 .expandIcon {
   transition: transform 0.3s ease;
   font-size: 0.8rem;
-  color: #4a9eff;
+  color: var(--accent-primary);
 }
 
 .expandIcon.expanded {
@@ -2552,24 +2552,24 @@
   overflow-y: auto;
   height: 100%;
   width: 100%;
-  background: #1a1a1a;
+  background: var(--surface-primary);
   box-sizing: border-box;
 }
 
 .chapterSection {
   margin-bottom: 32px;
-  border: 1px solid #333;
+  border: 1px solid var(--border-muted);
   border-radius: 12px;
   overflow: hidden;
-  background: #1f1f1f;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  background: var(--surface-tertiary);
+  box-shadow: 0 4px 12px var(--shadow-color, rgba(0, 0, 0, 0.3));
 }
 
 .chapterHeader {
   width: 100%;
-  background: #2a2a2a;
+  background: var(--surface-secondary);
   border: none;
-  color: #ffffff;
+  color: var(--foreground);
   padding: 20px 24px;
   cursor: pointer;
   transition: all 0.3s ease;
@@ -2581,7 +2581,7 @@
 }
 
 .chapterHeader:hover {
-  background: #333;
+  background: var(--surface-tertiary);
 }
 
 .chapterHeader h2 {
@@ -2589,12 +2589,12 @@
   font-size: 1.4rem;
   font-weight: 600;
   flex: 1;
-  color: #ffffff;
+  color: var(--foreground);
 }
 
 .chapterHeader .chapterNumber {
-  background: #4a9eff;
-  color: #ffffff;
+  background: var(--accent-primary);
+  color: var(--on-accent);
   width: 32px;
   height: 32px;
   border-radius: 50%;
@@ -2608,7 +2608,7 @@
 
 .chapterBody {
   padding: 24px;
-  background: #1a1a1a;
+  background: var(--surface-primary);
   animation: slideDown 0.3s ease-out;
 }
 
@@ -2624,21 +2624,21 @@
 }
 
 .chapterContent h3 {
-  color: #ffffff;
+  color: var(--foreground);
   font-size: 1.5rem;
   margin: 24px 0 16px 0;
-  border-bottom: 1px solid #333;
+  border-bottom: 1px solid var(--border-muted);
   padding-bottom: 8px;
 }
 
 .chapterContent h4 {
-  color: #ffffff;
+  color: var(--foreground);
   font-size: 1.2rem;
   margin: 20px 0 12px 0;
 }
 
 .chapterContent h5 {
-  color: #ffffff;
+  color: var(--foreground);
   font-size: 1rem;
   margin: 16px 0 8px 0;
 }
@@ -2670,8 +2670,8 @@
 }
 
 .codeExample {
-  background: #1f1f1f;
-  border: 1px solid #333;
+  background: var(--surface-tertiary);
+  border: 1px solid var(--border-muted);
   border-radius: 8px;
   padding: 16px;
   margin: 16px 0;
@@ -2693,7 +2693,7 @@
 
 .codeExample code {
   background: transparent;
-  color: #ffffff;
+  color: var(--foreground);
   padding: 0;
   font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
   font-size: 0.85rem;
@@ -2708,10 +2708,10 @@
 }
 
 .learnFooter {
-  background: #1f1f1f;
+  background: var(--surface-tertiary);
   padding: 40px 24px;
   text-align: center;
-  border-top: 1px solid #333;
+  border-top: 1px solid var(--border-muted);
   margin-top: auto;
   flex-shrink: 0;
 }
@@ -2739,7 +2739,7 @@
 
 .primaryButton {
   background: linear-gradient(45deg, #4a9eff, #8fbfff);
-  color: #ffffff;
+  color: var(--on-accent);
   padding: 12px 24px;
   border-radius: 8px;
   text-decoration: none;
@@ -2755,7 +2755,7 @@
 
 .secondaryButton {
   background: transparent;
-  color: #ffffff;
+  color: var(--foreground);
   padding: 12px 24px;
   border: 2px solid #4a9eff;
   border-radius: 8px;
@@ -2779,7 +2779,7 @@
   
   .tableOfContents {
     border-right: none;
-    border-bottom: 1px solid #333;
+    border-bottom: 1px solid var(--border-muted);
     max-height: 300px;
     overflow-y: auto;
   }

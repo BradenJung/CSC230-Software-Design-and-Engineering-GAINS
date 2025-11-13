@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import Header from "../components/header";
 import styles from "../styles/Home.module.css";
+import AccessibilityButton from "../components/AccessibilityButton";
 
 const metrics = [
   { label: "Datasets Analyzed", value: "1,200+" },
@@ -236,6 +237,7 @@ export default function Home() {
           </div>
         </section>
       </main>
+      <AccessibilityButton />
     </div>
   );
 }

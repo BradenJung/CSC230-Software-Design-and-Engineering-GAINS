@@ -4,6 +4,7 @@ import Head from "next/head";
 import Header from "../components/header";
 import styles from "../styles/Home.module.css";
 import CodexTool from "../components/CodexTool";
+import AccessibilityButton from "../components/AccessibilityButton";
 
 export default function Codex() {
   return (
@@ -14,6 +15,7 @@ export default function Codex() {
 
       <Header />
       <CodexTool />
+      <AccessibilityButton />
 
       <main className={styles.pageMain}>
         <section className={styles.pageCard}>

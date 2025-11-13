@@ -1,7 +1,60 @@
 :root {
-  --background: #1a1a1a;
+  --background: var(--surface-primary);
   --foreground: #ffffff;
+  --text-muted: #9c9c9c;
+  --on-accent: #ffffff;
   --header-height: 46px;
+  --surface-primary: #1a1a1a;
+  --surface-secondary: #2a2a2a;
+  --surface-tertiary: #1f1f1f;
+  --surface-card: #181c24;
+  --border-muted: #333333;
+  --border-strong: #191d27;
+  --accent-primary: #4a9eff;
+  --accent-primary-strong: #275fbe;
+  --accent-primary-soft: rgba(74, 158, 255, 0.18);
+  --danger-primary: #ff7d7d;
+  --danger-primary-strong: #d43b3b;
+  --danger-soft: rgba(255, 125, 125, 0.18);
+  --home-gradient-start: #191919;
+  --home-gradient-end: #020202;
+  --hero-gradient-start: #2d2d2d;
+  --hero-gradient-end: #000005;
+  --panel-background: rgba(15, 15, 15, 0.95);
+  --panel-border: rgba(255, 255, 255, 0.15);
+  --circle-background: rgba(255, 255, 255, 0.08);
+  --circle-border: rgba(255, 255, 255, 0.25);
+  --circle-background-active: rgba(255, 255, 255, 0.2);
+  --shadow-color: rgba(0, 0, 0, 0.45);
+}
+
+:root.theme-light {
+  --background: var(--surface-primary);
+  --foreground: #0f1b2b;
+  --text-muted: #4d5569;
+  --on-accent: #ffffff;
+  --surface-primary: #ffffff;
+  --surface-secondary: #e8edf7;
+  --surface-tertiary: #dbe3f2;
+  --surface-card: #f6f8fc;
+  --border-muted: #d7ddeb;
+  --border-strong: #c6d2ea;
+  --accent-primary: #3a71ff;
+  --accent-primary-strong: #1f54d2;
+  --accent-primary-soft: rgba(58, 113, 255, 0.18);
+  --danger-primary: #ff7d7d;
+  --danger-primary-strong: #d43b3b;
+  --danger-soft: rgba(255, 125, 125, 0.18);
+  --home-gradient-start: #ffffff;
+  --home-gradient-end: #e4eaf7;
+  --hero-gradient-start: #ffffff;
+  --hero-gradient-end: #dee6f6;
+  --panel-background: rgba(255, 255, 255, 0.92);
+  --panel-border: rgba(0, 0, 0, 0.15);
+  --circle-background: rgba(0, 0, 0, 0.05);
+  --circle-border: rgba(0, 0, 0, 0.25);
+  --circle-background-active: rgba(0, 0, 0, 0.15);
+  --shadow-color: rgba(15, 15, 15, 0.25);
 }
 
 html,
@@ -33,4 +86,9 @@ a {
 
 html {
   color-scheme: dark;
+}
+
+html.theme-light,
+body.theme-light {
+  color-scheme: light;
 }
