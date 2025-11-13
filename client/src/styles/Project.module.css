@@ -115,7 +115,7 @@
 .projectCard {
   width: 100%;
   background: rgba(244, 247, 252, 0.12);
-  border: 2px solid #30c8f7;
+  border: 2px solid #3a4150;
   border-radius: 18px;
   padding: 18px 22px;
   display: flex;
@@ -131,6 +131,7 @@
 .projectCard:hover {
   transform: translateY(-2px);
   box-shadow: 0 12px 28px rgba(9, 15, 36, 0.35);
+  border-color: #4a9eff;
 }
 
 .projectCardDeleteMode {

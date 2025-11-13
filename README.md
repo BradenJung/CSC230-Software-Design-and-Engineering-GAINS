@@ -41,25 +41,21 @@
 
 ## Installation
 ```bash
-# From the repository root
-cd client
-npm install
-
-cd ../server
+# From the repository root (installs workspace dependencies for both apps)
 npm install
 ```
 
 ## Running the Frontend and Backend Separately
 ```bash
-# Terminal 1 – start the backend (defaults to http://localhost:3000)
+# Terminal 1 – start the backend (defaults to http://localhost:4000)
 cd server
-npm start
+npm run dev     # use `npm start` for a non-reloading process
 
-# Terminal 2 – start the Next.js dev server (runs on http://localhost:3001)
+# Terminal 2 – start the Next.js dev server (runs on http://localhost:3000)
 cd client
 npm run dev
 ```
-Set `FRONTEND_ORIGIN=http://localhost:3001` when starting the backend if you need to customize ports.
+Set `CORS_ORIGIN=http://localhost:3000` (or your chosen frontend URL) when starting the backend if you need to customize ports.
 
 ## Running Both Services via Script
 ```bash
@@ -69,7 +65,9 @@ chmod +x start-services.sh
 # Launch backend and frontend together
 ./start-services.sh
 ```
-The script installs dependencies if needed, starts the Express server, and launches the Next.js dev server. Press `Ctrl+C` once to stop both processes.
+The script installs missing dependencies (via `npm install` at the repo root) and then delegates to `npm run dev`, which starts the backend watcher and the Next.js dev server in parallel. Press `Ctrl+C` once to stop both processes.
+
+You can also run `npm run dev` directly from the repository root if you prefer not to use the shell script.
 
 ## Development Tips
 - Inspect `localStorage` in your browser developer tools to watch account keys update (`gains.activeAccount`, `gains-projects`).

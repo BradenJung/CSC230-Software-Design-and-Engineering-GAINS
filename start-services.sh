@@ -3,28 +3,21 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-# Install and start client dev server
-(
-  cd "$SCRIPT_DIR/client"
-  npm install
-  npm run dev
-) &
-CLIENT_PID=$!
-
-# Install and start server
-(
-  cd "$SCRIPT_DIR/server"
-  npm install
-  npm start
-) &
-SERVER_PID=$!
-
-cleanup() {
-  trap - INT TERM EXIT
-  kill "$CLIENT_PID" "$SERVER_PID" 2>/dev/null || true
+ensure_dependencies() {
+  # Only run a full workspace install if any node_modules are missing.
+  if [[ ! -d "$SCRIPT_DIR/node_modules" || \
+        ! -d "$SCRIPT_DIR/client/node_modules" || \
+        ! -d "$SCRIPT_DIR/server/node_modules" ]]; then
+    echo "[deps] Installing workspace packages..."
+    (cd "$SCRIPT_DIR" && npm install)
+  fi
 }
 
-trap cleanup INT TERM EXIT
+start_services() {
+  echo "[run] Starting backend and frontend (npm run dev)..."
+  cd "$SCRIPT_DIR"
+  npm run dev
+}
 
-wait "$CLIENT_PID"
-wait "$SERVER_PID"
+ensure_dependencies
+start_services

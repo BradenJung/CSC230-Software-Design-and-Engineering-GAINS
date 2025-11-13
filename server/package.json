@@ -1,13 +1,20 @@
 {
-  "name": "gains-server",
-  "version": "1.0.0",
-  "description": "Minimal Node.js server scaffold for the GAINS project.",
+  "name": "server",
   "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "main": "express.js",
   "scripts": {
-    "start": "node index.js"
+    "dev": "nodemon express.js",
+    "start": "node express.js"
   },
   "dependencies": {
     "cors": "^2.8.5",
-    "express": "^4.19.2"
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "mongodb": "^6.10.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.0"
   }
 }
