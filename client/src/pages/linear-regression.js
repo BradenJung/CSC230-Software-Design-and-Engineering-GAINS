@@ -1036,9 +1036,10 @@ print(paste("Degrees of freedom:", t_test_result$parameter))`;
       id: "linear-regression",
       name: "Linear Regression",
       description: "A model that estimates the relationship between a scalar response.",
-      icon: "📊",
+      icon: "/images/tools/linear.png",
       color: "#ff4444",
-      chartIcon: "📈",
+      chartIcon: "/images/tools/linear.png",
+      useImage: true,
       rCode: `# Initialize data
 df <- data.frame(
   y = c(5, 7, 8, 6, 9),
@@ -1088,9 +1089,10 @@ model <- lm(
       id: "bar-chart",
       name: "Bar Chart",
       description: "Visualize the frequency or proportion of categories using bars.",
-      icon: "📊",
+      icon: "/images/tools/bar.png",
       color: "#4444ff",
-      chartIcon: "📊",
+      chartIcon: "/images/tools/bar.png",
+      useImage: true,
       rCode: `# Initialize data
 categories <- c("A", "B", "C", "D", "E")
 values <- c(23, 45, 56, 78, 32)
@@ -1131,9 +1133,10 @@ barplot(
       id: "line-chart",
       name: "Line Chart",
       description: "Display trends over time or sequential data.",
-      icon: "📈",
+      icon: "/images/tools/line.png",
       color: "#44ffaa",
-      chartIcon: "📈",
+      chartIcon: "/images/tools/line.png",
+      useImage: true,
       rCode: `# Initialize data
 time_points <- c(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)
 values <- c(12, 15, 18, 22, 25, 23, 28, 32, 30, 35)
@@ -1185,9 +1188,10 @@ points(df$time, df$value, col = "red", pch = 16)`,
       id: "dot-plot",
       name: "Dot Plot",
       description: "Visualize paired values with a scatter-style dot plot.",
-      icon: "⚫️",
+      icon: "/images/tools/dot.png",
       color: "#6f42c1",
-      chartIcon: "⚫️",
+      chartIcon: "/images/tools/dot.png",
+      useImage: true,
       rCode: `# Initialize data
 x_values <- c(1, 2, 3, 4, 5, 6)
 y_values <- c(2.5, 3.1, 4.8, 3.6, 5.2, 4.9)
@@ -1235,9 +1239,10 @@ grid(col = "lightgray")`,
       id: "pie-chart",
       name: "Pie Chart",
       description: "Display proportional data as slices of a circular chart.",
-      icon: "🥧",
+      icon: "/images/tools/pie.png",
       color: "#ff6b35",
-      chartIcon: "🥧",
+      chartIcon: "/images/tools/pie.png",
+      useImage: true,
       rCode: `# Define the data vector with the number of articles
 x <- c(210, 450, 250, 100, 50, 90)
 
@@ -1276,9 +1281,10 @@ dev.off()`,
       id: "histogram",
       name: "Histogram",
       description: "Display the distribution of a single numeric variable using bars.",
-      icon: "📊",
+      icon: "/images/tools/histogram.png",
       color: "#8e44ad",
-      chartIcon: "📊",
+      chartIcon: "/images/tools/histogram.png",
+      useImage: true,
       rCode: `# Initialize data
 values <- c(12, 15, 18, 22, 25, 23, 28, 32, 30, 35, 18, 22, 25, 28, 30)
 
@@ -1318,9 +1324,10 @@ hist(
       id: "density-plot",
       name: "Density Plot",
       description: "Display the probability density function of a numeric variable.",
-      icon: "📈",
+      icon: "/images/tools/density.png",
       color: "#27ae60",
-      chartIcon: "📈",
+      chartIcon: "/images/tools/density.png",
+      useImage: true,
       rCode: `# Initialize data
 values <- c(12, 15, 18, 22, 25, 23, 28, 32, 30, 35, 18, 22, 25, 28, 30)
 
@@ -1362,9 +1369,10 @@ polygon(density(values), col = "lightblue", border = "blue")`,
       id: "box-plot",
       name: "Box Plot",
       description: "Display the distribution of data using quartiles and outliers.",
-      icon: "📦",
+      icon: "/images/tools/box.png",
       color: "#e67e22",
-      chartIcon: "📦",
+      chartIcon: "/images/tools/box.png",
+      useImage: true,
       rCode: `# Initialize data
 values <- c(12, 15, 18, 22, 25, 23, 28, 32, 30, 35, 18, 22, 25, 28, 30)
 
@@ -1833,11 +1841,15 @@ print(paste("Degrees of freedom:", t_test_result$parameter))`,
                   className={`${styles.toolCard} ${selectedTool === tool.id ? styles.selected : ''}`}
                   onClick={() => handleToolSelection(tool.id)}
                 >
-                  <div className={styles.toolCardVisual}>
-                    <div className={styles.toolVisualization} style={{ color: tool.color }}>
-                      {tool.chartIcon}
-                    </div>
+                <div className={styles.toolCardVisual}>
+                  <div className={styles.toolVisualization} style={{ color: tool.color }}>
+                    {tool.useImage ? (
+                      <img src={tool.chartIcon} alt={tool.name} style={{ width: '50%', height: '35%', objectFit: 'contain', marginLeft: '25%', marginTop: '-16px', marginBottom: '-46px' }} />
+                    ) : (
+                      tool.chartIcon
+                    )}
                   </div>
+                </div>
                   <div className={styles.toolCardContent}>
                     <h3>{tool.name}</h3>
                     <p>{tool.description}</p>
@@ -1857,7 +1869,11 @@ print(paste("Degrees of freedom:", t_test_result$parameter))`,
               
               <div className={styles.toolVisual}>
                 <div className={styles.chartIcon} style={{ color: currentTool?.color }}>
-                  {currentTool?.chartIcon}
+                  {currentTool?.useImage ? (
+                    <img src={currentTool?.chartIcon} alt={currentTool?.name} style={{ width: '50%', height: '30%', objectFit: 'contain' }} />
+                  ) : (
+                    currentTool?.chartIcon
+                  )}
                 </div>
               </div>
             </div>
