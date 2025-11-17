@@ -99,11 +99,17 @@ export const EditableDataTable = ({
     switch (selectedTool) {
       case 'linear-regression':
         if (responseColumn === columnName) {
+          // Deselect response column
           onColumnSelectionChange('response', null);
         } else if (predictorColumns.includes(columnName)) {
+          // Deselect predictor column
           onColumnSelectionChange('predictor', columnName, false);
-        } else {
+        } else if (!responseColumn) {
+          // If no response column, select as response
           onColumnSelectionChange('response', columnName);
+        } else {
+          // If response exists, select as predictor
+          onColumnSelectionChange('predictor', columnName, true);
         }
         break;
       case 'bar-chart':
@@ -194,6 +200,24 @@ export const EditableDataTable = ({
           onColumnSelectionChange('value', columnName);
         }
         break;
+      case 'anova':
+      case 'bayesian':
+        if (categoryColumn === columnName) {
+          onColumnSelectionChange('category', null);
+        } else if (valueColumn === columnName) {
+          onColumnSelectionChange('value', null);
+        } else {
+          // Toggle between category and value
+          if (!categoryColumn) {
+            onColumnSelectionChange('category', columnName);
+          } else if (!valueColumn) {
+            onColumnSelectionChange('value', columnName);
+          } else {
+            // Replace category with new selection
+            onColumnSelectionChange('category', columnName);
+          }
+        }
+        break;
     }
   };
 
@@ -249,6 +273,14 @@ export const EditableDataTable = ({
         break;
       case 'box-plot':
         if (valueColumn === columnName) {
+          className += ` ${styles.valueColumn}`;
+        }
+        break;
+      case 'anova':
+      case 'bayesian':
+        if (categoryColumn === columnName) {
+          className += ` ${styles.categoryColumn}`;
+        } else if (valueColumn === columnName) {
           className += ` ${styles.valueColumn}`;
         }
         break;
@@ -315,6 +347,15 @@ export const EditableDataTable = ({
           return 'Click to deselect as value column';
         }
         return 'Click to select as value column';
+      case 'anova':
+      case 'bayesian':
+        if (categoryColumn === columnName) {
+          return 'Click to deselect as group column';
+        }
+        if (valueColumn === columnName) {
+          return 'Click to deselect as value column';
+        }
+        return 'Click to select as group or value column';
       default:
         return 'Click to toggle column selection';
     }
@@ -372,6 +413,18 @@ export const EditableDataTable = ({
                     <span className={styles.columnBadge}>Value</span>
                   )}
                   {selectedTool === 'box-plot' && valueColumn === columnName && (
+                    <span className={styles.columnBadge}>Value</span>
+                  )}
+                  {selectedTool === 'anova' && categoryColumn === columnName && (
+                    <span className={styles.columnBadge}>Group</span>
+                  )}
+                  {selectedTool === 'anova' && valueColumn === columnName && (
+                    <span className={styles.columnBadge}>Value</span>
+                  )}
+                  {selectedTool === 'bayesian' && categoryColumn === columnName && (
+                    <span className={styles.columnBadge}>Group</span>
+                  )}
+                  {selectedTool === 'bayesian' && valueColumn === columnName && (
                     <span className={styles.columnBadge}>Value</span>
                   )}
                 </div>

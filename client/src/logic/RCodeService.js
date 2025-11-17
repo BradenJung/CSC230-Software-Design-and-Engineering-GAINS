@@ -90,6 +90,19 @@ export class RCodeService {
         return this.generateDensityPlotCode(data, selections.valueColumn);
       case 'box-plot':
         return this.generateBoxPlotCode(data, selections.valueColumn);
+      case 'anova':
+        return this.generateANOVACode(data, selections.categoryColumn, selections.valueColumn);
+      case 'bayesian':
+        return this.generateBayesianCode(data, selections.categoryColumn, selections.valueColumn);
+      case 'iqr':
+      case 'standard-deviation':
+      case 'median':
+      case 'read-csv':
+      case 'combinations':
+      case 'permutations':
+      case 'z-value':
+      case 't-test':
+        return this.getDefaultCode(toolId);
       default:
         return this.getDefaultCode(toolId);
     }
@@ -468,6 +481,77 @@ boxplot(
   }
 
   /**
+   * Generate R code for ANOVA based on data
+   * @param {Array<Object>} data - Parsed CSV data
+   * @param {string} categoryColumn - Name of the group column
+   * @param {string} valueColumn - Name of the value column
+   * @returns {string} Generated R code
+   */
+  static generateANOVACode(data, categoryColumn, valueColumn) {
+    if (!data || data.length === 0 || !categoryColumn || !valueColumn) {
+      return this.getDefaultANOVACode();
+    }
+
+    const categories = data.map(row => row[categoryColumn]).filter(val => val !== '');
+    const values = data.map(row => row[valueColumn]).filter(val => val !== '');
+
+    const rCode = `# Initialize data
+df <- data.frame(
+  value = c(${values.join(', ')}),
+  group = factor(c(${categories.map(cat => `"${cat}"`).join(', ')}))
+)
+
+# Fit ANOVA model
+anova_model <- aov(value ~ group, data = df)
+
+# Display summary
+summary(anova_model)
+
+# Post-hoc test (Tukey's HSD)
+TukeyHSD(anova_model)`;
+
+    return rCode;
+  }
+
+  /**
+   * Generate R code for Bayesian model based on data
+   * @param {Array<Object>} data - Parsed CSV data
+   * @param {string} categoryColumn - Name of the group column
+   * @param {string} valueColumn - Name of the value column
+   * @returns {string} Generated R code
+   */
+  static generateBayesianCode(data, categoryColumn, valueColumn) {
+    if (!data || data.length === 0 || !categoryColumn || !valueColumn) {
+      return this.getDefaultBayesianCode();
+    }
+
+    const categories = data.map(row => row[categoryColumn]).filter(val => val !== '');
+    const values = data.map(row => row[valueColumn]).filter(val => val !== '');
+
+    const rCode = `# Install and load required package
+# install.packages("BayesFactor")
+library(BayesFactor)
+
+# Initialize data
+df <- data.frame(
+  value = c(${values.join(', ')}),
+  group = factor(c(${categories.map(cat => `"${cat}"`).join(', ')}))
+)
+
+# Perform Bayesian t-test
+bayes_test <- ttestBF(formula = value ~ group, data = df)
+
+# Display results
+print(bayes_test)
+
+# Alternative: Bayesian linear regression
+# bayes_lm <- lmBF(formula = y ~ x, data = df)
+# summary(bayes_lm)`;
+
+    return rCode;
+  }
+
+  /**
    * Generate histogram code with custom arguments
    * @param {Array<Object>} data - Parsed CSV data
    * @param {string} valueColumn - Name of the value column
@@ -814,6 +898,26 @@ dev.off()`;
         return this.getDefaultDensityPlotCode();
       case 'box-plot':
         return this.getDefaultBoxPlotCode();
+      case 'iqr':
+        return this.getDefaultIQRCode();
+      case 'standard-deviation':
+        return this.getDefaultStandardDeviationCode();
+      case 'median':
+        return this.getDefaultMedianCode();
+      case 'read-csv':
+        return this.getDefaultReadCSVCode();
+      case 'combinations':
+        return this.getDefaultCombinationsCode();
+      case 'permutations':
+        return this.getDefaultPermutationsCode();
+      case 'anova':
+        return this.getDefaultANOVACode();
+      case 'bayesian':
+        return this.getDefaultBayesianCode();
+      case 'z-value':
+        return this.getDefaultZValueCode();
+      case 't-test':
+        return this.getDefaultTTestCode();
       default:
         return this.getDefaultLinearRegressionCode();
     }
@@ -1470,5 +1574,215 @@ boxplot(
    */
   static validateDataForLinearRegression(data) {
     return this.validateData(data, 'linear-regression');
+  }
+
+  /**
+   * Get default IQR code
+   * @returns {string} Default R code
+   */
+  static getDefaultIQRCode() {
+    return `# Initialize data
+values <- c(12, 15, 18, 22, 25, 23, 28, 32, 30, 35, 18, 22, 25, 28, 30)
+
+# Calculate IQR
+iqr_value <- IQR(values, na.rm = TRUE)
+
+# Print result
+print(paste("Interquartile Range:", iqr_value))`;
+  }
+
+  /**
+   * Get default standard deviation code
+   * @returns {string} Default R code
+   */
+  static getDefaultStandardDeviationCode() {
+    return `# Initialize data
+values <- c(12, 15, 18, 22, 25, 23, 28, 32, 30, 35, 18, 22, 25, 28, 30)
+
+# Calculate standard deviation
+sd_value <- sd(values, na.rm = TRUE)
+
+# Print result
+print(paste("Standard Deviation:", sd_value))`;
+  }
+
+  /**
+   * Get default median code
+   * @returns {string} Default R code
+   */
+  static getDefaultMedianCode() {
+    return `# Initialize data
+values <- c(12, 15, 18, 22, 25, 23, 28, 32, 30, 35, 18, 22, 25, 28, 30)
+
+# Calculate median
+median_value <- median(values, na.rm = TRUE)
+
+# Print result
+print(paste("Median:", median_value))`;
+  }
+
+  /**
+   * Get default read CSV code
+   * @returns {string} Default R code
+   */
+  static getDefaultReadCSVCode() {
+    return `# Read CSV file
+data <- read.csv(
+  file = "data.csv",
+  header = TRUE,
+  sep = ",",
+  quote = "\\"",
+  dec = ".",
+  fill = TRUE,
+  comment.char = "",
+  stringsAsFactors = FALSE
+)
+
+# Display first few rows
+head(data)
+
+# Display structure
+str(data)`;
+  }
+
+  /**
+   * Get default combinations code
+   * @returns {string} Default R code
+   */
+  static getDefaultCombinationsCode() {
+    return `# Calculate combinations: choose(n, k)
+# n: total number of items
+# k: number of items to choose
+
+n <- 10
+k <- 3
+
+# Calculate combinations
+combinations <- choose(n, k)
+
+# Print result
+print(paste("Number of ways to choose", k, "items from", n, "items:", combinations))`;
+  }
+
+  /**
+   * Get default permutations code
+   * @returns {string} Default R code
+   */
+  static getDefaultPermutationsCode() {
+    return `# Calculate permutations
+# n: total number of items
+# k: number of items to arrange
+
+n <- 10
+k <- 3
+
+# Calculate permutations using factorial
+permutations <- factorial(n) / factorial(n - k)
+
+# Print result
+print(paste("Number of permutations of", k, "items from", n, "items:", permutations))`;
+  }
+
+  /**
+   * Get default ANOVA code
+   * @returns {string} Default R code
+   */
+  static getDefaultANOVACode() {
+    return `# Initialize data
+group1 <- c(23, 25, 27, 29, 31)
+group2 <- c(30, 32, 34, 36, 38)
+group3 <- c(18, 20, 22, 24, 26)
+
+# Create data frame
+df <- data.frame(
+  values = c(group1, group2, group3),
+  group = factor(rep(c("Group1", "Group2", "Group3"), each = 5))
+)
+
+# Fit ANOVA model
+anova_model <- aov(values ~ group, data = df)
+
+# Display summary
+summary(anova_model)
+
+# Post-hoc test (Tukey's HSD)
+TukeyHSD(anova_model)`;
+  }
+
+  /**
+   * Get default Bayesian code
+   * @returns {string} Default R code
+   */
+  static getDefaultBayesianCode() {
+    return `# Install and load required package
+# install.packages("BayesFactor")
+library(BayesFactor)
+
+# Initialize data
+df <- data.frame(
+  value = c(12, 15, 18, 22, 25, 23, 28, 32, 30, 35),
+  group = factor(c(rep("A", 5), rep("B", 5)))
+)
+
+# Perform Bayesian t-test
+bayes_test <- ttestBF(formula = value ~ group, data = df)
+
+# Display results
+print(bayes_test)
+
+# Alternative: Bayesian linear regression
+# bayes_lm <- lmBF(formula = y ~ x, data = df)
+# summary(bayes_lm)`;
+  }
+
+  /**
+   * Get default Z-value code
+   * @returns {string} Default R code
+   */
+  static getDefaultZValueCode() {
+    return `# Calculate Z-value
+sample_mean <- 52
+population_mean <- 50
+standard_deviation <- 5
+sample_size <- 30
+
+# Calculate standard error
+standard_error <- standard_deviation / sqrt(sample_size)
+
+# Calculate Z-value
+z_value <- (sample_mean - population_mean) / standard_error
+
+# Print result
+print(paste("Z-value:", z_value))
+
+# Calculate p-value (two-tailed)
+p_value <- 2 * pnorm(-abs(z_value))
+print(paste("P-value (two-tailed):", p_value))`;
+  }
+
+  /**
+   * Get default t-test code
+   * @returns {string} Default R code
+   */
+  static getDefaultTTestCode() {
+    return `# Initialize data
+group1 <- c(23, 25, 27, 29, 31, 33, 35)
+group2 <- c(18, 20, 22, 24, 26, 28, 30)
+
+# Perform t-test
+t_test_result <- t.test(
+  group1, 
+  group2,
+  paired = FALSE,
+  var.equal = FALSE
+)
+
+# Print results
+print(t_test_result)
+
+# Extract specific values
+print(paste("T-statistic:", t_test_result$statistic))
+print(paste("P-value:", t_test_result$p.value))
+print(paste("Degrees of freedom:", t_test_result$parameter))`;
   }
 }

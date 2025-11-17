@@ -24,7 +24,17 @@ const TOOL_ID_TO_STORAGE_VALUE = {
   "pie-chart": "PieChart",
   "histogram": "Histogram",
   "density-plot": "DensityPlot",
-  "box-plot": "BoxPlot"
+  "box-plot": "BoxPlot",
+  "iqr": "IQR",
+  "standard-deviation": "StandardDeviation",
+  "median": "Median",
+  "read-csv": "ReadCSV",
+  "combinations": "Combinations",
+  "permutations": "Permutations",
+  "anova": "ANOVA",
+  "bayesian": "Bayesian",
+  "z-value": "ZValue",
+  "t-test": "TTest"
 };
 // Normalize stored values back into kebab-case ids
 const TOOL_STORAGE_VALUE_TO_ID = {
@@ -35,7 +45,17 @@ const TOOL_STORAGE_VALUE_TO_ID = {
   PieChart: "pie-chart",
   Histogram: "histogram",
   DensityPlot: "density-plot",
-  BoxPlot: "box-plot"
+  BoxPlot: "box-plot",
+  IQR: "iqr",
+  StandardDeviation: "standard-deviation",
+  Median: "median",
+  ReadCSV: "read-csv",
+  Combinations: "combinations",
+  Permutations: "permutations",
+  ANOVA: "anova",
+  Bayesian: "bayesian",
+  ZValue: "z-value",
+  TTest: "t-test"
 };
 
 // Normalize any persisted tool identifier, legacy or current, back into the canonical id.
@@ -311,20 +331,166 @@ export default function linear() {
     projectVersion
   });
 
+  // Helper function to generate R code for one-function tools
+  const generateOneFunctionToolCode = useCallback((toolId, args, currentToolArg) => {
+    // If no custom arguments provided, just return the default code
+    if (!args || Object.keys(args).length === 0) {
+      return RCodeService.getDefaultCode(toolId);
+    }
+    
+    const defaultArgs = currentToolArg?.arguments || [];
+    
+    // Get values from customArguments or fall back to default values
+    const getValue = (argName) => {
+      return args[argName] !== undefined ? args[argName] : 
+             defaultArgs.find(a => a.name === argName)?.value || '';
+    };
+    
+    switch (toolId) {
+      case 'iqr':
+      case 'standard-deviation':
+      case 'median': {
+        const values = getValue('Values');
+        const naRm = getValue('na.rm');
+        const funcName = toolId === 'iqr' ? 'IQR' : toolId === 'standard-deviation' ? 'sd' : 'median';
+        const resultName = toolId === 'iqr' ? 'Interquartile Range' : toolId === 'standard-deviation' ? 'Standard Deviation' : 'Median';
+        return `# Initialize data
+values <- c(${values})
+
+# Calculate ${resultName.toLowerCase()}
+result <- ${funcName}(values, na.rm = ${naRm})
+
+# Print result
+print(paste("${resultName}:", result))`;
+      }
+      case 'read-csv': {
+        const fileName = getValue('File Name');
+        const header = getValue('header');
+        const sep = getValue('sep');
+        const stringsAsFactors = getValue('stringsAsFactors');
+        return `# Read CSV file
+data <- read.csv(
+  file = "${fileName}",
+  header = ${header},
+  sep = "${sep}",
+  quote = "\\"",
+  dec = ".",
+  fill = TRUE,
+  comment.char = "",
+  stringsAsFactors = ${stringsAsFactors}
+)
+
+# Display first few rows
+head(data)
+
+# Display structure
+str(data)`;
+      }
+      case 'combinations': {
+        const n = getValue('n (total items)');
+        const k = getValue('k (items to choose)');
+        return `# Calculate combinations: choose(n, k)
+# n: total number of items
+# k: number of items to choose
+
+n <- ${n}
+k <- ${k}
+
+# Calculate combinations
+combinations <- choose(n, k)
+
+# Print result
+print(paste("Number of ways to choose", k, "items from", n, "items:", combinations))`;
+      }
+      case 'permutations': {
+        const n = getValue('n (total items)');
+        const k = getValue('k (items to arrange)');
+        return `# Calculate permutations
+# n: total number of items
+# k: number of items to arrange
+
+n <- ${n}
+k <- ${k}
+
+# Calculate permutations using factorial
+permutations <- factorial(n) / factorial(n - k)
+
+# Print result
+print(paste("Number of permutations of", k, "items from", n, "items:", permutations))`;
+      }
+      case 'z-value': {
+        const sampleMean = getValue('Sample Mean');
+        const populationMean = getValue('Population Mean');
+        const standardDeviation = getValue('Standard Deviation');
+        const sampleSize = getValue('Sample Size');
+        return `# Calculate Z-value
+sample_mean <- ${sampleMean}
+population_mean <- ${populationMean}
+standard_deviation <- ${standardDeviation}
+sample_size <- ${sampleSize}
+
+# Calculate standard error
+standard_error <- standard_deviation / sqrt(sample_size)
+
+# Calculate Z-value
+z_value <- (sample_mean - population_mean) / standard_error
+
+# Print result
+print(paste("Z-value:", z_value))
+
+# Calculate p-value (two-tailed)
+p_value <- 2 * pnorm(-abs(z_value))
+print(paste("P-value (two-tailed):", p_value))`;
+      }
+      case 't-test': {
+        const group1 = getValue('Group 1 Values');
+        const group2 = getValue('Group 2 Values');
+        const paired = getValue('Paired');
+        return `# Initialize data
+group1 <- c(${group1})
+group2 <- c(${group2})
+
+# Perform t-test
+t_test_result <- t.test(
+  group1, 
+  group2,
+  paired = ${paired},
+  var.equal = FALSE
+)
+
+# Print results
+print(t_test_result)
+
+# Extract specific values
+print(paste("T-statistic:", t_test_result$statistic))
+print(paste("P-value:", t_test_result$p.value))
+print(paste("Degrees of freedom:", t_test_result$parameter))`;
+      }
+      default:
+        return RCodeService.getDefaultCode(toolId);
+    }
+  }, []);
+
   // Generate R code with custom arguments if available
   const generatedRCode = useMemo(() => {
-    // Always try to apply custom arguments if any exist
+    // For one-function tools, generate code with custom arguments
+    const oneFunctionTools = ['iqr', 'standard-deviation', 'median', 'read-csv', 'combinations', 'permutations', 'z-value', 't-test'];
+    const isOneFunction = oneFunctionTools.includes(selectedTool);
+    
+    if (isOneFunction) {
+      // Generate custom code for one-function tools (even if no customArguments yet)
+      // Note: toolConfig will be passed from the component state later via currentTool
+      return generateOneFunctionToolCode(selectedTool, customArguments, null);
+    }
+    
+    // Always try to apply custom arguments if any exist for visualization tools
     const hasCustomArgs = Object.keys(customArguments).length > 0;
     
-    console.log('Generating R code, custom args:', hasCustomArgs, customArguments);
-    
     if (!hasCustomArgs) {
-      console.log('Using base R code');
       return baseGeneratedRCode;
     }
     
     // Apply custom arguments to the R code
-    console.log('Applying custom arguments to R code');
     const customCode = RCodeService.generateCodeWithCustomArguments(
       selectedTool,
       importedRows,
@@ -332,9 +498,9 @@ export default function linear() {
       customArguments
     );
     
-    console.log('Generated custom code length:', customCode.length);
     return customCode;
-  }, [baseGeneratedRCode, customArguments, selectedTool, importedRows, responseColumn, predictorColumns, categoryColumn, valueColumn, timeColumn, xColumn, yColumn]);
+  }, [baseGeneratedRCode, customArguments, selectedTool, importedRows, responseColumn, predictorColumns, categoryColumn, valueColumn, timeColumn, xColumn, yColumn, generateOneFunctionToolCode]);
+
   // Tracks the most recent project/tool combo we wrote so we can avoid redundant storage churn.
   const lastPersistedToolRef = useRef({ projectId: null, toolId: null });
   const copyToastTimerRef = useRef(null);
@@ -343,6 +509,7 @@ export default function linear() {
   const [copyToastTone, setCopyToastTone] = useState('success');
   const [appearanceStyle, setAppearanceStyle] = useState(0);
   const [infoTooltipVisible, setInfoTooltipVisible] = useState(null);
+  const [toolSearchQuery, setToolSearchQuery] = useState('');
 
   const showCopyToast = useCallback((message, tone = 'success') => {
     setCopyToastMessage(message);
@@ -699,6 +866,9 @@ export default function linear() {
         return valueColumn;
       case 'box-plot':
         return valueColumn;
+      case 'anova':
+      case 'bayesian':
+        return categoryColumn && valueColumn;
       default:
         return false;
     }
@@ -852,6 +1022,10 @@ export default function linear() {
         return `Generated R code for density plot using ${valueColumn} as the data variable.`;
       case 'box-plot':
         return `Generated R code for box plot using ${valueColumn} as the data variable.`;
+      case 'anova':
+        return `Generated R code for ANOVA model using ${categoryColumn} as groups and ${valueColumn} as values.`;
+      case 'bayesian':
+        return `Generated R code for Bayesian model using ${categoryColumn} as groups and ${valueColumn} as values.`;
       default:
         return 'Generated R code based on your data and selections.';
     }
@@ -898,7 +1072,7 @@ model <- lm(
         { x1: 5, x2: 7, y: 8 }
       ],
       arguments: [
-        { name: "Formula", value: "y ~ x1 + x2", readOnly: true },
+        { name: "Formula", value: "y ~ x1 + x2", readOnly: false },
         { 
           name: "df (Initialize data)", 
           type: "data",
@@ -1224,12 +1398,359 @@ boxplot(
         { name: "Border Color", value: "darkgreen", readOnly: false },
         { name: "Horizontal", value: "FALSE", readOnly: false }
       ]
+    },
+    {
+      id: "iqr",
+      name: "IQR (Interquartile Range)",
+      description: "Calculate the interquartile range of a dataset.",
+      icon: "📐",
+      color: "#3498db",
+      chartIcon: "📐",
+      rCode: `# Initialize data
+values <- c(12, 15, 18, 22, 25, 23, 28, 32, 30, 35, 18, 22, 25, 28, 30)
+
+# Calculate IQR
+iqr_value <- IQR(values, na.rm = TRUE)
+
+# Print result
+print(paste("Interquartile Range:", iqr_value))`,
+      codeDescription: "Calculates the interquartile range (IQR) of numeric values.",
+      sampleData: [
+        { value: 12 },
+        { value: 15 },
+        { value: 18 },
+        { value: 22 },
+        { value: 25 }
+      ],
+      arguments: [
+        { name: "Values", value: "12, 15, 18, 22, 25, 23, 28, 32, 30, 35", readOnly: false },
+        { name: "na.rm", value: "TRUE", readOnly: false }
+      ]
+    },
+    {
+      id: "standard-deviation",
+      name: "Standard Deviation (sd)",
+      description: "Calculate the standard deviation of a dataset.",
+      icon: "📊",
+      color: "#9b59b6",
+      chartIcon: "📊",
+      rCode: `# Initialize data
+values <- c(12, 15, 18, 22, 25, 23, 28, 32, 30, 35, 18, 22, 25, 28, 30)
+
+# Calculate standard deviation
+sd_value <- sd(values, na.rm = TRUE)
+
+# Print result
+print(paste("Standard Deviation:", sd_value))`,
+      codeDescription: "Calculates the standard deviation of numeric values.",
+      sampleData: [
+        { value: 12 },
+        { value: 15 },
+        { value: 18 },
+        { value: 22 },
+        { value: 25 }
+      ],
+      arguments: [
+        { name: "Values", value: "12, 15, 18, 22, 25, 23, 28, 32, 30, 35", readOnly: false },
+        { name: "na.rm", value: "TRUE", readOnly: false }
+      ]
+    },
+    {
+      id: "median",
+      name: "Median",
+      description: "Calculate the median value of a dataset.",
+      icon: "📏",
+      color: "#16a085",
+      chartIcon: "📏",
+      rCode: `# Initialize data
+values <- c(12, 15, 18, 22, 25, 23, 28, 32, 30, 35, 18, 22, 25, 28, 30)
+
+# Calculate median
+median_value <- median(values, na.rm = TRUE)
+
+# Print result
+print(paste("Median:", median_value))`,
+      codeDescription: "Calculates the median of numeric values.",
+      sampleData: [
+        { value: 12 },
+        { value: 15 },
+        { value: 18 },
+        { value: 22 },
+        { value: 25 }
+      ],
+      arguments: [
+        { name: "Values", value: "12, 15, 18, 22, 25, 23, 28, 32, 30, 35", readOnly: false },
+        { name: "na.rm", value: "TRUE", readOnly: false }
+      ]
+    },
+    {
+      id: "read-csv",
+      name: "Read CSV",
+      description: "Import data from a CSV file into R.",
+      icon: "📂",
+      color: "#e74c3c",
+      chartIcon: "📂",
+      rCode: `# Read CSV file
+data <- read.csv(
+  file = "data.csv",
+  header = TRUE,
+  sep = ",",
+  quote = "\\"",
+  dec = ".",
+  fill = TRUE,
+  comment.char = "",
+  stringsAsFactors = FALSE
+)
+
+# Display first few rows
+head(data)
+
+# Display structure
+str(data)`,
+      codeDescription: "Reads data from a CSV file with customizable parameters.",
+      sampleData: [
+        { column1: "value1", column2: "value2" },
+        { column1: "value3", column2: "value4" }
+      ],
+      arguments: [
+        { name: "File Name", value: "data.csv", readOnly: false },
+        { name: "header", value: "TRUE", readOnly: false },
+        { name: "sep", value: ",", readOnly: false },
+        { name: "stringsAsFactors", value: "FALSE", readOnly: false }
+      ]
+    },
+    {
+      id: "combinations",
+      name: "Combinations",
+      description: "Calculate the number of ways to choose k items from n items.",
+      icon: "🔢",
+      color: "#f39c12",
+      chartIcon: "🔢",
+      rCode: `# Calculate combinations: choose(n, k)
+# n: total number of items
+# k: number of items to choose
+
+n <- 10
+k <- 3
+
+# Calculate combinations
+combinations <- choose(n, k)
+
+# Print result
+print(paste("Number of ways to choose", k, "items from", n, "items:", combinations))`,
+      codeDescription: "Calculates the number of combinations using the choose(n, k) function.",
+      sampleData: [
+        { n: 10, k: 3, result: 120 }
+      ],
+      arguments: [
+        { name: "n (total items)", value: "10", readOnly: false },
+        { name: "k (items to choose)", value: "3", readOnly: false }
+      ]
+    },
+    {
+      id: "permutations",
+      name: "Permutations",
+      description: "Calculate the number of permutations (arrangements) of items.",
+      icon: "🔀",
+      color: "#1abc9c",
+      chartIcon: "🔀",
+      rCode: `# Calculate permutations
+# n: total number of items
+# k: number of items to arrange
+
+n <- 10
+k <- 3
+
+# Calculate permutations using factorial
+permutations <- factorial(n) / factorial(n - k)
+
+# Print result
+print(paste("Number of permutations of", k, "items from", n, "items:", permutations))`,
+      codeDescription: "Calculates the number of permutations using factorial functions.",
+      sampleData: [
+        { n: 10, k: 3, result: 720 }
+      ],
+      arguments: [
+        { name: "n (total items)", value: "10", readOnly: false },
+        { name: "k (items to arrange)", value: "3", readOnly: false }
+      ]
+    },
+    {
+      id: "anova",
+      name: "ANOVA Model",
+      description: "Perform Analysis of Variance to compare means across groups.",
+      icon: "📈",
+      color: "#d35400",
+      chartIcon: "📈",
+      rCode: `# Initialize data
+df <- data.frame(
+  value = c(23, 25, 27, 29, 31, 30, 32, 34, 36, 38, 18, 20, 22, 24, 26),
+  group = factor(c(rep("Group1", 5), rep("Group2", 5), rep("Group3", 5)))
+)
+
+# Fit ANOVA model
+anova_model <- aov(value ~ group, data = df)
+
+# Display summary
+summary(anova_model)
+
+# Post-hoc test (Tukey's HSD)
+TukeyHSD(anova_model)`,
+      codeDescription: "Performs one-way ANOVA to test differences between group means.",
+      sampleData: [
+        { group: "Group1", value: 23 },
+        { group: "Group1", value: 25 },
+        { group: "Group1", value: 27 },
+        { group: "Group2", value: 30 },
+        { group: "Group2", value: 32 },
+        { group: "Group2", value: 34 },
+        { group: "Group3", value: 18 },
+        { group: "Group3", value: 20 },
+        { group: "Group3", value: 22 }
+      ],
+      arguments: [
+        { name: "Formula", value: "value ~ group", readOnly: false }
+      ]
+    },
+    {
+      id: "bayesian",
+      name: "Bayesian Model",
+      description: "Perform Bayesian statistical inference using prior and likelihood.",
+      icon: "🎲",
+      color: "#c0392b",
+      chartIcon: "🎲",
+      rCode: `# Install and load required package
+# install.packages("BayesFactor")
+library(BayesFactor)
+
+# Initialize data
+df <- data.frame(
+  value = c(12, 15, 18, 22, 25, 23, 28, 32, 30, 35),
+  group = factor(c(rep("A", 5), rep("B", 5)))
+)
+
+# Perform Bayesian t-test
+bayes_test <- ttestBF(formula = value ~ group, data = df)
+
+# Display results
+print(bayes_test)
+
+# Alternative: Bayesian linear regression
+# bayes_lm <- lmBF(formula = y ~ x, data = df)
+# summary(bayes_lm)`,
+      codeDescription: "Performs Bayesian inference using the BayesFactor package.",
+      sampleData: [
+        { group: "A", value: 12 },
+        { group: "A", value: 15 },
+        { group: "A", value: 18 },
+        { group: "A", value: 22 },
+        { group: "A", value: 25 },
+        { group: "B", value: 23 },
+        { group: "B", value: 28 },
+        { group: "B", value: 32 },
+        { group: "B", value: 30 },
+        { group: "B", value: 35 }
+      ],
+      arguments: [
+        { name: "Formula", value: "value ~ group", readOnly: false }
+      ]
+    },
+    {
+      id: "z-value",
+      name: "Z-Value",
+      description: "Calculate the Z-value and p-value for hypothesis testing.",
+      icon: "📐",
+      color: "#2980b9",
+      chartIcon: "📐",
+      rCode: `# Calculate Z-value
+sample_mean <- 52
+population_mean <- 50
+standard_deviation <- 5
+sample_size <- 30
+
+# Calculate standard error
+standard_error <- standard_deviation / sqrt(sample_size)
+
+# Calculate Z-value
+z_value <- (sample_mean - population_mean) / standard_error
+
+# Print result
+print(paste("Z-value:", z_value))
+
+# Calculate p-value (two-tailed)
+p_value <- 2 * pnorm(-abs(z_value))
+print(paste("P-value (two-tailed):", p_value))`,
+      codeDescription: "Calculates Z-value for hypothesis testing with known population parameters.",
+      sampleData: [
+        { sampleMean: 52, populationMean: 50, sd: 5, n: 30 }
+      ],
+      arguments: [
+        { name: "Sample Mean", value: "52", readOnly: false },
+        { name: "Population Mean", value: "50", readOnly: false },
+        { name: "Standard Deviation", value: "5", readOnly: false },
+        { name: "Sample Size", value: "30", readOnly: false }
+      ]
+    },
+    {
+      id: "t-test",
+      name: "T-Test",
+      description: "Perform independent or paired t-test to compare two groups.",
+      icon: "📊",
+      color: "#8e44ad",
+      chartIcon: "📊",
+      rCode: `# Initialize data
+group1 <- c(23, 25, 27, 29, 31, 33, 35)
+group2 <- c(18, 20, 22, 24, 26, 28, 30)
+
+# Perform t-test
+t_test_result <- t.test(
+  group1, 
+  group2,
+  paired = FALSE,
+  var.equal = FALSE
+)
+
+# Print results
+print(t_test_result)
+
+# Extract specific values
+print(paste("T-statistic:", t_test_result$statistic))
+print(paste("P-value:", t_test_result$p.value))
+print(paste("Degrees of freedom:", t_test_result$parameter))`,
+      codeDescription: "Performs t-test to compare means of two independent or paired groups.",
+      sampleData: [
+        { group1: "23, 25, 27", group2: "18, 20, 22" }
+      ],
+      arguments: [
+        { name: "Group 1 Values", value: "23, 25, 27, 29, 31, 33, 35", readOnly: false },
+        { name: "Group 2 Values", value: "18, 20, 22, 24, 26, 28, 30", readOnly: false },
+        { name: "Paired", value: "FALSE", readOnly: false }
+      ]
     }
   ];
 
   // Get current tool configuration
   const currentTool = tools.find(tool => tool.id === selectedTool);
   const currentProjectName = currentProject?.name || (projectHydrated ? "Untitled Project" : "");
+
+  // Filter tools based on search query
+  const filteredTools = useMemo(() => {
+    if (!toolSearchQuery.trim()) {
+      return tools;
+    }
+    const query = toolSearchQuery.toLowerCase();
+    return tools.filter(tool => 
+      tool.name.toLowerCase().includes(query) ||
+      tool.description.toLowerCase().includes(query) ||
+      tool.id.toLowerCase().includes(query)
+    );
+  }, [toolSearchQuery, tools]);
+
+  // Determine if current tool is a one-function tool (doesn't need data table)
+  const isOneFunctionTool = useMemo(() => {
+    const oneFunctionTools = ['iqr', 'standard-deviation', 'median', 'read-csv', 'combinations', 'permutations', 'z-value', 't-test'];
+    return oneFunctionTools.includes(selectedTool);
+  }, [selectedTool]);
 
   return (
     <>
@@ -1278,8 +1799,35 @@ boxplot(
               <p>Select an RStudio tool from the list.</p>
             </div>
             
+            {/* Search Bar */}
+            <div className={styles.searchContainer}>
+              <input
+                type="text"
+                className={styles.searchInput}
+                placeholder="🔍  Search R tools..."
+                value={toolSearchQuery}
+                onChange={(e) => setToolSearchQuery(e.target.value)}
+              />
+              {toolSearchQuery && (
+                <button
+                  className={styles.clearSearchBtn}
+                  onClick={() => setToolSearchQuery('')}
+                  title="Clear search"
+                >
+                  ✕
+                </button>
+              )}
+            </div>
+
+            {/* Display count of filtered tools */}
+            {toolSearchQuery && (
+              <div className={styles.searchResults}>
+                Found {filteredTools.length} tool{filteredTools.length !== 1 ? 's' : ''}
+              </div>
+            )}
+            
             <div className={styles.toolList}>
-              {tools.map((tool) => (
+              {filteredTools.map((tool) => (
                 <div
                   key={tool.id}
                   className={`${styles.toolCard} ${selectedTool === tool.id ? styles.selected : ''}`}
@@ -1314,20 +1862,40 @@ boxplot(
               </div>
             </div>
 
-            {/* Data Table / Placeholder */}
-            <EditableDataTable
-              data={importedRows}
-              onDataUpdate={handlePersistedDataUpdate}
-              selectedTool={selectedTool}
-              responseColumn={responseColumn}
-              predictorColumns={predictorColumns}
-              categoryColumn={categoryColumn}
-              valueColumn={valueColumn}
-              timeColumn={timeColumn}
-              xColumn={xColumn}
-              yColumn={yColumn}
-              onColumnSelectionChange={handleColumnSelectionChange}
-            />
+            {/* Data Table / Placeholder or Argument Inputs for One-Function Tools */}
+            {isOneFunctionTool ? (
+              <div className={styles.oneFunctionToolInputs}>
+                <h3>Configure Tool Arguments</h3>
+                <p className={styles.toolInstructions}>
+                  Enter values for each argument below. The R code will update automatically.
+                </p>
+                {currentTool?.arguments.map((arg, index) => (
+                  <div key={index} className={styles.argumentInput}>
+                    <label>{arg.name}</label>
+                    <input
+                      type="text"
+                      value={customArguments[arg.name] ?? arg.value}
+                      onChange={(e) => handleArgumentChange(arg.name, e.target.value)}
+                      placeholder={arg.value}
+                    />
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <EditableDataTable
+                data={importedRows}
+                onDataUpdate={handlePersistedDataUpdate}
+                selectedTool={selectedTool}
+                responseColumn={responseColumn}
+                predictorColumns={predictorColumns}
+                categoryColumn={categoryColumn}
+                valueColumn={valueColumn}
+                timeColumn={timeColumn}
+                xColumn={xColumn}
+                yColumn={yColumn}
+                onColumnSelectionChange={handleColumnSelectionChange}
+              />
+            )}
 
             {/* Validation Messages */}
             {!validation.isValid && (
@@ -1390,6 +1958,18 @@ boxplot(
                     <p><strong>Value Column:</strong> {valueColumn || <span style={{color: '#888'}}>None selected</span>}</p>
                   </>
                 )}
+                {selectedTool === 'anova' && (
+                  <>
+                    <p><strong>Group Column:</strong> {categoryColumn || <span style={{color: '#888'}}>None selected</span>}</p>
+                    <p><strong>Value Column:</strong> {valueColumn || <span style={{color: '#888'}}>None selected</span>}</p>
+                  </>
+                )}
+                {selectedTool === 'bayesian' && (
+                  <>
+                    <p><strong>Group Column:</strong> {categoryColumn || <span style={{color: '#888'}}>None selected</span>}</p>
+                    <p><strong>Value Column:</strong> {valueColumn || <span style={{color: '#888'}}>None selected</span>}</p>
+                  </>
+                )}
                 <p className={styles.columnSelectionHint}>
                   Click on column headers to select variables. The R code will update automatically.
                 </p>
@@ -1410,11 +1990,14 @@ boxplot(
                   Copy R Code
                 </button>
                 <button 
-                  className={`${styles.switchBtn} ${styles[`appearanceStyle${appearanceStyle}`]}`}
-                  onClick={toggleAppearanceStyle}
-                  title="Change Appearance"
+                  className={styles.clearDatasetBtn}
+                  onClick={() => {
+                    applyImportedRows([], selectedTool);
+                    persistImportedCsvData([]);
+                  }}
+                  title="Clear Dataset"
                 >
-                  Switch R Tool
+                  Clear Dataset
                 </button>
               </div>
             </div>
@@ -1435,9 +2018,10 @@ boxplot(
               </p>
             </div>
 
-            <div className={styles.argumentsSection}>
-              <h3>Arguments</h3>
-              {generatedArguments?.map((arg, index) => {
+            {!isOneFunctionTool && (
+              <div className={styles.argumentsSection}>
+                <h3>Arguments</h3>
+                {generatedArguments?.map((arg, index) => {
                 const isDataset = isDatasetArgument(arg.name);
                 const isColor = isColorArgument(arg.name);
                 const isReadOnly = arg.readOnly || isDataset;
@@ -1536,9 +2120,10 @@ boxplot(
                       />
                     )}
                   </div>
-                );
-              })}
-            </div>
+                  );
+                })}
+              </div>
+            )}
             </div>
           )}
         </div>
