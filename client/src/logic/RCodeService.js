@@ -92,8 +92,6 @@ export class RCodeService {
         return this.generateBoxPlotCode(data, selections.valueColumn);
       case 'anova':
         return this.generateANOVACode(data, selections.categoryColumn, selections.valueColumn);
-      case 'bayesian':
-        return this.generateBayesianCode(data, selections.categoryColumn, selections.valueColumn);
       case 'iqr':
       case 'standard-deviation':
       case 'median':
@@ -134,6 +132,8 @@ export class RCodeService {
         return this.generateDensityPlotCodeWithCustomArgs(data, selections.valueColumn, customArgs);
       case 'box-plot':
         return this.generateBoxPlotCodeWithCustomArgs(data, selections.valueColumn, customArgs);
+      case 'anova':
+        return this.generateANOVACodeWithCustomArgs(data, selections.categoryColumn, selections.valueColumn, customArgs);
       default:
         return this.generateCode(toolId, data, selections);
     }
@@ -495,10 +495,43 @@ boxplot(
     const categories = data.map(row => row[categoryColumn]).filter(val => val !== '');
     const values = data.map(row => row[valueColumn]).filter(val => val !== '');
 
-    const rCode = `# Initialize data
+    // Get unique category values
+    const uniqueCategories = [...new Set(categories)];
+
+    // Group values by category
+    const groupedData = {};
+    uniqueCategories.forEach(cat => {
+      groupedData[cat] = [];
+    });
+    
+    data.forEach(row => {
+      const cat = row[categoryColumn];
+      const val = row[valueColumn];
+      if (cat && val !== '') {
+        groupedData[cat].push(val);
+      }
+    });
+
+    // Generate group variable declarations
+    const groupDeclarations = uniqueCategories.map((cat, index) => {
+      const groupName = `group${index + 1}`;
+      const groupValues = groupedData[cat];
+      return `${groupName} <- c(${groupValues.join(', ')})`;
+    }).join('\n');
+
+    // Generate group labels
+    const groupLabels = uniqueCategories.map((cat, index) => `rep("${cat}", length(group${index + 1}))`).join(', ');
+
+    // Generate combined values
+    const groupValues = uniqueCategories.map((_, index) => `group${index + 1}`).join(', ');
+
+    const rCode = `# Initialize data by groups
+${groupDeclarations}
+
+# Combine all groups into data frame
 df <- data.frame(
-  value = c(${values.join(', ')}),
-  group = factor(c(${categories.map(cat => `"${cat}"`).join(', ')}))
+  value = c(${groupValues}),
+  group = factor(c(${groupLabels}))
 )
 
 # Fit ANOVA model
@@ -514,39 +547,69 @@ TukeyHSD(anova_model)`;
   }
 
   /**
-   * Generate R code for Bayesian model based on data
+   * Generate ANOVA code with custom arguments
    * @param {Array<Object>} data - Parsed CSV data
    * @param {string} categoryColumn - Name of the group column
    * @param {string} valueColumn - Name of the value column
+   * @param {Object} customArgs - Custom argument values
    * @returns {string} Generated R code
    */
-  static generateBayesianCode(data, categoryColumn, valueColumn) {
+  static generateANOVACodeWithCustomArgs(data, categoryColumn, valueColumn, customArgs) {
     if (!data || data.length === 0 || !categoryColumn || !valueColumn) {
-      return this.getDefaultBayesianCode();
+      return this.getDefaultANOVACode();
     }
 
     const categories = data.map(row => row[categoryColumn]).filter(val => val !== '');
     const values = data.map(row => row[valueColumn]).filter(val => val !== '');
+    const uniqueCategories = [...new Set(categories)];
 
-    const rCode = `# Install and load required package
-# install.packages("BayesFactor")
-library(BayesFactor)
+    // Group values by category
+    const groupedData = {};
+    uniqueCategories.forEach(cat => {
+      groupedData[cat] = [];
+    });
+    
+    data.forEach(row => {
+      const cat = row[categoryColumn];
+      const val = row[valueColumn];
+      if (cat && val !== '') {
+        groupedData[cat].push(val);
+      }
+    });
 
-# Initialize data
+    // Generate group variable declarations
+    const groupDeclarations = uniqueCategories.map((cat, index) => {
+      const groupName = `group${index + 1}`;
+      const groupValues = groupedData[cat];
+      return `${groupName} <- c(${groupValues.join(', ')})`;
+    }).join('\n');
+
+    // Generate group labels
+    const groupLabels = uniqueCategories.map((cat, index) => `rep("${cat}", length(group${index + 1}))`).join(', ');
+
+    // Generate combined values
+    const groupValues = uniqueCategories.map((_, index) => `group${index + 1}`).join(', ');
+
+    // Get formula from custom args or use default
+    const formula = customArgs['Formula'] || `value ~ group`;
+
+    const rCode = `# Initialize data by groups
+${groupDeclarations}
+
+# Combine all groups into data frame
 df <- data.frame(
-  value = c(${values.join(', ')}),
-  group = factor(c(${categories.map(cat => `"${cat}"`).join(', ')}))
+  value = c(${groupValues}),
+  group = factor(c(${groupLabels}))
 )
 
-# Perform Bayesian t-test
-bayes_test <- ttestBF(formula = value ~ group, data = df)
+# Fit ANOVA model using formula: ${formula}
+anova_model <- aov(${formula}, data = df)
 
-# Display results
-print(bayes_test)
+# Display summary
+summary(anova_model)
 
-# Alternative: Bayesian linear regression
-# bayes_lm <- lmBF(formula = y ~ x, data = df)
-# summary(bayes_lm)`;
+# Post-hoc test (Tukey's HSD)
+TukeyHSD(anova_model)`;
 
     return rCode;
   }
@@ -912,8 +975,6 @@ dev.off()`;
         return this.getDefaultPermutationsCode();
       case 'anova':
         return this.getDefaultANOVACode();
-      case 'bayesian':
-        return this.getDefaultBayesianCode();
       case 'z-value':
         return this.getDefaultZValueCode();
       case 't-test':
@@ -1157,6 +1218,8 @@ boxplot(
         return this.generateDensityPlotArguments(data, selections.valueColumn);
       case 'box-plot':
         return this.generateBoxPlotArguments(data, selections.valueColumn);
+      case 'anova':
+        return this.generateANOVAArguments(data, selections.categoryColumn, selections.valueColumn);
       default:
         return this.getDefaultArguments(toolId);
     }
@@ -1375,6 +1438,23 @@ boxplot(
   }
 
   /**
+   * Generate arguments configuration for ANOVA
+   * @param {Array<Object>} data - Parsed CSV data
+   * @param {string} categoryColumn - Name of the group column
+   * @param {string} valueColumn - Name of the value column
+   * @returns {Array<Object>} Arguments configuration
+   */
+  static generateANOVAArguments(data, categoryColumn, valueColumn) {
+    if (!data || data.length === 0 || !categoryColumn || !valueColumn) {
+      return this.getDefaultArguments('anova');
+    }
+
+    return [
+      { name: "Formula", value: "value ~ group", readOnly: false }
+    ];
+  }
+
+  /**
    * Get default arguments when no data is available
    * @param {string} toolId - Tool identifier
    * @returns {Array<Object>} Default arguments
@@ -1457,6 +1537,10 @@ boxplot(
           { name: "Color", value: "lightgreen", readOnly: false },
           { name: "Border Color", value: "darkgreen", readOnly: false },
           { name: "Horizontal", value: "FALSE", readOnly: false }
+        ];
+      case 'anova':
+        return [
+          { name: "Formula", value: "value ~ group", readOnly: false }
         ];
       default:
         return [
@@ -1688,51 +1772,25 @@ print(paste("Number of permutations of", k, "items from", n, "items:", permutati
    * @returns {string} Default R code
    */
   static getDefaultANOVACode() {
-    return `# Initialize data
+    return `# Initialize data by groups
 group1 <- c(23, 25, 27, 29, 31)
 group2 <- c(30, 32, 34, 36, 38)
 group3 <- c(18, 20, 22, 24, 26)
 
-# Create data frame
+# Combine all groups into data frame
 df <- data.frame(
-  values = c(group1, group2, group3),
-  group = factor(rep(c("Group1", "Group2", "Group3"), each = 5))
+  value = c(group1, group2, group3),
+  group = factor(c(rep("Group1", length(group1)), rep("Group2", length(group2)), rep("Group3", length(group3))))
 )
 
 # Fit ANOVA model
-anova_model <- aov(values ~ group, data = df)
+anova_model <- aov(value ~ group, data = df)
 
 # Display summary
 summary(anova_model)
 
 # Post-hoc test (Tukey's HSD)
 TukeyHSD(anova_model)`;
-  }
-
-  /**
-   * Get default Bayesian code
-   * @returns {string} Default R code
-   */
-  static getDefaultBayesianCode() {
-    return `# Install and load required package
-# install.packages("BayesFactor")
-library(BayesFactor)
-
-# Initialize data
-df <- data.frame(
-  value = c(12, 15, 18, 22, 25, 23, 28, 32, 30, 35),
-  group = factor(c(rep("A", 5), rep("B", 5)))
-)
-
-# Perform Bayesian t-test
-bayes_test <- ttestBF(formula = value ~ group, data = df)
-
-# Display results
-print(bayes_test)
-
-# Alternative: Bayesian linear regression
-# bayes_lm <- lmBF(formula = y ~ x, data = df)
-# summary(bayes_lm)`;
   }
 
   /**

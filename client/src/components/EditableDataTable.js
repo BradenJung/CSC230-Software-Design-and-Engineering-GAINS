@@ -26,42 +26,34 @@ export const EditableDataTable = ({
   if (!data || data.length === 0) {
     return (
       <div className={styles.tablePlaceholder}>
-        <div className={styles.placeholderHeader}>
-          <h3>Data table is empty</h3>
-          <p>Import a CSV file to populate the table. Click Import above.</p>
+        <div className={styles.placeholderIllustration}>
+          <div className={styles.placeholderTableIcon}>
+            <svg width="120" height="100" viewBox="0 0 120 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <rect x="10" y="20" width="100" height="70" rx="4" stroke="currentColor" strokeWidth="2" fill="none" opacity="0.3"/>
+              <line x1="10" y1="35" x2="110" y2="35" stroke="currentColor" strokeWidth="2" opacity="0.5"/>
+              <line x1="43" y1="20" x2="43" y2="90" stroke="currentColor" strokeWidth="2" opacity="0.3"/>
+              <line x1="77" y1="20" x2="77" y2="90" stroke="currentColor" strokeWidth="2" opacity="0.3"/>
+              <circle cx="26.5" cy="27.5" r="3" fill="currentColor" opacity="0.4"/>
+              <circle cx="60" cy="27.5" r="3" fill="currentColor" opacity="0.4"/>
+              <circle cx="93.5" cy="27.5" r="3" fill="currentColor" opacity="0.4"/>
+              <rect x="18" y="45" width="18" height="4" rx="2" fill="currentColor" opacity="0.2"/>
+              <rect x="18" y="55" width="18" height="4" rx="2" fill="currentColor" opacity="0.2"/>
+              <rect x="18" y="65" width="18" height="4" rx="2" fill="currentColor" opacity="0.2"/>
+              <rect x="51" y="45" width="18" height="4" rx="2" fill="currentColor" opacity="0.2"/>
+              <rect x="51" y="55" width="18" height="4" rx="2" fill="currentColor" opacity="0.2"/>
+              <rect x="51" y="65" width="18" height="4" rx="2" fill="currentColor" opacity="0.2"/>
+              <rect x="85" y="45" width="18" height="4" rx="2" fill="currentColor" opacity="0.2"/>
+              <rect x="85" y="55" width="18" height="4" rx="2" fill="currentColor" opacity="0.2"/>
+              <rect x="85" y="65" width="18" height="4" rx="2" fill="currentColor" opacity="0.2"/>
+            </svg>
+          </div>
         </div>
-        <div className={styles.placeholderContent}>
-          <div className={styles.placeholderIllustration}>
-            <div className={styles.placeholderGrid}>
-              <span />
-              <span />
-              <span />
-              <span />
-              <span />
-              <span />
-            </div>
-          </div>
-          <div className={styles.tableFormats}>
-            <h4>Supported table formats</h4>
-            <ul>
-              <li>
-                <strong>Tidy data</strong>: one row per observation; one column per variable; first row contains headers.
-              </li>
-              <li>
-                <strong>Linear regression</strong>: numeric columns for predictors and one numeric response column (e.g., y, x1, x2, ...).
-              </li>
-              <li>
-                <strong>Bar chart</strong>: category column and numeric value column (e.g., category, value).
-              </li>
-              <li>
-                <strong>Line chart</strong>: time/index column and numeric value column (e.g., time, value).
-              </li>
-              <li>
-                <strong>Dot plot / scatter</strong>: two numeric columns (e.g., x, y); optional category for groups.
-              </li>
-            </ul>
-            <p>CSV must be UTF-8 encoded. Quoted cells and commas inside quotes are supported.</p>
-          </div>
+        <div className={styles.placeholderHeader}>
+          <h3>No Data Loaded</h3>
+          <p>Click <strong>Import</strong> to load a CSV file</p>
+        </div>
+        <div className={styles.placeholderHint}>
+          <p>💡 CSV files should have headers in the first row</p>
         </div>
       </div>
     );
@@ -201,7 +193,6 @@ export const EditableDataTable = ({
         }
         break;
       case 'anova':
-      case 'bayesian':
         if (categoryColumn === columnName) {
           onColumnSelectionChange('category', null);
         } else if (valueColumn === columnName) {
@@ -277,7 +268,6 @@ export const EditableDataTable = ({
         }
         break;
       case 'anova':
-      case 'bayesian':
         if (categoryColumn === columnName) {
           className += ` ${styles.categoryColumn}`;
         } else if (valueColumn === columnName) {
@@ -348,7 +338,6 @@ export const EditableDataTable = ({
         }
         return 'Click to select as value column';
       case 'anova':
-      case 'bayesian':
         if (categoryColumn === columnName) {
           return 'Click to deselect as group column';
         }
@@ -419,12 +408,6 @@ export const EditableDataTable = ({
                     <span className={styles.columnBadge}>Group</span>
                   )}
                   {selectedTool === 'anova' && valueColumn === columnName && (
-                    <span className={styles.columnBadge}>Value</span>
-                  )}
-                  {selectedTool === 'bayesian' && categoryColumn === columnName && (
-                    <span className={styles.columnBadge}>Group</span>
-                  )}
-                  {selectedTool === 'bayesian' && valueColumn === columnName && (
                     <span className={styles.columnBadge}>Value</span>
                   )}
                 </div>

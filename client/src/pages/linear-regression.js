@@ -1,9 +1,21 @@
+/**
+ * R Tools Dashboard Page
+ * 
+ * This page provides a comprehensive dashboard for various R statistical tools including:
+ * - Data visualizations (bar charts, line charts, histograms, etc.)
+ * - Statistical models (linear regression, ANOVA)
+ * - Statistical functions (IQR, standard deviation, median, etc.)
+ * - Utility functions (read CSV, combinations, permutations, etc.)
+ * 
+ * Users can import CSV data, select appropriate columns, and generate R code
+ * for their analysis needs.
+ */
 import Head from "next/head";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/router";
 import Header from "../components/header";
 import { EditableDataTable } from "../components/EditableDataTable";
-import { useLinearRegression } from "../logic/useLinearRegression";
+import { useRDashboard } from "../logic/useLinearRegression";
 import { RCodeService } from "../logic/RCodeService";
 import styles from "../styles/Home.module.css";
 
@@ -32,7 +44,6 @@ const TOOL_ID_TO_STORAGE_VALUE = {
   "combinations": "Combinations",
   "permutations": "Permutations",
   "anova": "ANOVA",
-  "bayesian": "Bayesian",
   "z-value": "ZValue",
   "t-test": "TTest"
 };
@@ -53,7 +64,6 @@ const TOOL_STORAGE_VALUE_TO_ID = {
   Combinations: "combinations",
   Permutations: "permutations",
   ANOVA: "anova",
-  Bayesian: "bayesian",
   ZValue: "z-value",
   TTest: "t-test"
 };
@@ -177,7 +187,7 @@ const withImportedCsvData = (project) => {
   };
 };
 
-export default function linear() {
+export default function RDashboard() {
   const router = useRouter();
   const fileInputRef = useRef(null);
   const [currentProject, setCurrentProject] = useState(null);
@@ -325,7 +335,7 @@ export default function linear() {
     updateDataValue,
     updateColumnSelection,
     toggleRightPanel
-  } = useLinearRegression({
+  } = useRDashboard({
     initialRows: resolvedImportedRows,
     initialTool: resolvedSelectedTool,
     projectVersion
@@ -510,6 +520,7 @@ print(paste("Degrees of freedom:", t_test_result$parameter))`;
   const [appearanceStyle, setAppearanceStyle] = useState(0);
   const [infoTooltipVisible, setInfoTooltipVisible] = useState(null);
   const [toolSearchQuery, setToolSearchQuery] = useState('');
+  const [codeViewMode, setCodeViewMode] = useState('night'); // 'dark', 'light', or 'night'
 
   const showCopyToast = useCallback((message, tone = 'success') => {
     setCopyToastMessage(message);
@@ -867,7 +878,6 @@ print(paste("Degrees of freedom:", t_test_result$parameter))`;
       case 'box-plot':
         return valueColumn;
       case 'anova':
-      case 'bayesian':
         return categoryColumn && valueColumn;
       default:
         return false;
@@ -1024,8 +1034,6 @@ print(paste("Degrees of freedom:", t_test_result$parameter))`;
         return `Generated R code for box plot using ${valueColumn} as the data variable.`;
       case 'anova':
         return `Generated R code for ANOVA model using ${categoryColumn} as groups and ${valueColumn} as values.`;
-      case 'bayesian':
-        return `Generated R code for Bayesian model using ${categoryColumn} as groups and ${valueColumn} as values.`;
       default:
         return 'Generated R code based on your data and selections.';
     }
@@ -1621,49 +1629,6 @@ TukeyHSD(anova_model)`,
       ]
     },
     {
-      id: "bayesian",
-      name: "Bayesian Model",
-      description: "Perform Bayesian statistical inference using prior and likelihood.",
-      icon: "🎲",
-      color: "#c0392b",
-      chartIcon: "🎲",
-      rCode: `# Install and load required package
-# install.packages("BayesFactor")
-library(BayesFactor)
-
-# Initialize data
-df <- data.frame(
-  value = c(12, 15, 18, 22, 25, 23, 28, 32, 30, 35),
-  group = factor(c(rep("A", 5), rep("B", 5)))
-)
-
-# Perform Bayesian t-test
-bayes_test <- ttestBF(formula = value ~ group, data = df)
-
-# Display results
-print(bayes_test)
-
-# Alternative: Bayesian linear regression
-# bayes_lm <- lmBF(formula = y ~ x, data = df)
-# summary(bayes_lm)`,
-      codeDescription: "Performs Bayesian inference using the BayesFactor package.",
-      sampleData: [
-        { group: "A", value: 12 },
-        { group: "A", value: 15 },
-        { group: "A", value: 18 },
-        { group: "A", value: 22 },
-        { group: "A", value: 25 },
-        { group: "B", value: 23 },
-        { group: "B", value: 28 },
-        { group: "B", value: 32 },
-        { group: "B", value: 30 },
-        { group: "B", value: 35 }
-      ],
-      arguments: [
-        { name: "Formula", value: "value ~ group", readOnly: false }
-      ]
-    },
-    {
       id: "z-value",
       name: "Z-Value",
       description: "Calculate the Z-value and p-value for hypothesis testing.",
@@ -1763,8 +1728,8 @@ print(paste("Degrees of freedom:", t_test_result$parameter))`,
   return (
     <>
       <Head>
-        <title>Select R Tool</title>
-        <meta name="description" content="R programming language tools dashboard for statistical students" />
+        <title>R Tools Dashboard</title>
+        <meta name="description" content="R programming language tools dashboard for data analysis and statistics" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <link rel="icon" href="/favicon.ico" />
       </Head>
@@ -1867,15 +1832,6 @@ print(paste("Degrees of freedom:", t_test_result$parameter))`,
                 <p>{currentTool?.description}</p>
               </div>
               
-              <div className={styles.toolVisual}>
-                <div className={styles.chartIcon} style={{ color: currentTool?.color }}>
-                  {currentTool?.useImage ? (
-                    <img src={currentTool?.chartIcon} alt={currentTool?.name} style={{ width: '50%', height: '30%', objectFit: 'contain' }} />
-                  ) : (
-                    currentTool?.chartIcon
-                  )}
-                </div>
-              </div>
             </div>
 
             {/* Data Table / Placeholder or Argument Inputs for One-Function Tools */}
@@ -1980,12 +1936,6 @@ print(paste("Degrees of freedom:", t_test_result$parameter))`,
                     <p><strong>Value Column:</strong> {valueColumn || <span style={{color: '#888'}}>None selected</span>}</p>
                   </>
                 )}
-                {selectedTool === 'bayesian' && (
-                  <>
-                    <p><strong>Group Column:</strong> {categoryColumn || <span style={{color: '#888'}}>None selected</span>}</p>
-                    <p><strong>Value Column:</strong> {valueColumn || <span style={{color: '#888'}}>None selected</span>}</p>
-                  </>
-                )}
                 <p className={styles.columnSelectionHint}>
                   Click on column headers to select variables. The R code will update automatically.
                 </p>
@@ -2021,9 +1971,28 @@ print(paste("Degrees of freedom:", t_test_result$parameter))`,
             <div className={styles.codeSection}>
               <div className={styles.sectionHeader}>
                 <h3>Code Snippet</h3>
-                <span className={styles.expandIcon}>+</span>
+                <div className={styles.segmentedControl}>
+                  <button 
+                    className={`${styles.segmentedButton} ${codeViewMode === 'dark' ? styles.segmentedButtonActive : ''}`}
+                    onClick={() => setCodeViewMode('dark')}
+                  >
+                    Dark
+                  </button>
+                  <button 
+                    className={`${styles.segmentedButton} ${codeViewMode === 'light' ? styles.segmentedButtonActive : ''}`}
+                    onClick={() => setCodeViewMode('light')}
+                  >
+                    Light
+                  </button>
+                  <button 
+                    className={`${styles.segmentedButton} ${codeViewMode === 'night' ? styles.segmentedButtonActive : ''}`}
+                    onClick={() => setCodeViewMode('night')}
+                  >
+                    Night
+                  </button>
+                </div>
               </div>
-              <div className={styles.codeBlock}>
+              <div className={`${styles.codeBlock} ${styles['codeBlock' + codeViewMode.charAt(0).toUpperCase() + codeViewMode.slice(1)]}`}>
                 <pre><code>{generatedRCode}</code></pre>
               </div>
               <p className={styles.codeDescription}>
