@@ -1,7 +1,12 @@
+/**
+ * useRDashboard - Custom hook for R Tools Dashboard
+ * Manages state and logic for the R tools dashboard including data import,
+ * tool selection, column selection, and R code generation
+ */
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { RCodeService } from './RCodeService';
 
-export const useLinearRegression = ({
+export const useRDashboard = ({
   initialRows = [],
   initialTool = 'linear-regression',
   projectVersion
@@ -75,6 +80,11 @@ export const useLinearRegression = ({
       }
       case 'box-plot': {
         setValueColumn(columns[0] ?? '');
+        break;
+      }
+      case 'anova': {
+        setCategoryColumn(columns[0] ?? '');
+        setValueColumn(columns[1] ?? '');
         break;
       }
       default:
@@ -238,6 +248,8 @@ export const useLinearRegression = ({
         return { valueColumn };
       case 'box-plot':
         return { valueColumn };
+      case 'anova':
+        return { categoryColumn, valueColumn };
       default:
         return { responseColumn, predictorColumns };
     }
@@ -299,3 +311,6 @@ export const useLinearRegression = ({
     initializeFromSnapshot
   };
 };
+
+// Backward compatibility export
+export const useLinearRegression = useRDashboard;

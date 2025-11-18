@@ -90,6 +90,17 @@ export class RCodeService {
         return this.generateDensityPlotCode(data, selections.valueColumn);
       case 'box-plot':
         return this.generateBoxPlotCode(data, selections.valueColumn);
+      case 'anova':
+        return this.generateANOVACode(data, selections.categoryColumn, selections.valueColumn);
+      case 'iqr':
+      case 'standard-deviation':
+      case 'median':
+      case 'read-csv':
+      case 'combinations':
+      case 'permutations':
+      case 'z-value':
+      case 't-test':
+        return this.getDefaultCode(toolId);
       default:
         return this.getDefaultCode(toolId);
     }
@@ -121,6 +132,8 @@ export class RCodeService {
         return this.generateDensityPlotCodeWithCustomArgs(data, selections.valueColumn, customArgs);
       case 'box-plot':
         return this.generateBoxPlotCodeWithCustomArgs(data, selections.valueColumn, customArgs);
+      case 'anova':
+        return this.generateANOVACodeWithCustomArgs(data, selections.categoryColumn, selections.valueColumn, customArgs);
       default:
         return this.generateCode(toolId, data, selections);
     }
@@ -463,6 +476,140 @@ boxplot(
   border = "darkgreen",
   horizontal = FALSE
 )`;
+
+    return rCode;
+  }
+
+  /**
+   * Generate R code for ANOVA based on data
+   * @param {Array<Object>} data - Parsed CSV data
+   * @param {string} categoryColumn - Name of the group column
+   * @param {string} valueColumn - Name of the value column
+   * @returns {string} Generated R code
+   */
+  static generateANOVACode(data, categoryColumn, valueColumn) {
+    if (!data || data.length === 0 || !categoryColumn || !valueColumn) {
+      return this.getDefaultANOVACode();
+    }
+
+    const categories = data.map(row => row[categoryColumn]).filter(val => val !== '');
+    const values = data.map(row => row[valueColumn]).filter(val => val !== '');
+
+    // Get unique category values
+    const uniqueCategories = [...new Set(categories)];
+
+    // Group values by category
+    const groupedData = {};
+    uniqueCategories.forEach(cat => {
+      groupedData[cat] = [];
+    });
+    
+    data.forEach(row => {
+      const cat = row[categoryColumn];
+      const val = row[valueColumn];
+      if (cat && val !== '') {
+        groupedData[cat].push(val);
+      }
+    });
+
+    // Generate group variable declarations
+    const groupDeclarations = uniqueCategories.map((cat, index) => {
+      const groupName = `group${index + 1}`;
+      const groupValues = groupedData[cat];
+      return `${groupName} <- c(${groupValues.join(', ')})`;
+    }).join('\n');
+
+    // Generate group labels
+    const groupLabels = uniqueCategories.map((cat, index) => `rep("${cat}", length(group${index + 1}))`).join(', ');
+
+    // Generate combined values
+    const groupValues = uniqueCategories.map((_, index) => `group${index + 1}`).join(', ');
+
+    const rCode = `# Initialize data by groups
+${groupDeclarations}
+
+# Combine all groups into data frame
+df <- data.frame(
+  value = c(${groupValues}),
+  group = factor(c(${groupLabels}))
+)
+
+# Fit ANOVA model
+anova_model <- aov(value ~ group, data = df)
+
+# Display summary
+summary(anova_model)
+
+# Post-hoc test (Tukey's HSD)
+TukeyHSD(anova_model)`;
+
+    return rCode;
+  }
+
+  /**
+   * Generate ANOVA code with custom arguments
+   * @param {Array<Object>} data - Parsed CSV data
+   * @param {string} categoryColumn - Name of the group column
+   * @param {string} valueColumn - Name of the value column
+   * @param {Object} customArgs - Custom argument values
+   * @returns {string} Generated R code
+   */
+  static generateANOVACodeWithCustomArgs(data, categoryColumn, valueColumn, customArgs) {
+    if (!data || data.length === 0 || !categoryColumn || !valueColumn) {
+      return this.getDefaultANOVACode();
+    }
+
+    const categories = data.map(row => row[categoryColumn]).filter(val => val !== '');
+    const values = data.map(row => row[valueColumn]).filter(val => val !== '');
+    const uniqueCategories = [...new Set(categories)];
+
+    // Group values by category
+    const groupedData = {};
+    uniqueCategories.forEach(cat => {
+      groupedData[cat] = [];
+    });
+    
+    data.forEach(row => {
+      const cat = row[categoryColumn];
+      const val = row[valueColumn];
+      if (cat && val !== '') {
+        groupedData[cat].push(val);
+      }
+    });
+
+    // Generate group variable declarations
+    const groupDeclarations = uniqueCategories.map((cat, index) => {
+      const groupName = `group${index + 1}`;
+      const groupValues = groupedData[cat];
+      return `${groupName} <- c(${groupValues.join(', ')})`;
+    }).join('\n');
+
+    // Generate group labels
+    const groupLabels = uniqueCategories.map((cat, index) => `rep("${cat}", length(group${index + 1}))`).join(', ');
+
+    // Generate combined values
+    const groupValues = uniqueCategories.map((_, index) => `group${index + 1}`).join(', ');
+
+    // Get formula from custom args or use default
+    const formula = customArgs['Formula'] || `value ~ group`;
+
+    const rCode = `# Initialize data by groups
+${groupDeclarations}
+
+# Combine all groups into data frame
+df <- data.frame(
+  value = c(${groupValues}),
+  group = factor(c(${groupLabels}))
+)
+
+# Fit ANOVA model using formula: ${formula}
+anova_model <- aov(${formula}, data = df)
+
+# Display summary
+summary(anova_model)
+
+# Post-hoc test (Tukey's HSD)
+TukeyHSD(anova_model)`;
 
     return rCode;
   }
@@ -814,6 +961,24 @@ dev.off()`;
         return this.getDefaultDensityPlotCode();
       case 'box-plot':
         return this.getDefaultBoxPlotCode();
+      case 'iqr':
+        return this.getDefaultIQRCode();
+      case 'standard-deviation':
+        return this.getDefaultStandardDeviationCode();
+      case 'median':
+        return this.getDefaultMedianCode();
+      case 'read-csv':
+        return this.getDefaultReadCSVCode();
+      case 'combinations':
+        return this.getDefaultCombinationsCode();
+      case 'permutations':
+        return this.getDefaultPermutationsCode();
+      case 'anova':
+        return this.getDefaultANOVACode();
+      case 'z-value':
+        return this.getDefaultZValueCode();
+      case 't-test':
+        return this.getDefaultTTestCode();
       default:
         return this.getDefaultLinearRegressionCode();
     }
@@ -1053,6 +1218,8 @@ boxplot(
         return this.generateDensityPlotArguments(data, selections.valueColumn);
       case 'box-plot':
         return this.generateBoxPlotArguments(data, selections.valueColumn);
+      case 'anova':
+        return this.generateANOVAArguments(data, selections.categoryColumn, selections.valueColumn);
       default:
         return this.getDefaultArguments(toolId);
     }
@@ -1271,6 +1438,23 @@ boxplot(
   }
 
   /**
+   * Generate arguments configuration for ANOVA
+   * @param {Array<Object>} data - Parsed CSV data
+   * @param {string} categoryColumn - Name of the group column
+   * @param {string} valueColumn - Name of the value column
+   * @returns {Array<Object>} Arguments configuration
+   */
+  static generateANOVAArguments(data, categoryColumn, valueColumn) {
+    if (!data || data.length === 0 || !categoryColumn || !valueColumn) {
+      return this.getDefaultArguments('anova');
+    }
+
+    return [
+      { name: "Formula", value: "value ~ group", readOnly: false }
+    ];
+  }
+
+  /**
    * Get default arguments when no data is available
    * @param {string} toolId - Tool identifier
    * @returns {Array<Object>} Default arguments
@@ -1353,6 +1537,10 @@ boxplot(
           { name: "Color", value: "lightgreen", readOnly: false },
           { name: "Border Color", value: "darkgreen", readOnly: false },
           { name: "Horizontal", value: "FALSE", readOnly: false }
+        ];
+      case 'anova':
+        return [
+          { name: "Formula", value: "value ~ group", readOnly: false }
         ];
       default:
         return [
@@ -1470,5 +1658,189 @@ boxplot(
    */
   static validateDataForLinearRegression(data) {
     return this.validateData(data, 'linear-regression');
+  }
+
+  /**
+   * Get default IQR code
+   * @returns {string} Default R code
+   */
+  static getDefaultIQRCode() {
+    return `# Initialize data
+values <- c(12, 15, 18, 22, 25, 23, 28, 32, 30, 35, 18, 22, 25, 28, 30)
+
+# Calculate IQR
+iqr_value <- IQR(values, na.rm = TRUE)
+
+# Print result
+print(paste("Interquartile Range:", iqr_value))`;
+  }
+
+  /**
+   * Get default standard deviation code
+   * @returns {string} Default R code
+   */
+  static getDefaultStandardDeviationCode() {
+    return `# Initialize data
+values <- c(12, 15, 18, 22, 25, 23, 28, 32, 30, 35, 18, 22, 25, 28, 30)
+
+# Calculate standard deviation
+sd_value <- sd(values, na.rm = TRUE)
+
+# Print result
+print(paste("Standard Deviation:", sd_value))`;
+  }
+
+  /**
+   * Get default median code
+   * @returns {string} Default R code
+   */
+  static getDefaultMedianCode() {
+    return `# Initialize data
+values <- c(12, 15, 18, 22, 25, 23, 28, 32, 30, 35, 18, 22, 25, 28, 30)
+
+# Calculate median
+median_value <- median(values, na.rm = TRUE)
+
+# Print result
+print(paste("Median:", median_value))`;
+  }
+
+  /**
+   * Get default read CSV code
+   * @returns {string} Default R code
+   */
+  static getDefaultReadCSVCode() {
+    return `# Read CSV file
+data <- read.csv(
+  file = "data.csv",
+  header = TRUE,
+  sep = ",",
+  quote = "\\"",
+  dec = ".",
+  fill = TRUE,
+  comment.char = "",
+  stringsAsFactors = FALSE
+)
+
+# Display first few rows
+head(data)
+
+# Display structure
+str(data)`;
+  }
+
+  /**
+   * Get default combinations code
+   * @returns {string} Default R code
+   */
+  static getDefaultCombinationsCode() {
+    return `# Calculate combinations: choose(n, k)
+# n: total number of items
+# k: number of items to choose
+
+n <- 10
+k <- 3
+
+# Calculate combinations
+combinations <- choose(n, k)
+
+# Print result
+print(paste("Number of ways to choose", k, "items from", n, "items:", combinations))`;
+  }
+
+  /**
+   * Get default permutations code
+   * @returns {string} Default R code
+   */
+  static getDefaultPermutationsCode() {
+    return `# Calculate permutations
+# n: total number of items
+# k: number of items to arrange
+
+n <- 10
+k <- 3
+
+# Calculate permutations using factorial
+permutations <- factorial(n) / factorial(n - k)
+
+# Print result
+print(paste("Number of permutations of", k, "items from", n, "items:", permutations))`;
+  }
+
+  /**
+   * Get default ANOVA code
+   * @returns {string} Default R code
+   */
+  static getDefaultANOVACode() {
+    return `# Initialize data by groups
+group1 <- c(23, 25, 27, 29, 31)
+group2 <- c(30, 32, 34, 36, 38)
+group3 <- c(18, 20, 22, 24, 26)
+
+# Combine all groups into data frame
+df <- data.frame(
+  value = c(group1, group2, group3),
+  group = factor(c(rep("Group1", length(group1)), rep("Group2", length(group2)), rep("Group3", length(group3))))
+)
+
+# Fit ANOVA model
+anova_model <- aov(value ~ group, data = df)
+
+# Display summary
+summary(anova_model)
+
+# Post-hoc test (Tukey's HSD)
+TukeyHSD(anova_model)`;
+  }
+
+  /**
+   * Get default Z-value code
+   * @returns {string} Default R code
+   */
+  static getDefaultZValueCode() {
+    return `# Calculate Z-value
+sample_mean <- 52
+population_mean <- 50
+standard_deviation <- 5
+sample_size <- 30
+
+# Calculate standard error
+standard_error <- standard_deviation / sqrt(sample_size)
+
+# Calculate Z-value
+z_value <- (sample_mean - population_mean) / standard_error
+
+# Print result
+print(paste("Z-value:", z_value))
+
+# Calculate p-value (two-tailed)
+p_value <- 2 * pnorm(-abs(z_value))
+print(paste("P-value (two-tailed):", p_value))`;
+  }
+
+  /**
+   * Get default t-test code
+   * @returns {string} Default R code
+   */
+  static getDefaultTTestCode() {
+    return `# Initialize data
+group1 <- c(23, 25, 27, 29, 31, 33, 35)
+group2 <- c(18, 20, 22, 24, 26, 28, 30)
+
+# Perform t-test
+t_test_result <- t.test(
+  group1, 
+  group2,
+  paired = FALSE,
+  var.equal = FALSE
+)
+
+# Print results
+print(t_test_result)
+
+# Extract specific values
+print(paste("T-statistic:", t_test_result$statistic))
+print(paste("P-value:", t_test_result$p.value))
+print(paste("Degrees of freedom:", t_test_result$parameter))`;
   }
 }
