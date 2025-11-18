@@ -1,0 +1,89 @@
+.accessibilityButton {
+  position: fixed;
+  bottom: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1000;
+  padding: 0.65rem 1.2rem;
+  border-radius: 999px;
+  border: 1px solid var(--panel-border, rgba(255, 255, 255, 0.25));
+  background: var(--panel-background, rgba(20, 20, 20, 0.85));
+  color: var(--foreground, #ffffff);
+  font-size: 0.85rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  cursor: pointer;
+  box-shadow: 0 10px 30px var(--shadow-color, rgba(0, 0, 0, 0.35));
+  transition: transform 0.2s ease, background 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.accessibilityButton:focus-visible {
+  outline: 2px solid #8dd6ff;
+  outline-offset: 2px;
+}
+
+.accessibilityButton:hover {
+  transform: translate(-50%, -1px);
+  border-color: var(--circle-border, rgba(255, 255, 255, 0.4));
+  box-shadow: 0 14px 30px var(--shadow-color, rgba(0, 0, 0, 0.35));
+}
+
+.panel {
+  position: fixed;
+  left: 50%;
+  bottom: 72px;
+  transform: translateX(-50%);
+  padding: 1rem 1.25rem;
+  border-radius: 1rem;
+  background: var(--panel-background, rgba(15, 15, 15, 0.95));
+  border: 1px solid var(--panel-border, rgba(255, 255, 255, 0.15));
+  box-shadow: 0 20px 45px var(--shadow-color, rgba(0, 0, 0, 0.45));
+  min-width: 220px;
+  text-align: center;
+  z-index: 1000;
+  color: var(--foreground, #ffffff);
+}
+
+.panelTitle {
+  font-size: 0.85rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--foreground, #ffffff);
+  opacity: 0.75;
+  margin-bottom: 0.75rem;
+}
+
+.controlRow {
+  display: flex;
+  justify-content: center;
+  gap: 0.75rem;
+}
+
+.circleButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  border: 1px solid var(--circle-border, rgba(255, 255, 255, 0.25));
+  background: var(--circle-background, rgba(255, 255, 255, 0.08));
+  color: var(--foreground, #ffffff);
+  font-size: 1rem;
+  cursor: pointer;
+  transition: transform 0.2s ease, border-color 0.2s ease, background 0.2s ease;
+}
+
+.circleButtonActive {
+  background: var(--circle-background-active, rgba(255, 255, 255, 0.2));
+  border-color: var(--circle-border, rgba(255, 255, 255, 0.6));
+}
+
+.circleButton:hover,
+.circleButton:focus-visible {
+  transform: translateY(-2px);
+  border-color: var(--circle-border, rgba(255, 255, 255, 0.6));
+  background: var(--circle-background-active, rgba(255, 255, 255, 0.15));
+  outline: none;
+}

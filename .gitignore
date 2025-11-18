@@ -4,6 +4,7 @@
 node_modules/
 client/node_modules/
 server/node_modules/
+server/node_modules/
 /.pnp
 .pnp.*
 .yarn/*
@@ -35,6 +36,7 @@ yarn-error.log*
 
 # env files (can opt-in for committing if needed)
 .env
+.env.local
 
 # vercel
 .vercel

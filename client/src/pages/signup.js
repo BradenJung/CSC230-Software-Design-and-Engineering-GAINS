@@ -10,6 +10,21 @@ const initialState = {
   confirmPassword: "",
 };
 
+async function handleSignup(e) {
+  e.preventDefault();
+  const fd = new FormData(e.currentTarget);
+  const username = String(fd.get("username") || "");
+  const password = String(fd.get("password") || "");
+  try {
+    const { message } = await signupRequest({ username, password });
+    alert(message || "Signup successful");
+    // optional: redirect after success
+    // router.push("/login");
+  } catch (err) {
+    alert(err.message);
+  }
+}
+
 const ACCOUNTS_STORAGE_KEY = "gains.accounts";
 const ACTIVE_ACCOUNT_KEY = "gains.activeAccount";
 
@@ -121,7 +136,7 @@ export default function Signup() {
             </aside>
 
             <div className={styles.authCard}>
-              <form onSubmit={handleSubmit} className={styles.authForm}>
+              <form onSubmit={handleSignup} className={styles.authForm}>
                 <div className={styles.inputGroup}>
                   <label htmlFor="accountName" className={styles.inputLabel}>
                     Account name

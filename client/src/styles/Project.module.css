@@ -16,7 +16,7 @@
   border-radius: 999px;
   background: rgba(79, 206, 255, 0.12);
   border: 1px solid rgba(79, 206, 255, 0.35);
-  color: #d3f4ff;
+  color: var(--foreground);
   font-size: 12px;
   font-weight: 600;
   letter-spacing: 0.08em;
@@ -24,8 +24,8 @@
 }
 
 .heroChecklist {
-  background: rgba(18, 27, 49, 0.7);
-  border: 1px solid rgba(75, 142, 255, 0.35);
+  background: var(--surface-secondary);
+  border: 1px solid var(--border-strong);
   border-radius: 14px;
   padding: 20px 24px;
   display: flex;
@@ -37,7 +37,7 @@
   margin: 0;
   font-size: 14px;
   font-weight: 600;
-  color: #f1f4f9;
+  color: var(--foreground);
 }
 
 .actionButton {
@@ -47,12 +47,12 @@
 
 .deleteButton {
   background: linear-gradient(135deg, #ff6b6b 0%, #d43b3b 100%);
-  color: #ffffff;
+  color: var(--on-accent);
 }
 
 .deleteButton:hover {
   background: #ff7d7d;
-  color: #ffffff;
+  color: var(--on-accent);
 }
 
 .deleteButtonActive {
@@ -62,20 +62,20 @@
 
 .selectAllButton {
   min-width: 160px;
-  border: 1px solid #ff7d7d !important;
-  color: #ffe6e6 !important;
+  border: 1px solid var(--danger-primary) !important;
+  color: var(--foreground) !important;
 }
 
 .selectAllButton:hover {
   background: rgba(255, 125, 125, 0.1);
-  border-color: #ff9d9d !important;
-  color: #ffffff !important;
+  border-color: var(--danger-primary) !important;
+  color: var(--foreground) !important;
 }
 
 .deleteHelper {
   margin: 0;
   font-size: 14px;
-  color: #ffc6c6;
+  color: var(--text-muted);
 }
 
 .projectsSection {
@@ -114,8 +114,8 @@
 
 .projectCard {
   width: 100%;
-  background: rgba(244, 247, 252, 0.12);
-  border: 2px solid #30c8f7;
+  background: var(--surface-secondary);
+  border: 1px solid var(--border-strong);
   border-radius: 18px;
   padding: 18px 22px;
   display: flex;
@@ -123,19 +123,20 @@
   align-items: stretch;
   gap: 16px;
   font-weight: 600;
-  color: #f0f4fb;
+  color: var(--foreground);
   transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease, min-height 0.2s ease;
   cursor: pointer;
 }
 
 .projectCard:hover {
   transform: translateY(-2px);
-  box-shadow: 0 12px 28px rgba(9, 15, 36, 0.35);
+  box-shadow: 0 12px 28px var(--shadow-color, rgba(9, 15, 36, 0.35));
+  border-color: var(--accent-primary);
 }
 
 .projectCardDeleteMode {
-  border-color: #ff7d7d;
-  box-shadow: 0 0 0 2px rgba(255, 125, 125, 0.4);
+  border-color: var(--danger-primary);
+  box-shadow: 0 0 0 2px var(--danger-soft);
   cursor: pointer;
 }
 
@@ -173,12 +174,12 @@
 
 .settingsButton:hover {
   transform: translateY(-2px);
-  background: rgba(58, 71, 96, 0.28);
+  background: var(--accent-primary-soft);
 }
 
 .settingsButton:focus-visible {
-  background: rgba(58, 71, 96, 0.28);
-  outline: 2px solid #4a9eff;
+  background: var(--accent-primary-soft);
+  outline: 2px solid var(--accent-primary);
   outline-offset: 2px;
 }
 
@@ -204,14 +205,14 @@
   margin: 0;
   font-size: 14px;
   font-weight: 500;
-  color: #c2ccdf;
+  color: var(--text-muted);
   text-align: center;
 }
 
 .emptyState {
   margin: 0;
   font-size: 15px;
-  color: #c2ccdf;
+  color: var(--text-muted);
   text-align: center;
 }
 
@@ -227,13 +228,13 @@
 }
 
 .settingsModal {
-  background: rgba(22, 32, 59, 0.95);
-  border: 1px solid rgba(65, 153, 255, 0.5);
+  background: var(--surface-secondary);
+  border: 1px solid var(--border-strong);
   border-radius: 16px;
   padding: 32px;
   width: min(420px, 100%);
-  box-shadow: 0 20px 40px rgba(5, 10, 25, 0.4);
-  color: #f0f4fb;
+  box-shadow: 0 20px 40px var(--shadow-color, rgba(5, 10, 25, 0.4));
+  color: var(--foreground);
   text-align: center;
 }
 
@@ -245,7 +246,7 @@
 .settingsModalCopy {
   margin: 0 0 24px;
   font-size: 16px;
-  color: #c2ccdf;
+  color: var(--text-muted);
 }
 
 .closeSettingsButton {
@@ -255,7 +256,7 @@
   font-weight: 600;
   cursor: pointer;
   background: linear-gradient(135deg, #4a9eff 0%, #2972e3 100%);
-  color: #ffffff;
+  color: var(--on-accent);
   transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
