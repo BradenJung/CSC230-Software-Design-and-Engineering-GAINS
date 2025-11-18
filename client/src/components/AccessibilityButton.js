@@ -75,12 +75,6 @@ export default function AccessibilityButton({ onClick, title = "Open accessibili
             >
               ☀
             </button>
-            <button type="button" className={styles.circleButton} aria-label="Sample option 2">
-              A+
-            </button>
-            <button type="button" className={styles.circleButton} aria-label="Sample option 3">
-              A-
-            </button>
           </div>
         </div>
       )}
