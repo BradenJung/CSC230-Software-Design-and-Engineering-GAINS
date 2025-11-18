@@ -3,6 +3,7 @@ import Link from "next/link";
 import Header from "../components/header";
 import styles from "../styles/Home.module.css";
 import AccessibilityButton from "../components/AccessibilityButton";
+import CodexTool from "../components/CodexTool";
 
 const metrics = [
   { label: "Datasets Analyzed", value: "1,200+" },
@@ -237,7 +238,10 @@ export default function Home() {
           </div>
         </section>
       </main>
+      {/*Adds Accessibility Button to page */}
       <AccessibilityButton />
+      {/*Adds Chat Option to the current page */}
+      <CodexTool />
     </div>
   );
 }

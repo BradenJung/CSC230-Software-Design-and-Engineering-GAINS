@@ -2,6 +2,8 @@ import Head from "next/head";
 import { useState } from "react";
 import Header from "../components/header";
 import styles from "../styles/Home.module.css";
+import AccessibilityButton from "../components/AccessibilityButton";
+import CodexTool from "../components/CodexTool";
 
 export default function Learn() {
   const [expandedChapters, setExpandedChapters] = useState({});
@@ -596,6 +598,10 @@ is_even(7)  # FALSE`}</code></pre>
             </a>
           </div>
         </div>
+        {/*Adds Accessibility Button to page */}
+      <AccessibilityButton />
+      {/*Adds Chat Option to the current page */}
+      <CodexTool />
       </div>
     </>
   );

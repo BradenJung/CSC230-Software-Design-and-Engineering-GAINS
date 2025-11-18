@@ -4,6 +4,8 @@ import Header from "../components/header";
 import Footer from "../components/footer";
 import layoutStyles from "../styles/Home.module.css";
 import projectStyles from "../styles/Project.module.css";
+import AccessibilityButton from "../components/AccessibilityButton";
+import CodexTool from "../components/CodexTool";
 
 // Persist projects in localStorage so we remember state between sessions
 const STORAGE_KEY = "gains-projects";
@@ -480,6 +482,10 @@ export default function Project() {
         </section>
       </main>
       <Footer />
+      {/*Adds Accessibility Button to page */}
+      <AccessibilityButton />
+      {/*Adds Chat Option to the current page */}
+      <CodexTool />
     </div>
   );
 }

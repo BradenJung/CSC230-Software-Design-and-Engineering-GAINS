@@ -3,6 +3,8 @@ import { useState } from "react";
 import Link from "next/link";
 import Header from "../components/header";
 import styles from "../styles/Home.module.css";
+import AccessibilityButton from "../components/AccessibilityButton";
+import CodexTool from "../components/CodexTool";
 
 const ACCOUNTS_STORAGE_KEY = "gains.accounts";
 const ACTIVE_ACCOUNT_KEY = "gains.activeAccount";
@@ -163,6 +165,10 @@ export default function Login() {
             </div>
           </section>
         </main>
+        {/*Adds Accessibility Button to page */}
+      <AccessibilityButton />
+      {/*Adds Chat Option to the current page */}
+      <CodexTool />
       </div>
     </>
   );

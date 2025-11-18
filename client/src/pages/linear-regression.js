@@ -18,6 +18,8 @@ import { EditableDataTable } from "../components/EditableDataTable";
 import { useRDashboard } from "../logic/useLinearRegression";
 import { RCodeService } from "../logic/RCodeService";
 import styles from "../styles/Home.module.css";
+import AccessibilityButton from "../components/AccessibilityButton";
+import CodexTool from "../components/CodexTool";
 
 const STORAGE_KEY = "gains-projects";
 const ACTIVE_ACCOUNT_KEY = "gains.activeAccount";
@@ -2184,6 +2186,10 @@ print(paste("Degrees of freedom:", t_test_result$parameter))`,
             </div>
           )}
         </div>
+        {/*Adds Accessibility Button to page */}
+      <AccessibilityButton />
+      {/*Adds Chat Option to the current page */}
+      <CodexTool />
       </div>
     </>
   );

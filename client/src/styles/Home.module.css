@@ -317,7 +317,7 @@
 
 .panelHeader p {
   font-size: 14px;
-  color: #8a8a8a;
+  color: var(--text-muted);
   margin: 0;
   line-height: 1.4;
 }
@@ -331,9 +331,9 @@
 
 .searchInput {
   width: 104%;
-  background: #2a2a2a;
-  border: 1px solid #333;
-  color: #ffffff;
+  background: var(--surface-secondary);
+  border: 1px solid var(--border-muted);
+  color: var(--foreground);
   padding: 12px 16px;
   border-radius: 8px;
   font-size: 14px;
@@ -349,7 +349,7 @@
 }
 
 .searchInput::placeholder {
-  color: #666;
+  color: var(--text-muted);
 }
 
 .clearSearchBtn {
@@ -359,7 +359,7 @@
   transform: translateY(-50%);
   background: transparent;
   border: none;
-  color: #666;
+  color: var(--text-muted);
   cursor: pointer;
   font-size: 18px;
   padding: 4px 8px;
@@ -371,13 +371,13 @@
 }
 
 .clearSearchBtn:hover {
-  color: #ffffff;
-  background: rgba(255, 255, 255, 0.1);
+  color: var(--foreground);
+  background: var(--surface-secondary);
 }
 
 .searchResults {
   font-size: 12px;
-  color: #8a8a8a;
+  color: var(--text-muted);
   padding: 4px 8px;
   margin-bottom: 8px;
   text-align: center;
@@ -391,8 +391,8 @@
 }
 
 .toolCard {
-  background: #242424;
-  border: 2px solid var(--surface-secondary);
+  background: var(--surface-card);
+  border: 2px solid var(--border-muted);
   border-radius: 12px;
   padding: 0;
   cursor: pointer;
@@ -404,14 +404,14 @@
 }
 
 .toolCard:hover {
-  border-color: #3a3a3a;
+  border-color: var(--border-strong);
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
 }
 
 .toolCard.selected {
   border-color: #4a9eff;
-  background: #1e1e1e;
+  background: var(--surface-secondary);
   box-shadow: 0 0 0 1px rgba(74, 158, 255, 0.2);
 }
 
@@ -423,10 +423,6 @@
   justify-content: center;
   min-height: 140px;
   position: relative;
-}
-
-.toolCard.selected .toolCardVisual {
-  background: #0f0f0f;
 }
 
 .toolVisualization {
@@ -442,13 +438,13 @@
 
 .toolCardContent {
   padding: 16px 20px 20px;
-  background: #242424;
-  border-top: 1px solid var(--surface-secondary);
+  background: var(--surface-card);
+  border-top: 1px solid var(--border-muted);
 }
 
 .toolCard.selected .toolCardContent {
-  background: #1e1e1e;
-  border-top-color: #333;
+  background: var(--surface-secondary);
+  border-top-color: var(--border-muted);
 }
 
 .toolCardContent h3 {
@@ -461,13 +457,14 @@
 
 .toolCardContent p {
   font-size: 13px;
-  color: #8a8a8a;
+  color: var(--text-muted);
   line-height: 1.5;
   margin: 0;
 }
 
 .toolCard.selected .toolCardContent p {
-  color: #a0a0a0;
+  color: var(--foreground);
+  opacity: 0.85;
 }
 
 /* Center Panel - Tool Details */
@@ -498,7 +495,7 @@
 
 .toolHeader p {
   font-size: 14px;
-  color: #aaa;
+  color: var(--text-muted);
 }
 
 .toolVisual {
@@ -1035,7 +1032,7 @@
 /* Validation and Column Selection Styles */
 .validationErrors {
   background: var(--surface-secondary);
-  border: 1px solid #3a3a3a;
+  border: 1px solid var(--border-muted);
   border-left: 3px solid #ff453a;
   border-radius: 8px;
   padding: 14px 18px;
@@ -1064,7 +1061,7 @@
 .validationErrors ul {
   margin: 0;
   padding-left: 20px;
-  color: #c7c7c7;
+  color: var(--text-muted);
   font-size: 13px;
   line-height: 1.6;
 }
@@ -1075,7 +1072,7 @@
 
 .columnSelectionInfo {
   background: var(--surface-secondary);
-  border: 1px solid #3a3a3a;
+  border: 1px solid var(--border-muted);
   border-left: 3px solid #4a9eff;
   border-radius: 8px;
   padding: 14px 18px;
@@ -1105,7 +1102,7 @@
 .columnSelectionInfo p {
   margin: 6px 0;
   font-size: 13px;
-  color: #c7c7c7;
+  color: var(--text-muted);
   line-height: 1.5;
 }
 
@@ -1115,12 +1112,12 @@
 }
 
 .columnSelectionHint {
-  color: #888 !important;
+  color: var(--text-muted) !important;
   font-style: italic;
   margin-top: 10px !important;
   font-size: 12px !important;
   padding-top: 8px;
-  border-top: 1px solid #3a3a3a;
+  border-top: 1px solid var(--border-muted);
 }
 
 /* Empty state placeholder for data table */
@@ -1200,7 +1197,7 @@
 
 /* Right Panel - Code and Arguments */
 .rightPanel {
-  background: #1e1e1e;
+  background: var(--surface-primary);
   border-left: 1px solid var(--border-muted);
   padding: 24px;
   overflow-y: auto;
@@ -1272,9 +1269,9 @@
   color: var(--foreground);
 }
 .clearDatasetBtn {
-  background: #2a2a2a;
-  border: 1px solid #333;
-  color: #ffffff;
+  background: var(--surface-secondary);
+  border: 1px solid var(--border-muted);
+  color: var(--foreground);
   padding: 6px 12px;
   border-radius: 6px;
   cursor: pointer;
@@ -1351,8 +1348,8 @@
 
 .segmentedControl {
   display: flex;
-  background: #0d1117;
-  border: 1px solid #333;
+  background: var(--surface-secondary);
+  border: 1px solid var(--border-muted);
   border-radius: 6px;
   padding: 2px;
   gap: 2px;
@@ -1361,7 +1358,7 @@
 .segmentedButton {
   background: transparent;
   border: none;
-  color: #9aa3b5;
+  color: var(--text-muted);
   padding: 6px 16px;
   border-radius: 4px;
   font-size: 13px;
@@ -1371,8 +1368,8 @@
 }
 
 .segmentedButton:hover {
-  color: #ffffff;
-  background: rgba(74, 158, 255, 0.1);
+  color: var(--foreground);
+  background: var(--surface-card);
 }
 
 .segmentedButtonActive {
@@ -1385,7 +1382,7 @@
 }
 
 .codeBlock {
-  background: #0d1117;
+  background: var(--surface-secondary);
   border: 1px solid var(--border-muted);
   border-radius: 6px;
   padding: 16px;
@@ -1398,7 +1395,7 @@
   font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
   font-size: 12px;
   line-height: 1.5;
-  color: #e6edf3;
+  color: var(--foreground);
 }
 
 .codeBlockDark {
@@ -1430,7 +1427,7 @@
 
 .codeDescription {
   font-size: 12px;
-  color: #aaa;
+  color: var(--text-muted);
   margin: 0;
 }
 
@@ -1471,7 +1468,7 @@
 .argumentGroup input:disabled,
 .argumentGroup input[readonly] {
   background: var(--surface-primary);
-  color: #666;
+  color: var(--text-muted);
   cursor: not-allowed;
   opacity: 0.6;
 }
@@ -1481,7 +1478,7 @@
 }
 
 .datasetArgument label {
-  color: #888;
+  color: var(--text-muted);
 }
 
 .argumentLabelRow {
@@ -1608,7 +1605,7 @@
 
 .dataInput label {
   font-size: 12px;
-  color: #aaa;
+  color: var(--text-muted);
   margin: 0;
   min-width: 20px;
 }
@@ -1621,8 +1618,8 @@
 
 /* One-Function Tool Inputs */
 .oneFunctionToolInputs {
-  background: #2a2a2a;
-  border: 1px solid #333;
+  background: var(--surface-secondary);
+  border: 1px solid var(--border-muted);
   border-radius: 12px;
   padding: 24px;
   display: flex;
@@ -1634,12 +1631,12 @@
   font-size: 18px;
   font-weight: 600;
   margin: 0;
-  color: #ffffff;
+  color: var(--foreground);
 }
 
 .toolInstructions {
   font-size: 14px;
-  color: #8a8a8a;
+  color: var(--text-muted);
   margin: 0;
   line-height: 1.5;
 }
@@ -1653,13 +1650,13 @@
 .argumentInput label {
   font-size: 14px;
   font-weight: 500;
-  color: #ffffff;
+  color: var(--foreground);
 }
 
 .argumentInput input {
-  background: #1a1a1a;
-  border: 1px solid #333;
-  color: #ffffff;
+  background: var(--surface-primary);
+  border: 1px solid var(--border-muted);
+  color: var(--foreground);
   padding: 12px 16px;
   border-radius: 8px;
   font-size: 14px;
@@ -1674,7 +1671,7 @@
 }
 
 .argumentInput input::placeholder {
-  color: #666;
+  color: var(--text-muted);
 }
 
 .link {
