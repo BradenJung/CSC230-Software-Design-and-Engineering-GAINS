@@ -20,6 +20,11 @@ import { RCodeService } from "../logic/RCodeService";
 import styles from "../styles/Home.module.css";
 import AccessibilityButton from "../components/AccessibilityButton";
 import CodexTool from "../components/CodexTool";
+import ScatterplotTool from "../components/scatterplot";
+import HistogramTool from "../components/histogram";
+import DensityTool from "../components/densityplot";
+import PieChartTool from "../components/piechart";
+import BoxplotTool from "../components/boxplot";
 
 const STORAGE_KEY = "gains-projects";
 const ACTIVE_ACCOUNT_KEY = "gains.activeAccount";
@@ -28,6 +33,13 @@ const DEFAULT_ACCOUNT_KEY = "__guest__";
 const IMPORTED_CSV_DATA_KEY = "importedCsvData";
 const LAST_USED_R_TOOL_KEY = "lastUsedRTool";
 const DEFAULT_TOOL_ID = "linear-regression";
+const TOOL_PREVIEW_COMPONENTS = {
+  "dot-plot": { title: "Dot Plot Preview", Component: ScatterplotTool },
+  "histogram": { title: "Histogram Preview", Component: HistogramTool },
+  "density-plot": { title: "Density Plot Preview", Component: DensityTool },
+  "pie-chart": { title: "Pie Chart Preview", Component: PieChartTool },
+  "box-plot": { title: "Box Plot Preview", Component: BoxplotTool }
+};
 // Shared map allows us to round-trip tool ids between React state and stored PascalCase values.
 // Map internal ids to storage-safe PascalCase variants (dot plot included)
 const TOOL_ID_TO_STORAGE_VALUE = {
@@ -552,10 +564,12 @@ print(paste("Degrees of freedom:", t_test_result$parameter))`;
   const [copyToastVisible, setCopyToastVisible] = useState(false);
   const [copyToastMessage, setCopyToastMessage] = useState('');
   const [copyToastTone, setCopyToastTone] = useState('success');
+  const [previewModalOpen, setPreviewModalOpen] = useState(false);
   const [appearanceStyle, setAppearanceStyle] = useState(0);
   const [infoTooltipVisible, setInfoTooltipVisible] = useState(null);
   const [toolSearchQuery, setToolSearchQuery] = useState('');
   const [codeViewMode, setCodeViewMode] = useState('night'); // 'dark', 'light', or 'night'
+  const previewConfig = TOOL_PREVIEW_COMPONENTS[selectedTool] || null;
 
   // Show a quick message when we copy code or fail to do so.
   const showCopyToast = useCallback((message, tone = 'success') => {
@@ -573,6 +587,22 @@ print(paste("Degrees of freedom:", t_test_result$parameter))`;
       copyToastTimerRef.current = null;
     }, 2200);
   }, []);
+
+  const openPreviewModal = useCallback(() => {
+    if (previewConfig) {
+      setPreviewModalOpen(true);
+    }
+  }, [previewConfig]);
+
+  const closePreviewModal = useCallback(() => {
+    setPreviewModalOpen(false);
+  }, []);
+
+  useEffect(() => {
+    if (!previewConfig && previewModalOpen) {
+      setPreviewModalOpen(false);
+    }
+  }, [previewModalOpen, previewConfig]);
 
   // Save the latest table rows and tool choice into localStorage.
   const persistImportedCsvData = useCallback(
@@ -1798,6 +1828,8 @@ print(paste("Degrees of freedom:", t_test_result$parameter))`,
     const oneFunctionTools = ['iqr', 'standard-deviation', 'median', 'read-csv', 'combinations', 'permutations', 'z-value', 't-test'];
     return oneFunctionTools.includes(selectedTool);
   }, [selectedTool]);
+  const previewAvailable = Boolean(previewConfig);
+  const PreviewComponent = previewConfig?.Component;
 
   return (
     <>
@@ -1808,12 +1840,39 @@ print(paste("Degrees of freedom:", t_test_result$parameter))`,
         <link rel="icon" href="/favicon.ico" />
       </Head>
 
+      {previewModalOpen && previewConfig && (
+        <div
+          className={styles.previewOverlay}
+          role="dialog"
+          aria-modal="true"
+          aria-label={previewConfig.title}
+        >
+          <div className={styles.previewModal}>
+            <div className={styles.previewModalHeader}>
+              <h2>{previewConfig.title}</h2>
+              <button
+                type="button"
+                className={styles.previewCloseButton}
+                onClick={closePreviewModal}
+                aria-label="Close preview"
+              >
+                ×
+              </button>
+            </div>
+            <div className={styles.previewModalBody}>
+              {PreviewComponent && <PreviewComponent />}
+            </div>
+          </div>
+        </div>
+      )}
+
       <Header
         onImportClick={handleTriggerImport}
         onEditClick={toggleRightPanel}
         onExportClick={handleExport}
-        onCopyClick={handleCopyRCode}
         onProjectRename={handleProjectRename}
+        onPreviewClick={openPreviewModal}
+        isPreviewAvailable={previewAvailable}
         isRightPanelVisible={isRightPanelVisible}
         currentProjectName={projectHydrated ? currentProjectName : undefined}
       />

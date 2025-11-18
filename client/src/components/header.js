@@ -10,8 +10,9 @@ export default function Header({
   onImportClick,
   onEditClick,
   onExportClick,
-  onCopyClick = () => {},
+  onPreviewClick = () => {},
   onProjectRename = () => {},
+  isPreviewAvailable = false,
   isRightPanelVisible,
   currentProjectName
 }) {
@@ -172,7 +173,7 @@ export default function Header({
     { label: "Edit", onClick: onEditClick },
     { label: "Import", onClick: onImportClick },
     { label: "Export", onClick: onExportClick },
-    { label: "Copy R Code", onClick: onCopyClick, icon: "{}" },
+    { label: "Preview", onClick: onPreviewClick, disabled: !isPreviewAvailable },
   ];
 
   const authButtons = [
@@ -203,11 +204,13 @@ export default function Header({
         {isLinearRegressionPage && (
           <div className={styles.navCenter}>
             <div className={styles.navLinks}>
-              {toolNavItems.map(({ label, onClick, icon }) => (
+              {toolNavItems.map(({ label, onClick, icon, disabled }) => (
                 <button
                   key={label}
+                  type="button"
                   onClick={onClick}
-                  className={styles.navLink}
+                  className={`${styles.navLink} ${disabled ? styles.navLinkDisabled : ''}`}
+                  disabled={disabled}
                   style={{
                     background: 'none',
                     border: 'none',

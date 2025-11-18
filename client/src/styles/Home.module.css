@@ -64,6 +64,12 @@
   color: #4a9eff;
 }
 
+.navLinkDisabled {
+  opacity: 0.4;
+  cursor: not-allowed !important;
+  color: var(--border-muted);
+}
+
 .currentProjectBadge {
   display: inline-flex;
   align-items: center;
@@ -2973,6 +2979,65 @@
 .secondaryButton:hover {
   background: #4a9eff;
   transform: translateY(-2px);
+}
+
+.previewOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(6, 12, 20, 0.6);
+  backdrop-filter: blur(6px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  z-index: 2000;
+}
+
+.previewModal {
+  background: var(--surface-primary);
+  border-radius: 16px;
+  border: 1px solid var(--border-muted);
+  box-shadow: 0 25px 80px rgba(0, 0, 0, 0.5);
+  width: min(1100px, 95vw);
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.previewModalHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 24px;
+  border-bottom: 1px solid var(--border-muted);
+  background: var(--surface-tertiary);
+}
+
+.previewModalHeader h2 {
+  margin: 0;
+  font-size: 1.25rem;
+}
+
+.previewModalBody {
+  padding: 16px 24px 24px;
+  overflow-y: auto;
+  background: var(--surface-primary);
+}
+
+.previewCloseButton {
+  background: transparent;
+  border: none;
+  color: var(--foreground);
+  font-size: 1.5rem;
+  cursor: pointer;
+  line-height: 1;
+}
+
+.previewCloseButton:hover,
+.previewCloseButton:focus {
+  color: #ff7b7b;
+  outline: none;
 }
 
 /* Responsive Design for Learn Page */
