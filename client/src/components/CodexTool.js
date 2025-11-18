@@ -462,14 +462,14 @@ export default function CodexTool({ variant = "floating" }) {
         <span className={styles.triggerIcons}>
           <span className={`${styles.caret} ${isExpanded ? styles.caretOpen : ""}`} aria-hidden />
           {isExpanded && !isFullscreen && (
-            <button
-              type="button"
+            <Link
+              href="/chat"
               className={styles.expandSymbolButton}
-              aria-label="Expand Codex window"
+              aria-label="Open Codex fullscreen"
               onClick={(event) => event.stopPropagation()}
             >
               ⤢
-            </button>
+            </Link>
           )}
         </span>
       </button>
