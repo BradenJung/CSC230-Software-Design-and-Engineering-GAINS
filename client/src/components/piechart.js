@@ -1,4 +1,57 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
+import {
+  PieChart,
+  Pie,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+  Cell,
+  Sector
+} from "recharts";
+
+const DEFAULT_COLORS = [
+  "#4a9eff",
+  "#8fbfff",
+  "#ffd166",
+  "#06d6a0",
+  "#ef476f",
+  "#ff7b72",
+  "#f4a261",
+  "#2ec4b6"
+];
+
+const renderSlice = (props) => {
+  const {
+    cx,
+    cy,
+    innerRadius,
+    outerRadius,
+    startAngle,
+    endAngle,
+    fill,
+    payload
+  } = props;
+  const explodeRatio = Math.max(0, Math.min(1, payload?.explode ?? 0));
+  const midAngle = (startAngle + endAngle) / 2;
+  const rad = Math.PI / 180;
+  const offset = explodeRatio * 30;
+  const dx = Math.cos(-midAngle * rad) * offset;
+  const dy = Math.sin(-midAngle * rad) * offset;
+
+  return (
+    <g transform={`translate(${dx}, ${dy})`}>
+      <Sector
+        cx={cx}
+        cy={cy}
+        innerRadius={innerRadius}
+        outerRadius={outerRadius}
+        startAngle={startAngle}
+        endAngle={endAngle}
+        fill={fill}
+      />
+    </g>
+  );
+};
 
 export default function PieChartTool() {
   const [labels, setLabels] = useState("Category A,Category B,Category C,Category D");
@@ -6,8 +59,9 @@ export default function PieChartTool() {
   const [colors, setColors] = useState("tomato,steelblue,goldenrod,seagreen");
   const [mainTitle, setMainTitle] = useState("Pie Chart Example");
   const [explode, setExplode] = useState("");
-  const [imgSrc, setImgSrc] = useState("");
+  const [chartData, setChartData] = useState([]);
   const [error, setError] = useState("");
+  const [csvFileName, setCsvFileName] = useState("");
 
   const parseList = (input) =>
     input
@@ -18,10 +72,12 @@ export default function PieChartTool() {
   const parseNumbers = (input) =>
     input
       .split(",")
-      .map((value) => Number(value.trim()))
+      .map((value) => value.trim())
+      .filter((value) => value.length > 0)
+      .map((value) => Number(value))
       .filter(Number.isFinite);
 
-  const runR = async () => {
+  const runR = () => {
     const labelList = parseList(labels);
     const valueList = parseNumbers(values);
     const colorList = parseList(colors);
@@ -29,52 +85,105 @@ export default function PieChartTool() {
 
     if (!labelList.length || !valueList.length || labelList.length !== valueList.length) {
       setError("Labels and values must be comma-separated lists of equal length.");
-      setImgSrc("");
       return;
     }
 
     if (colorList.length && colorList.length !== valueList.length) {
       setError("Provide the same number of colors as labels, or leave colors blank.");
-      setImgSrc("");
       return;
     }
 
     if (explodeList.length && explodeList.length !== valueList.length) {
       setError("Explode values must match the number of slices.");
-      setImgSrc("");
       return;
     }
 
+    const sanitizedColors =
+      colorList.length > 0
+        ? colorList
+        : DEFAULT_COLORS;
+
+    const preparedData = labelList.map((name, index) => ({
+      name,
+      value: valueList[index],
+      color: sanitizedColors[index % sanitizedColors.length],
+      explode: explodeList[index] ?? 0
+    }));
+
+    setChartData(preparedData);
     setError("");
-
-    try {
-      const res = await fetch("/api/run-r", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          labels: labelList,
-          values: valueList,
-          colors: colorList.length ? colorList : null,
-          explode: explodeList.length ? explodeList : null,
-          mainTitle
-        })
-      });
-
-      if (!res.ok) {
-        throw new Error(`Request failed with status ${res.status}`);
-      }
-
-      const data = await res.json();
-      if (data.imageBase64) {
-        setImgSrc(`data:image/png;base64,${data.imageBase64}`);
-      } else {
-        setError("R script did not return an image. Check server logs for details.");
-        console.error(data);
-      }
-    } catch (err) {
-      setError(err.message || "Unable to generate pie chart.");
-    }
   };
+
+  const handleCsvUpload = (event) => {
+    const file = event.target.files && event.target.files[0];
+    if (!file) {
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const text = e.target?.result;
+        const rows = String(text || "")
+          .split(/\r?\n/)
+          .map((line) => line.trim())
+          .filter(Boolean)
+          .map((line) => line.split(","));
+
+        if (!rows.length || rows[0].length < 2) {
+          throw new Error("CSV must provide at least two columns (label,value).");
+        }
+
+        const firstDataRow = rows[0];
+        const hasHeader =
+          firstDataRow.length >= 2 &&
+          (isNaN(Number(firstDataRow[1])) ||
+            (!firstDataRow[0] || Number.isNaN(Number(firstDataRow[0]))));
+
+        const dataRows = hasHeader ? rows.slice(1) : rows;
+        const processed = dataRows
+          .map((row) => {
+            const [rawLabel = "", rawValue = "", rawColor = ""] = row;
+            return {
+              label: rawLabel.trim(),
+              value: Number(rawValue.trim()),
+              color: rawColor.trim()
+            };
+          })
+          .filter(
+            (entry) =>
+              entry.label.length > 0 && Number.isFinite(entry.value)
+          );
+
+        if (!processed.length) {
+          throw new Error("No valid label/value pairs detected in the CSV.");
+        }
+
+        setLabels(processed.map((entry) => entry.label).join(","));
+        setValues(processed.map((entry) => entry.value).join(","));
+        const colorCandidates = processed
+          .map((entry) => entry.color)
+          .filter(Boolean);
+        setColors(colorCandidates.length ? colorCandidates.join(",") : "");
+        setCsvFileName(file.name);
+        setError("");
+      } catch (err) {
+        setError(err.message || "Unable to parse CSV file.");
+      }
+    };
+
+    reader.onerror = () => {
+      setError("Failed to read CSV file.");
+    };
+
+    reader.readAsText(file);
+  };
+
+  const hasChart = chartData.length > 0;
+  const totalValue = useMemo(
+    () => chartData.reduce((sum, entry) => sum + entry.value, 0),
+    [chartData]
+  );
 
   return (
     <div style={{ padding: 24, maxWidth: 800, margin: "0 auto" }}>
@@ -82,6 +191,22 @@ export default function PieChartTool() {
       <p>Configure slice labels, values, and optional colors to generate a pie chart.</p>
 
       <div style={{ display: "grid", gap: 12 }}>
+        <div>
+          <label style={{ display: "block", marginBottom: 6 }}>
+            Import CSV (Label,Value[,Color])
+            <input
+              type="file"
+              accept=".csv"
+              onChange={handleCsvUpload}
+              style={{ display: "block", marginTop: 6 }}
+            />
+          </label>
+          {csvFileName && (
+            <p style={{ margin: "4px 0", color: "#9fb3d8" }}>
+              Loaded: {csvFileName}
+            </p>
+          )}
+        </div>
         <label>
           Labels
           <input value={labels} onChange={(e) => setLabels(e.target.value)} />
@@ -120,15 +245,44 @@ export default function PieChartTool() {
         </p>
       )}
 
-      {imgSrc && (
-        <div style={{ marginTop: 16 }}>
-          <img
-            src={imgSrc}
-            alt="R Pie Chart"
-            style={{ maxWidth: "100%", border: "1px solid #eee" }}
-          />
-        </div>
-      )}
+      <div style={{ marginTop: 24, background: "#090f1a", borderRadius: 16, padding: 24, border: "1px solid rgba(255,255,255,0.08)" }}>
+        {hasChart ? (
+          <>
+            <h2 style={{ marginBottom: 12 }}>{mainTitle || "Pie Chart"}</h2>
+            <ResponsiveContainer width="100%" height={360}>
+              <PieChart>
+                <Pie
+                  data={chartData}
+                  dataKey="value"
+                  nameKey="name"
+                  cx="50%"
+                  cy="50%"
+                  outerRadius={140}
+                  innerRadius={40}
+                  labelLine={false}
+                  label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(1)}%`}
+                  isAnimationActive={false}
+                  shape={renderSlice}
+                >
+                  {chartData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={entry.color} stroke="#0f1b2b" />
+                  ))}
+                </Pie>
+                <Tooltip
+                  formatter={(value, name) => [`${value}`, `${name}`]}
+                  contentStyle={{ background: "#0f1b2b", borderRadius: 8, border: "1px solid rgba(255,255,255,0.08)" }}
+                />
+                <Legend />
+              </PieChart>
+            </ResponsiveContainer>
+            <p style={{ marginTop: 12, color: "#9fb3d8" }}>
+              Total value: <strong>{totalValue}</strong>
+            </p>
+          </>
+        ) : (
+          <p style={{ color: "#9fb3d8" }}>Click Generate to build a preview.</p>
+        )}
+      </div>
     </div>
   );
 }
