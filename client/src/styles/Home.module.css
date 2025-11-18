@@ -1270,6 +1270,7 @@
   background: var(--surface-secondary);
   border: 1px solid var(--border-muted);
   color: var(--foreground);
+}
 .clearDatasetBtn {
   background: #2a2a2a;
   border: 1px solid #333;

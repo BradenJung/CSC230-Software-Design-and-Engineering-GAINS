@@ -204,7 +204,6 @@ const withImportedCsvData = (project) => {
 };
 
 // Main page component for the regression tool.
-export default function linear() {
 export default function RDashboard() {
   const router = useRouter();
   const fileInputRef = useRef(null);
