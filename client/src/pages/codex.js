@@ -19,9 +19,9 @@ export default function Codex() {
 
       <main className={styles.pageMain}>
         <section className={styles.pageCard}>
-          <h1>Codex Testing Page</h1>
+          <h1>GAINS Analysis Testing Page</h1>
           <p>
-            This page is going to be used to test the CodexTool component.
+            This page is going to be used to test the GAINS Analysis assistant component.
           </p>
         </section>
       </main>

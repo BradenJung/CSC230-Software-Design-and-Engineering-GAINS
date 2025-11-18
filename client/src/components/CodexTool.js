@@ -239,7 +239,7 @@ export default function CodexTool({ variant = "floating" }) {
         return safeProjects[0].id;
       });
     } catch (err) {
-      console.error("Failed to hydrate project context for Codex", err);
+      console.error("Failed to hydrate project context for GAINS Analysis", err);
       setAvailableProjects([]);
       setSelectedProjectId(null);
       selectionInitializedRef.current = false;
@@ -304,7 +304,7 @@ export default function CodexTool({ variant = "floating" }) {
 
       setMessages((prev) => [...prev, { role: "assistant", content: replyContent }]);
     } catch (err) {
-      setError("We hit a snag talking to Codex. Please try again.");
+      setError("We hit a snag talking to GAINS Analysis. Please try again.");
       console.error(err);
     } finally {
       setIsLoading(false);
@@ -361,7 +361,7 @@ export default function CodexTool({ variant = "floating" }) {
               <p className={styles.projectPickerMeta}>
                 {activeProjectSummary.totalRows > 0
                   ? `Previewing ${activeProjectSummary.previewRowCount} of ${activeProjectSummary.totalRows} row(s).`
-                  : "No imported data shared with Codex yet."}
+                  : "No imported data shared with GAINS Analysis yet."}
                 {activeProjectSummary.columnNames.length > 0
                   ? ` Columns: ${activeProjectSummary.columnNames.join(", ")}.`
                   : ""}
@@ -385,7 +385,7 @@ export default function CodexTool({ variant = "floating" }) {
             ))}
             {messages.length === 0 && !isLoading && isFullscreen && (
               <div className={styles.historyPlaceholder}>
-                Ask a question to start your Codex session.
+                Ask a question to start your GAINS Analysis session.
               </div>
             )}
             {isLoading && <div className={styles.messageAssistant}>Thinking…</div>}
@@ -418,7 +418,7 @@ export default function CodexTool({ variant = "floating" }) {
             type="button"
             className={styles.sendButton}
             onClick={handleSubmitPrompt}
-            aria-label="Submit Codex prompt"
+            aria-label="Submit GAINS Analysis prompt"
             disabled={isLoading}
           >
             <span className={styles.sendIcon} aria-hidden>
@@ -465,7 +465,7 @@ export default function CodexTool({ variant = "floating" }) {
             <Link
               href="/chat"
               className={styles.expandSymbolButton}
-              aria-label="Open Codex fullscreen"
+              aria-label="Open GAINS Analysis fullscreen"
               onClick={(event) => event.stopPropagation()}
             >
               ⤢
