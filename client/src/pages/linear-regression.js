@@ -25,6 +25,7 @@ import HistogramTool from "../components/histogram";
 import DensityTool from "../components/densityplot";
 import PieChartTool from "../components/piechart";
 import BoxplotTool from "../components/boxplot";
+import BarChartTool from "../components/barchart";
 
 const STORAGE_KEY = "gains-projects";
 const ACTIVE_ACCOUNT_KEY = "gains.activeAccount";
@@ -34,6 +35,21 @@ const IMPORTED_CSV_DATA_KEY = "importedCsvData";
 const LAST_USED_R_TOOL_KEY = "lastUsedRTool";
 const DEFAULT_TOOL_ID = "linear-regression";
 const TOOL_PREVIEW_COMPONENTS = {
+  "bar-chart": {
+    title: "Bar Chart Preview",
+    Component: BarChartTool,
+    isReady: ({ importedRows, categoryColumn, valueColumn }) =>
+      Array.isArray(importedRows) &&
+      importedRows.length > 0 &&
+      Boolean(categoryColumn) &&
+      Boolean(valueColumn),
+    getProps: ({ importedRows, categoryColumn, valueColumn }) => ({
+      dataRows: importedRows,
+      categoryColumn,
+      valueColumn,
+      defaultTitle: categoryColumn ? `${categoryColumn} Bar Chart` : "Bar Chart Preview"
+    })
+  },
   "dot-plot": {
     title: "Dot Plot Preview",
     Component: ScatterplotTool,
