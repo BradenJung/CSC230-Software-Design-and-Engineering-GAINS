@@ -73,15 +73,13 @@
 .currentProjectBadge {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
-  background: var(--surface-tertiary);
-  border: 1px solid #4a9eff;
-  border-radius: 999px;
+  background: var(--surface-primary);
+  border: 1px solid var(--border-muted);
+  border-radius: 12px;
   padding: 4px 12px;
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--foreground);
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
+  box-shadow: none;
+  min-height: 36px;
+  gap: 8px;
 }
 
 .currentProjectLabel {
@@ -128,51 +126,72 @@
 }
 
 .projectRenameInput {
-  background: var(--surface-primary);
+  background: transparent;
   color: var(--foreground);
-  border: 1px solid #4a9eff;
-  border-radius: 8px;
-  padding: 6px 10px;
+  border: none;
   font-size: 13px;
   font-weight: 600;
-  min-width: 180px;
+  min-width: 160px;
+  border-radius: 8px;
+  padding: 6px 4px;
 }
 
 .projectRenameInput:focus {
   outline: none;
-  box-shadow: 0 0 0 2px rgba(74, 158, 255, 0.4);
+  box-shadow: none;
 }
 
 .projectRenameActions {
   display: inline-flex;
   gap: 6px;
+  width: 70px;
+  justify-content: flex-end;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
 }
 
-.projectRenameButton,
-.projectRenameButtonSecondary {
-  background: var(--surface-secondary);
-  border-radius: 8px;
+.currentProjectBadge:focus-within .projectRenameActions {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.projectRenameSaveButton,
+.projectRenameCancelButton {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
   border: 1px solid var(--border-muted);
-  color: var(--foreground);
-  padding: 5px 10px;
-  font-size: 12px;
-  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
   cursor: pointer;
-  transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
 }
 
-.projectRenameButton:hover,
-.projectRenameButton:focus {
-  background: #4a9eff;
-  border-color: #4a9eff;
-  color: #0f1b2b;
+.projectRenameSaveButton {
+  background: linear-gradient(135deg, var(--accent-primary), var(--accent-primary-strong));
+  color: var(--on-accent);
+}
+
+.projectRenameSaveButton:hover,
+.projectRenameSaveButton:focus {
+  border-color: var(--accent-primary);
+  box-shadow: 0 0 0 3px rgba(74, 158, 255, 0.35);
+  transform: translateY(-1px);
   outline: none;
 }
 
-.projectRenameButtonSecondary:hover,
-.projectRenameButtonSecondary:focus {
-  background: #3a3a3a;
-  border-color: #4a9eff;
+.projectRenameCancelButton {
+  background: transparent;
+  color: var(--foreground);
+}
+
+.projectRenameCancelButton:hover,
+.projectRenameCancelButton:focus {
+  border-color: rgba(255, 255, 255, 0.4);
+  transform: translateY(-1px);
   outline: none;
 }
 
