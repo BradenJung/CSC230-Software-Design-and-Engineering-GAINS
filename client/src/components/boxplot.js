@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 export default function BoxplotTool({
   dataRows = [],
@@ -134,7 +134,7 @@ export default function BoxplotTool({
     return { data: computedData };
   };
 
-  const runR = () => {
+  const runR = useCallback(() => {
     if (usingProjectData) {
       if (!projectValues.length) {
         setError("Selected column has no numeric values.");
@@ -163,7 +163,7 @@ export default function BoxplotTool({
     }
     setBoxplotData(data);
     setError("");
-  };
+  }, [usingProjectData, projectValues, projectGroups, groupColumn, values, groups]);
 
   useEffect(() => {
     if (!usingProjectData) {
@@ -189,6 +189,13 @@ export default function BoxplotTool({
     setBoxplotData(data);
     setError("");
   }, [usingProjectData, projectValues, projectGroups, groupColumn, valueColumn, defaultTitle]);
+
+  useEffect(() => {
+    if (usingProjectData) {
+      return;
+    }
+    runR();
+  }, [usingProjectData, runR]);
 
   // --- CSV parsing utilities (delimiter detection + RFC4180-like parser)
   function detectDelimiter(sampleText) {
@@ -407,7 +414,6 @@ export default function BoxplotTool({
           </label>
         </div>
 
-        <button onClick={runR}>Generate</button>
       </div>
 
       {error && (
@@ -434,9 +440,36 @@ export default function BoxplotTool({
                 height - paddingY - ((value - minValue) / range) * chartHeight;
               const spacing = chartWidth / boxplotData.length;
               const boxWidth = Math.min(60, spacing * 0.6);
+              const tickCount = 5;
+              const tickValues = Array.from({ length: tickCount + 1 }, (_, i) => minValue + (range * i) / tickCount);
 
               return (
                 <>
+                  {/* Horizontal grid and numeric axis labels */}
+                  {tickValues.map((tick) => {
+                    const y = scaleY(tick);
+                    return (
+                      <g key={`tick-${tick}`}>
+                        <line
+                          x1={paddingX - 10}
+                          x2={width - paddingX}
+                          y1={y}
+                          y2={y}
+                          stroke="rgba(255,255,255,0.08)"
+                          strokeDasharray="4 4"
+                        />
+                        <text
+                          x={paddingX - 18}
+                          y={y + 4}
+                          textAnchor="end"
+                          fill="#b8c7e0"
+                          fontSize="12"
+                        >
+                          {Math.abs(tick) < 1e-6 ? "0" : Number.isInteger(tick) ? tick : tick.toFixed(1)}
+                        </text>
+                      </g>
+                    );
+                  })}
                   {/* Horizontal axis labels */}
                   {boxplotData.map((entry, index) => {
                     const centerX = paddingX + spacing * index + spacing / 2;
@@ -551,7 +584,7 @@ export default function BoxplotTool({
             })()}
           </svg>
         ) : (
-          <p style={{ color: "#9fb3d8" }}>Click Generate to preview the boxplot.</p>
+          <p style={{ color: "#9fb3d8" }}>Adjust the inputs above to update the boxplot preview.</p>
         )}
       </div>
     </div>
