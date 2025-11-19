@@ -166,6 +166,7 @@ export default function Header({
     { href: "/learn", label: "Learn" },
     { href: "/about", label: "About" },
     { href: "/faq", label: "FAQ" },
+    { href: "/chat", label: "Chat"}
   ];
 
   // Tool-specific navigation items for linear regression page
