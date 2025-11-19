@@ -1,10 +1,20 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  ResponsiveContainer,
+  CartesianGrid,
+  Tooltip
+} from "recharts";
 
 export default function HistogramTool() {
   const [values, setValues] = useState("5,7,8,9,10,12,13,15,16,18,20");
   const [breaks, setBreaks] = useState(5);
   const [csvFile, setCsvFile] = useState(null);
   const [error, setError] = useState("");
+  const [chartData, setChartData] = useState([]);
 
   const handleCsvUpload = (event) => {
     const file = event.target.files[0];
@@ -41,25 +51,58 @@ export default function HistogramTool() {
   const [mainTitle, setMainTitle] = useState("Histogram Example");
   const [xLabel, setXLabel] = useState("Values");
   const [color, setColor] = useState("darkorange");
-  const [imgSrc, setImgSrc] = useState("");
+  const parseNumbers = (input) =>
+    input
+      .split(",")
+      .map((value) => Number(value.trim()))
+      .filter(Number.isFinite);
+
+  const buildHistogramData = (numbers, binCount) => {
+    if (!numbers.length) {
+      return [];
+    }
+    const cleanBinCount = Math.max(1, Number.isFinite(binCount) ? Math.floor(binCount) : 1);
+    const min = Math.min(...numbers);
+    const max = Math.max(...numbers);
+    const span = max - min || 1;
+    const step = span / cleanBinCount;
+    const bins = Array.from({ length: cleanBinCount }, (_, index) => {
+      const start = min + index * step;
+      const end = index === cleanBinCount - 1 ? max : start + step;
+      return {
+        start,
+        end,
+        count: 0,
+        label: `${start.toFixed(2)} – ${end.toFixed(2)}`
+      };
+    });
+    numbers.forEach((value) => {
+      const relative = value - min;
+      const index = Math.min(
+        cleanBinCount - 1,
+        Math.floor(relative / step)
+      );
+      bins[index].count += 1;
+    });
+    return bins;
+  };
 
   const runR = async () => {
-    const payload = {
-      breaks,
-      mainTitle,
-      xLabel,
-      color,
-      values: values.split(",").map(v => Number(v.trim())).filter(Number.isFinite)
-    };
-    const res = await fetch("/api/run-r", {
-      method: "POST",
-      headers: {"Content-Type":"application/json"},
-      body: JSON.stringify(payload)
-    });
-    const data = await res.json();
-    if (data.imageBase64) setImgSrc(`data:image/png;base64,${data.imageBase64}`);
-    else console.error(data);
+    const numericValues = parseNumbers(values);
+    if (!numericValues.length) {
+      setError("Please provide at least one numeric value.");
+      setChartData([]);
+      return;
+    }
+    const data = buildHistogramData(numericValues, breaks);
+    setChartData(data);
+    setError("");
   };
+
+  const totalCount = useMemo(
+    () => chartData.reduce((sum, bin) => sum + bin.count, 0),
+    [chartData]
+  );
 
   return (
     <div style={{ padding: 24, maxWidth: 800, margin: "0 auto" }}>
@@ -89,12 +132,31 @@ export default function HistogramTool() {
         <button onClick={runR}>Generate</button>
       </div>
 
-      {imgSrc && (
-        <div style={{ marginTop: 16 }}>
-          <img src={imgSrc} alt="R Histogram" style={{ maxWidth: "100%", border: "1px solid #eee" }} />
-        </div>
-      )}
+      <div style={{ marginTop: 24, background: "#090f1a", borderRadius: 16, padding: 24, border: "1px solid rgba(255,255,255,0.08)" }}>
+        {chartData.length ? (
+          <>
+            <h2 style={{ marginBottom: 12 }}>{mainTitle}</h2>
+            <ResponsiveContainer width="100%" height={320}>
+              <BarChart data={chartData}>
+                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.08)" />
+                <XAxis dataKey="label" tick={{ fill: "#b8c7e0", fontSize: 12 }} />
+                <YAxis allowDecimals={false} tick={{ fill: "#b8c7e0" }} />
+                <Tooltip
+                  contentStyle={{ background: "#0f1b2b", borderRadius: 8, border: "1px solid rgba(255,255,255,0.08)" }}
+                  labelStyle={{ color: "#fff", fontWeight: "bold" }}
+                />
+                <Bar dataKey="count" fill={color} />
+              </BarChart>
+            </ResponsiveContainer>
+            <p style={{ marginTop: 12, color: "#9fb3d8" }}>
+              Total observations: <strong>{totalCount}</strong>
+            </p>
+            <p style={{ marginTop: 4, color: "#9fb3d8" }}>{xLabel}</p>
+          </>
+        ) : (
+          <p style={{ color: "#9fb3d8" }}>Click Generate after importing or entering values to view the histogram.</p>
+        )}
+      </div>
     </div>
   );
 }
-
