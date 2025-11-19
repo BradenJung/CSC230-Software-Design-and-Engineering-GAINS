@@ -3,32 +3,47 @@ import { useState } from "react";
 import Link from "next/link";
 import Header from "../components/header";
 import styles from "../styles/Home.module.css";
+import { useRouter } from "next/router";
 
 const initialState = { email: "", password: "" };
 
 export default function Login() {
   const [formState, setFormState] = useState(initialState);
-  // Surface lightweight feedback until backend wiring is complete
   const [status, setStatus] = useState(null);
+
+  const router = useRouter();
 
   const handleChange = (event) => {
     const { name, value } = event.target;
     setFormState((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleSubmit = (event) => {
+  async function handleSubmit(event) {
     event.preventDefault();
-    if (!formState.email || !formState.password) {
-      setStatus({ type: "error", message: "Please enter your email and password." });
-      return;
+  
+    const { email, password } = formState;
+  
+    try {
+      const res = await fetch("http://localhost:4000/api/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
+  
+      const data = await res.json();
+  
+      if (!res.ok) throw new Error(data.error || "Login failed");
+  
+      // Optional: save logged-in user
+      // localStorage.setItem("user", JSON.stringify(data.user));
+  
+      // Redirect after login
+      router.push("/linear-regression");
+  
+    } catch (err) {
+      setStatus({ type: "error", message: err.message });
     }
-
-    // Placeholder success message; swap once API integration is implemented
-    setStatus({
-      type: "success",
-      message: "Form submitted. Your team can hook this into the backend when ready.",
-    });
-  };
+  }  
 
   return (
     <>
@@ -39,7 +54,6 @@ export default function Login() {
       <Header />
 
       <div className={styles.dashboard}>
-        {/* Global header already renders navigation; keep only the auth layout here */}
         <section className={styles.authLayout}>
           <aside className={styles.authIntro}>
             <h1>Welcome back</h1>
@@ -112,3 +126,4 @@ export default function Login() {
     </>
   );
 }
+

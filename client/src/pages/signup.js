@@ -13,18 +13,41 @@ const initialState = {
 
 async function handleSignup(e) {
   e.preventDefault();
+
   const fd = new FormData(e.currentTarget);
-  const username = String(fd.get("username") || "");
+  const name = String(fd.get("name") || "");
+  const email = String(fd.get("email") || "");
   const password = String(fd.get("password") || "");
+  const confirmPassword = String(fd.get("confirmPassword") || "");
+
+  if (!name || !email || !password || !confirmPassword) {
+    alert("Please fill out every field.");
+    return;
+  }
+
+  if (password !== confirmPassword) {
+    alert("Passwords do not match.");
+    return;
+  }
+
   try {
-    const { message } = await signupRequest({ username, password });
-    alert(message || "Signup successful");
-    // optional: redirect after success
-    // router.push("/login");
+    const res = await fetch("http://localhost:4000/api/signup", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name, email, password })
+    });
+
+
+    const data = await res.json();
+
+    if (!res.ok) throw new Error(data.message);
+
+    alert(data.message || "Signup successful!");
   } catch (err) {
     alert(err.message);
   }
 }
+
 
 export default function Signup() {
   const [formState, setFormState] = useState(initialState);
@@ -152,9 +175,8 @@ export default function Signup() {
 
             {status && (
               <p
-                className={`${styles.statusMessage} ${
-                  status.type === "success" ? styles.statusSuccess : styles.statusError
-                }`}
+                className={`${styles.statusMessage} ${status.type === "success" ? styles.statusSuccess : styles.statusError
+                  }`}
               >
                 {status.message}
               </p>
