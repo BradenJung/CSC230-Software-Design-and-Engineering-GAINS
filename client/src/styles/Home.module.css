@@ -627,7 +627,7 @@
 }
 
 .authIntro {
-  background: #1e1e1e;
+  background: var(--surface-card);
   border: 1px solid var(--border-muted);
   border-radius: 16px;
   padding: 40px;
@@ -641,11 +641,12 @@
   font-size: 28px;
   font-weight: 600;
   margin: 0;
+  color: var(--foreground);
 }
 
 .authIntro p {
   font-size: 15px;
-  color: #9eaec2;
+  color: var(--text-muted);
   line-height: 1.5;
   margin: 0;
 }
@@ -664,18 +665,18 @@
   display: flex;
   align-items: center;
   gap: 10px;
-  color: #c0cadb;
+  color: var(--foreground);
 }
 
 .authBenefits li::before {
   content: "✔";
   font-size: 12px;
-  color: #4a9eff;
+  color: var(--accent-primary);
 }
 
 .authCard {
   background: var(--surface-secondary);
-  border: 1px solid var(--border-muted)b45;
+  border: 1px solid var(--border-muted);
   border-radius: 16px;
   padding: 36px;
   box-shadow: 0 20px 45px rgba(0, 0, 0, 0.35);
@@ -696,12 +697,12 @@
 .inputLabel {
   font-size: 13px;
   font-weight: 500;
-  color: #c8d2e3;
+  color: var(--text-muted);
 }
 
 .inputField {
-  background: #13171d;
-  border: 1px solid #2a2f3b;
+  background: var(--surface-tertiary);
+  border: 1px solid var(--border-muted);
   border-radius: 12px;
   color: var(--foreground);
   padding: 14px;
@@ -755,7 +756,7 @@
   justify-content: space-between;
   margin-top: 26px;
   font-size: 13px;
-  color: #9bb0c9;
+  color: var(--text-muted);
 }
 
 .supportLinks a {
