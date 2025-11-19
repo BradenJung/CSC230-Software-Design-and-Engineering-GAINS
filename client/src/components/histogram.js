@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   BarChart,
   Bar,
@@ -9,12 +9,55 @@ import {
   Tooltip
 } from "recharts";
 
-export default function HistogramTool() {
+export default function HistogramTool({
+  dataRows = [],
+  valueColumn = "",
+  defaultTitle = "Histogram Example"
+} = {}) {
   const [values, setValues] = useState("5,7,8,9,10,12,13,15,16,18,20");
   const [breaks, setBreaks] = useState(5);
   const [csvFile, setCsvFile] = useState(null);
   const [error, setError] = useState("");
   const [chartData, setChartData] = useState([]);
+  const [mainTitle, setMainTitle] = useState(defaultTitle || "Histogram Example");
+  const [xLabel, setXLabel] = useState("Values");
+  const [color, setColor] = useState("darkorange");
+
+  const parseNumbers = (input) =>
+    input
+      .split(",")
+      .map((value) => Number(value.trim()))
+      .filter(Number.isFinite);
+
+  const usingProjectData =
+    Array.isArray(dataRows) &&
+    dataRows.length > 0 &&
+    Boolean(valueColumn);
+
+  const projectValues = useMemo(() => {
+    if (!usingProjectData) {
+      return [];
+    }
+    return dataRows
+      .map((row) => Number(row?.[valueColumn]))
+      .filter(Number.isFinite);
+  }, [dataRows, valueColumn, usingProjectData]);
+
+  useEffect(() => {
+    if (!usingProjectData) {
+      return;
+    }
+    setMainTitle(defaultTitle || "Histogram Example");
+    setXLabel(valueColumn || "Values");
+    if (!projectValues.length) {
+      setError("Selected column has no numeric values.");
+      setChartData([]);
+      return;
+    }
+    setValues(projectValues.join(","));
+    setChartData(buildHistogramData(projectValues, breaks));
+    setError("");
+  }, [usingProjectData, projectValues, breaks, valueColumn, defaultTitle]);
 
   const handleCsvUpload = (event) => {
     const file = event.target.files[0];
@@ -26,10 +69,10 @@ export default function HistogramTool() {
           const lines = text.split('\n');
           const data = lines
             .map(line => line.trim())
-            .filter(line => line) // Remove empty lines
+            .filter(line => line)
             .map(line => line.split(','))
-            .flat() // Flatten the array since we only need one column
-            .filter(value => !isNaN(value.trim())); // Keep only numeric values
+            .flat()
+            .filter(value => !isNaN(value.trim()));
           
           if (data.length) {
             setValues(data.join(','));
@@ -48,14 +91,6 @@ export default function HistogramTool() {
       reader.readAsText(file);
     }
   };
-  const [mainTitle, setMainTitle] = useState("Histogram Example");
-  const [xLabel, setXLabel] = useState("Values");
-  const [color, setColor] = useState("darkorange");
-  const parseNumbers = (input) =>
-    input
-      .split(",")
-      .map((value) => Number(value.trim()))
-      .filter(Number.isFinite);
 
   const buildHistogramData = (numbers, binCount) => {
     if (!numbers.length) {
@@ -87,15 +122,24 @@ export default function HistogramTool() {
     return bins;
   };
 
-  const runR = async () => {
+  const runR = () => {
+    if (usingProjectData) {
+      if (!projectValues.length) {
+        setError("Selected column has no numeric values.");
+        setChartData([]);
+        return;
+      }
+      setChartData(buildHistogramData(projectValues, breaks));
+      setError("");
+      return;
+    }
     const numericValues = parseNumbers(values);
     if (!numericValues.length) {
       setError("Please provide at least one numeric value.");
       setChartData([]);
       return;
     }
-    const data = buildHistogramData(numericValues, breaks);
-    setChartData(data);
+    setChartData(buildHistogramData(numericValues, breaks));
     setError("");
   };
 
@@ -107,22 +151,33 @@ export default function HistogramTool() {
   return (
     <div style={{ padding: 24, maxWidth: 800, margin: "0 auto" }}>
       <h1>R Histogram</h1>
-      <p>Enter values as comma-separated numbers or upload a CSV file.</p>
+      {usingProjectData ? (
+        <p>
+          Using <strong>{valueColumn}</strong> from the imported dataset ({projectValues.length} row
+          {projectValues.length === 1 ? "" : "s"}).
+        </p>
+      ) : (
+        <p>Enter values as comma-separated numbers or upload a CSV file.</p>
+      )}
       <div style={{ display: "grid", gap: 12 }}>
-        <div style={{ marginBottom: 12 }}>
-          <label style={{ display: "block", marginBottom: 8 }}>
-            Upload CSV file
-            <input
-              type="file"
-              accept=".csv"
-              onChange={handleCsvUpload}
-              style={{ marginLeft: 8 }}
-            />
-          </label>
-          {csvFile && <p style={{ margin: "4px 0", fontSize: "0.9em", color: "green" }}>Loaded: {csvFile}</p>}
-          {error && <p style={{ margin: "4px 0", fontSize: "0.9em", color: "crimson" }}>{error}</p>}
-        </div>
-        <input value={values} onChange={e=>setValues(e.target.value)} />
+        {!usingProjectData && (
+          <>
+            <div style={{ marginBottom: 12 }}>
+              <label style={{ display: "block", marginBottom: 8 }}>
+                Upload CSV file
+                <input
+                  type="file"
+                  accept=".csv"
+                  onChange={handleCsvUpload}
+                  style={{ marginLeft: 8 }}
+                />
+              </label>
+              {csvFile && <p style={{ margin: "4px 0", fontSize: "0.9em", color: "green" }}>Loaded: {csvFile}</p>}
+              {error && <p style={{ margin: "4px 0", fontSize: "0.9em", color: "crimson" }}>{error}</p>}
+            </div>
+            <input value={values} onChange={e=>setValues(e.target.value)} />
+          </>
+        )}
         <div style={{ display: "flex", gap: 12 }}>
           <label>Breaks: <input type="number" min={1} value={breaks} onChange={e=>setBreaks(+e.target.value)} /></label>
           <label>Title: <input value={mainTitle} onChange={e=>setMainTitle(e.target.value)} /></label>
@@ -157,6 +212,12 @@ export default function HistogramTool() {
           <p style={{ color: "#9fb3d8" }}>Click Generate after importing or entering values to view the histogram.</p>
         )}
       </div>
+
+      {usingProjectData && error && (
+        <p style={{ color: "crimson", marginTop: 12 }}>
+          {error}
+        </p>
+      )}
     </div>
   );
 }

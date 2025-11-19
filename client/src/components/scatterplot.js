@@ -1,17 +1,39 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
-export default function ScatterplotTool() {
+export default function ScatterplotTool({
+  dataRows = [],
+  xColumn = "",
+  yColumn = "",
+  defaultTitle = "Scatter Plot Example"
+} = {}) {
   const [xValues, setXValues] = useState("1,2,3,4,5,6,7,8,9,10");
   const [yValues, setYValues] = useState("12,15,18,22,25,23,28,32,30,35");
   const [csvFile, setCsvFile] = useState(null);
 
-  const [mainTitle, setMainTitle] = useState("Scatter Plot Example");
+  const [mainTitle, setMainTitle] = useState(defaultTitle || "Scatter Plot Example");
   const [xLabel, setXLabel] = useState("X Values");
   const [yLabel, setYLabel] = useState("Y Values");
   const [pointColor, setPointColor] = useState("steelblue");
   const [pointSize, setPointSize] = useState(4);
 
   const [error, setError] = useState("");
+
+  const usingProjectData =
+    Array.isArray(dataRows) &&
+    dataRows.length > 0 &&
+    Boolean(xColumn) &&
+    Boolean(yColumn);
+
+  useEffect(() => {
+    setMainTitle(defaultTitle || "Scatter Plot Example");
+  }, [defaultTitle]);
+
+  useEffect(() => {
+    if (usingProjectData) {
+      setXLabel(xColumn || "X Values");
+      setYLabel(yColumn || "Y Values");
+    }
+  }, [usingProjectData, xColumn, yColumn]);
 
   // csv parsing 
   const handleCsvUpload = (event) => {
@@ -51,13 +73,43 @@ export default function ScatterplotTool() {
     reader.readAsText(file);
   };
 
-  const data = useMemo(() => {
-    const xs = xValues.split(",").map((v) => Number(v.trim())).filter(Number.isFinite);
-    const ys = yValues.split(",").map((v) => Number(v.trim())).filter(Number.isFinite);
+  const projectData = useMemo(() => {
+    if (!usingProjectData) {
+      return null;
+    }
+    return dataRows
+      .map((row) => {
+        const rawX = row?.[xColumn];
+        const rawY = row?.[yColumn];
+        const parsedX = Number(rawX);
+        const parsedY = Number(rawY);
+        if (!Number.isFinite(parsedX) || !Number.isFinite(parsedY)) {
+          return null;
+        }
+        return { x: parsedX, y: parsedY };
+      })
+      .filter(Boolean);
+  }, [dataRows, xColumn, yColumn, usingProjectData]);
+
+  const manualData = useMemo(() => {
+    const xs = xValues
+      .split(",")
+      .map((v) => Number(v.trim()))
+      .filter(Number.isFinite);
+    const ys = yValues
+      .split(",")
+      .map((v) => Number(v.trim()))
+      .filter(Number.isFinite);
     return xs.length && xs.length === ys.length
       ? xs.map((x, i) => ({ x, y: ys[i] }))
       : [];
   }, [xValues, yValues]);
+
+  const data = usingProjectData ? projectData || [] : manualData;
+  const projectDataValid = !usingProjectData || (projectData && projectData.length > 0);
+  const displayError = usingProjectData
+    ? (projectDataValid ? "" : "Selected columns do not contain numeric values.")
+    : error;
 
   // --- chart layout
   const width = 800, height = 480, pad = 50;
@@ -90,31 +142,42 @@ export default function ScatterplotTool() {
   return (
     <div style={{ padding: 24, maxWidth: 980, margin: "0 auto" }}>
       <h1>{mainTitle}</h1>
-      <p>Provide X and Y values as comma-separated numbers or upload a CSV file.</p>
+      {usingProjectData ? (
+        <p>
+          Using <strong>{xColumn}</strong> vs <strong>{yColumn}</strong> from the imported dataset (
+          {data.length} row{data.length === 1 ? "" : "s"}).
+        </p>
+      ) : (
+        <p>Provide X and Y values as comma-separated numbers or upload a CSV file.</p>
+      )}
 
       <div style={{ display: "grid", gap: 12 }}>
-        {/* CSV Upload */}
-        <div style={{ marginBottom: 12 }}>
-          <label style={{ display: "block", marginBottom: 8 }}>
-            Upload CSV file (2 columns: X,Y)
-            <input type="file" accept=".csv" onChange={handleCsvUpload} style={{ marginLeft: 8 }} />
-          </label>
-          {csvFile && (
-            <p style={{ margin: "4px 0", fontSize: "0.9em", color: "green" }}>
-              Loaded: {csvFile}
-            </p>
-          )}
-        </div>
+        {!usingProjectData && (
+          <>
+            {/* CSV Upload */}
+            <div style={{ marginBottom: 12 }}>
+              <label style={{ display: "block", marginBottom: 8 }}>
+                Upload CSV file (2 columns: X,Y)
+                <input type="file" accept=".csv" onChange={handleCsvUpload} style={{ marginLeft: 8 }} />
+              </label>
+              {csvFile && (
+                <p style={{ margin: "4px 0", fontSize: "0.9em", color: "green" }}>
+                  Loaded: {csvFile}
+                </p>
+              )}
+            </div>
 
-        {/* Manual entry */}
-        <label>
-          X Values
-          <input value={xValues} onChange={(e) => setXValues(e.target.value)} style={{ width: "100%" }} />
-        </label>
-        <label>
-          Y Values
-          <input value={yValues} onChange={(e) => setYValues(e.target.value)} style={{ width: "100%" }} />
-        </label>
+            {/* Manual entry */}
+            <label>
+              X Values
+              <input value={xValues} onChange={(e) => setXValues(e.target.value)} style={{ width: "100%" }} />
+            </label>
+            <label>
+              Y Values
+              <input value={yValues} onChange={(e) => setYValues(e.target.value)} style={{ width: "100%" }} />
+            </label>
+          </>
+        )}
 
         {/* Options */}
         <div style={{ display: "flex", flexWrap: "wrap", gap: 12 }}>
@@ -147,7 +210,7 @@ export default function ScatterplotTool() {
         </div>
       </div>
 
-      {error && <p style={{ color: "crimson", marginTop: 12 }}>{error}</p>}
+      {displayError && <p style={{ color: "crimson", marginTop: 12 }}>{displayError}</p>}
 
       {/* SVG Chart */}
       <div style={{ marginTop: 16, background: "#fff", border: "1px solid #eee" }}>

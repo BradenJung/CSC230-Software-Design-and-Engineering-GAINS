@@ -1,9 +1,14 @@
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
-export default function BoxplotTool() {
+export default function BoxplotTool({
+  dataRows = [],
+  valueColumn = "",
+  groupColumn = "",
+  defaultTitle = "Boxplot Example"
+} = {}) {
   const [values, setValues] = useState("5,7,8,9,10,12,13,15,16,18,20");
   const [groups, setGroups] = useState("");
-  const [mainTitle, setMainTitle] = useState("Boxplot Example");
+  const [mainTitle, setMainTitle] = useState(defaultTitle || "Boxplot Example");
   const [xLabel, setXLabel] = useState("Group");
   const [yLabel, setYLabel] = useState("Values");
   const [fillColor, setFillColor] = useState("lightblue");
@@ -16,11 +21,39 @@ export default function BoxplotTool() {
   const [csvPreview, setCsvPreview] = useState([]); // array of rows
   const [csvRows, setCsvRows] = useState([]); // full parsed rows
   const [csvColumns, setCsvColumns] = useState([]); // column headers or indices
-  const [valueColumn, setValueColumn] = useState(null); // index of column to use as values
-  const [groupColumn, setGroupColumn] = useState(null); // index of column to use as groups (optional)
+  const [valueColumnIndex, setValueColumnIndex] = useState(null); // index of column to use as values
+  const [groupColumnIndex, setGroupColumnIndex] = useState(null); // index of column to use as groups (optional)
   const [autoGenerateOnUpload, setAutoGenerateOnUpload] = useState(false);
 
   const MAX_PREVIEW_ROWS = 20;
+
+  const usingProjectData =
+    Array.isArray(dataRows) &&
+    dataRows.length > 0 &&
+    Boolean(valueColumn);
+
+  const { projectValues, projectGroups } = useMemo(() => {
+    if (!usingProjectData) {
+      return { projectValues: [], projectGroups: [] };
+    }
+    const valuesList = [];
+    const groupsList = [];
+    dataRows.forEach((row) => {
+      const numericValue = Number(row?.[valueColumn]);
+      if (!Number.isFinite(numericValue)) {
+        return;
+      }
+      valuesList.push(numericValue);
+      if (groupColumn) {
+        const rawGroup = row?.[groupColumn];
+        const normalized = rawGroup === undefined || rawGroup === null || rawGroup === ""
+          ? "Group"
+          : String(rawGroup);
+        groupsList.push(normalized);
+      }
+    });
+    return { projectValues: valuesList, projectGroups: groupsList };
+  }, [dataRows, valueColumn, groupColumn, usingProjectData]);
 
   const parseNumbers = (input) =>
     input
@@ -64,19 +97,13 @@ export default function BoxplotTool() {
     };
   };
 
-  const runR = () => {
-    const numericValues = parseNumbers(values);
+  const prepareBoxplotData = (numericValues, groupValues) => {
     if (!numericValues.length) {
-      setError("Please provide at least one numeric value.");
-      setBoxplotData([]);
-      return;
+      return { error: "Please provide at least one numeric value." };
     }
 
-    const groupValues = parseGroups(groups);
     if (groupValues.length && groupValues.length !== numericValues.length) {
-      setError("Groups (if provided) must match the number of values.");
-      setBoxplotData([]);
-      return;
+      return { error: "Groups (if provided) must match the number of values." };
     }
 
     const grouped = {};
@@ -101,14 +128,67 @@ export default function BoxplotTool() {
       .filter(Boolean);
 
     if (!computedData.length) {
-      setError("Unable to compute box plot statistics.");
-      setBoxplotData([]);
+      return { error: "Unable to compute box plot statistics." };
+    }
+
+    return { data: computedData };
+  };
+
+  const runR = () => {
+    if (usingProjectData) {
+      if (!projectValues.length) {
+        setError("Selected column has no numeric values.");
+        setBoxplotData([]);
+        return;
+      }
+      const groupValues = groupColumn ? projectGroups : [];
+      const { data, error: validationError } = prepareBoxplotData(projectValues, groupValues);
+      if (validationError) {
+        setError(validationError);
+        setBoxplotData([]);
+        return;
+      }
+      setBoxplotData(data);
+      setError("");
       return;
     }
 
-    setBoxplotData(computedData);
+    const numericValues = parseNumbers(values);
+    const groupValues = parseGroups(groups);
+    const { data, error: validationError } = prepareBoxplotData(numericValues, groupValues);
+    if (validationError) {
+      setError(validationError);
+      setBoxplotData([]);
+      return;
+    }
+    setBoxplotData(data);
     setError("");
   };
+
+  useEffect(() => {
+    if (!usingProjectData) {
+      return;
+    }
+    setMainTitle(defaultTitle || "Boxplot Example");
+    setXLabel(groupColumn || "Group");
+    setYLabel(valueColumn || "Values");
+    if (!projectValues.length) {
+      setBoxplotData([]);
+      setError("Selected column has no numeric values.");
+      return;
+    }
+    const groupValues = groupColumn ? projectGroups : [];
+    setValues(projectValues.join(","));
+    setGroups(groupValues.length ? groupValues.join(",") : "");
+    const { data, error: validationError } = prepareBoxplotData(projectValues, groupValues);
+    if (validationError) {
+      setBoxplotData([]);
+      setError(validationError);
+      return;
+    }
+    setBoxplotData(data);
+    setError("");
+  }, [usingProjectData, projectValues, projectGroups, groupColumn, valueColumn, defaultTitle]);
 
   // --- CSV parsing utilities (delimiter detection + RFC4180-like parser)
   function detectDelimiter(sampleText) {
@@ -220,72 +300,85 @@ export default function BoxplotTool() {
   return (
     <div style={{ padding: 24, maxWidth: 800, margin: "0 auto" }}>
       <h1>R Boxplot</h1>
-      <p>
-        Enter numeric values separated by commas. Optionally supply matching group labels to
-        create grouped boxplots.
-      </p>
+      {usingProjectData ? (
+        <p>
+          Using <strong>{valueColumn}</strong>
+          {groupColumn ? (
+            <> grouped by <strong>{groupColumn}</strong></>
+          ) : null} from the imported dataset.
+        </p>
+      ) : (
+        <p>
+          Enter numeric values separated by commas. Optionally supply matching group labels to
+          create grouped boxplots.
+        </p>
+      )}
 
       <div style={{ display: "grid", gap: 12 }}>
-        {/* CSV Upload */}
-        <div style={{ marginBottom: 8 }}>
-          <label style={{ display: "block", marginBottom: 6 }}>
-            Upload CSV file (supports comma, semicolon, tab). First two columns are suggested as Value/Group.
-            <input type="file" accept=".csv" onChange={handleCsvUpload} style={{ marginLeft: 8 }} />
-          </label>
-          <label style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
-            <input
-              type="checkbox"
-              checked={autoGenerateOnUpload}
-              onChange={(e) => setAutoGenerateOnUpload(e.target.checked)}
-            />
-            Auto-generate after upload
-          </label>
-          {csvFileName && <div style={{ marginTop: 8, fontSize: "0.9em", color: "green" }}>Loaded: {csvFileName}</div>}
+        {!usingProjectData && (
+          <>
+            {/* CSV Upload */}
+            <div style={{ marginBottom: 8 }}>
+              <label style={{ display: "block", marginBottom: 6 }}>
+                Upload CSV file (supports comma, semicolon, tab). First two columns are suggested as Value/Group.
+                <input type="file" accept=".csv" onChange={handleCsvUpload} style={{ marginLeft: 8 }} />
+              </label>
+              <label style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
+                <input
+                  type="checkbox"
+                  checked={autoGenerateOnUpload}
+                  onChange={(e) => setAutoGenerateOnUpload(e.target.checked)}
+                />
+                Auto-generate after upload
+              </label>
+              {csvFileName && <div style={{ marginTop: 8, fontSize: "0.9em", color: "green" }}>Loaded: {csvFileName}</div>}
 
-          {csvColumns.length > 0 && (
-            <div style={{ marginTop: 8 }}>
-              <label style={{ display: "block", marginBottom: 6 }}>
-                Value column
-                <select
-                  value={valueColumn ?? ''}
-                  onChange={(e) => { const idx = e.target.value === '' ? null : Number(e.target.value); setValueColumn(idx); applyColumnSelection(idx, groupColumn); }}
-                  style={{ marginLeft: 8 }}
-                >
-                  {csvColumns.map((c, i) => (
-                    <option key={i} value={i}>{c}</option>
-                  ))}
-                </select>
-              </label>
-              <label style={{ display: "block", marginBottom: 6 }}>
-                Group column (optional)
-                <select
-                  value={groupColumn ?? ''}
-                  onChange={(e) => { const idx = e.target.value === '' ? null : Number(e.target.value); setGroupColumn(idx); applyColumnSelection(valueColumn, idx); }}
-                  style={{ marginLeft: 8 }}
-                >
-                  <option value="">(none)</option>
-                  {csvColumns.map((c, i) => (
-                    <option key={i} value={i}>{c}</option>
-                  ))}
-                </select>
-              </label>
+              {csvColumns.length > 0 && (
+                <div style={{ marginTop: 8 }}>
+                  <label style={{ display: "block", marginBottom: 6 }}>
+                    Value column
+                  <select
+                    value={valueColumnIndex ?? ''}
+                    onChange={(e) => { const idx = e.target.value === '' ? null : Number(e.target.value); setValueColumnIndex(idx); applyColumnSelection(idx, groupColumnIndex); }}
+                    style={{ marginLeft: 8 }}
+                  >
+                      {csvColumns.map((c, i) => (
+                        <option key={i} value={i}>{c}</option>
+                      ))}
+                    </select>
+                  </label>
+                  <label style={{ display: "block", marginBottom: 6 }}>
+                    Group column (optional)
+                  <select
+                    value={groupColumnIndex ?? ''}
+                    onChange={(e) => { const idx = e.target.value === '' ? null : Number(e.target.value); setGroupColumnIndex(idx); applyColumnSelection(valueColumnIndex, idx); }}
+                    style={{ marginLeft: 8 }}
+                  >
+                      <option value="">(none)</option>
+                      {csvColumns.map((c, i) => (
+                        <option key={i} value={i}>{c}</option>
+                      ))}
+                    </select>
+                  </label>
+                </div>
+              )}
+
             </div>
-          )}
 
-        </div>
-
-        <label>
-          Values
-          <input value={values} onChange={(e) => setValues(e.target.value)} />
-        </label>
-        <label>
-          Groups (optional)
-          <input
-            placeholder="e.g. A,A,A,B,B,B"
-            value={groups}
-            onChange={(e) => setGroups(e.target.value)}
-          />
-        </label>
+            <label>
+              Values
+              <input value={values} onChange={(e) => setValues(e.target.value)} />
+            </label>
+            <label>
+              Groups (optional)
+              <input
+                placeholder="e.g. A,A,A,B,B,B"
+                value={groups}
+                onChange={(e) => setGroups(e.target.value)}
+              />
+            </label>
+          </>
+        )}
 
         <div style={{ display: "flex", flexWrap: "wrap", gap: 12 }}>
           <label>

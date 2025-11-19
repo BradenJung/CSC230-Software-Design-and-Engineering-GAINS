@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   PieChart,
   Pie,
@@ -53,15 +53,25 @@ const renderSlice = (props) => {
   );
 };
 
-export default function PieChartTool() {
+export default function PieChartTool({
+  dataRows = [],
+  categoryColumn = "",
+  valueColumn = "",
+  defaultTitle = "Pie Chart Example"
+} = {}) {
   const [labels, setLabels] = useState("Category A,Category B,Category C,Category D");
   const [values, setValues] = useState("20,35,25,20");
   const [colors, setColors] = useState("tomato,steelblue,goldenrod,seagreen");
-  const [mainTitle, setMainTitle] = useState("Pie Chart Example");
+  const [mainTitle, setMainTitle] = useState(defaultTitle || "Pie Chart Example");
   const [explode, setExplode] = useState("");
   const [chartData, setChartData] = useState([]);
   const [error, setError] = useState("");
   const [csvFileName, setCsvFileName] = useState("");
+  const usingProjectData =
+    Array.isArray(dataRows) &&
+    dataRows.length > 0 &&
+    Boolean(categoryColumn) &&
+    Boolean(valueColumn);
 
   const parseList = (input) =>
     input
@@ -77,25 +87,17 @@ export default function PieChartTool() {
       .map((value) => Number(value))
       .filter(Number.isFinite);
 
-  const runR = () => {
-    const labelList = parseList(labels);
-    const valueList = parseNumbers(values);
-    const colorList = parseList(colors);
-    const explodeList = parseNumbers(explode).map((num) => Math.max(0, num));
-
+  const buildChartData = (labelList, valueList, colorList, explodeList) => {
     if (!labelList.length || !valueList.length || labelList.length !== valueList.length) {
-      setError("Labels and values must be comma-separated lists of equal length.");
-      return;
+      return { error: "Labels and values must be comma-separated lists of equal length." };
     }
 
     if (colorList.length && colorList.length !== valueList.length) {
-      setError("Provide the same number of colors as labels, or leave colors blank.");
-      return;
+      return { error: "Provide the same number of colors as labels, or leave colors blank." };
     }
 
     if (explodeList.length && explodeList.length !== valueList.length) {
-      setError("Explode values must match the number of slices.");
-      return;
+      return { error: "Explode values must match the number of slices." };
     }
 
     const sanitizedColors =
@@ -109,10 +111,68 @@ export default function PieChartTool() {
       color: sanitizedColors[index % sanitizedColors.length],
       explode: explodeList[index] ?? 0
     }));
+    return { data: preparedData };
+  };
 
-    setChartData(preparedData);
+  const runR = () => {
+    const labelList = parseList(labels);
+    const valueList = parseNumbers(values);
+    const colorList = parseList(colors);
+    const explodeList = parseNumbers(explode).map((num) => Math.max(0, num));
+
+    const { data, error: validationError } = buildChartData(labelList, valueList, colorList, explodeList);
+    if (validationError) {
+      setError(validationError);
+      setChartData([]);
+      return;
+    }
+
+    setChartData(data);
     setError("");
   };
+
+  const projectSlices = useMemo(() => {
+    if (!usingProjectData) {
+      return [];
+    }
+    const grouped = new Map();
+    dataRows.forEach((row) => {
+      const key = row?.[categoryColumn];
+      const numericValue = Number(row?.[valueColumn]);
+      if (key === undefined || key === null) {
+        return;
+      }
+      if (!Number.isFinite(numericValue)) {
+        return;
+      }
+      grouped.set(key, (grouped.get(key) || 0) + numericValue);
+    });
+    return Array.from(grouped.entries()).map(([name, value]) => ({ name, value }));
+  }, [dataRows, categoryColumn, valueColumn, usingProjectData]);
+
+  useEffect(() => {
+    if (!usingProjectData) {
+      return;
+    }
+    setMainTitle(defaultTitle || "Pie Chart Example");
+    if (!projectSlices.length) {
+      setChartData([]);
+      setError("Selected columns do not contain usable category/value data.");
+      return;
+    }
+    const labelList = projectSlices.map((slice) => slice.name);
+    const valueList = projectSlices.map((slice) => slice.value);
+    setLabels(labelList.join(","));
+    setValues(valueList.join(","));
+    const { data, error: validationError } = buildChartData(labelList, valueList, [], []);
+    if (validationError) {
+      setChartData([]);
+      setError(validationError);
+      return;
+    }
+    setChartData(data);
+    setError("");
+  }, [usingProjectData, projectSlices, defaultTitle]);
 
   const handleCsvUpload = (event) => {
     const file = event.target.files && event.target.files[0];
@@ -188,49 +248,59 @@ export default function PieChartTool() {
   return (
     <div style={{ padding: 24, maxWidth: 800, margin: "0 auto" }}>
       <h1>R Pie Chart</h1>
-      <p>Configure slice labels, values, and optional colors to generate a pie chart.</p>
+      {usingProjectData ? (
+        <p>
+          Using <strong>{categoryColumn}</strong> vs <strong>{valueColumn}</strong> from the imported dataset.
+        </p>
+      ) : (
+        <p>Configure slice labels, values, and optional colors to generate a pie chart.</p>
+      )}
 
       <div style={{ display: "grid", gap: 12 }}>
-        <div>
-          <label style={{ display: "block", marginBottom: 6 }}>
-            Import CSV (Label,Value[,Color])
-            <input
-              type="file"
-              accept=".csv"
-              onChange={handleCsvUpload}
-              style={{ display: "block", marginTop: 6 }}
-            />
-          </label>
-          {csvFileName && (
-            <p style={{ margin: "4px 0", color: "#9fb3d8" }}>
-              Loaded: {csvFileName}
-            </p>
-          )}
-        </div>
-        <label>
-          Labels
-          <input value={labels} onChange={(e) => setLabels(e.target.value)} />
-        </label>
-        <label>
-          Values
-          <input value={values} onChange={(e) => setValues(e.target.value)} />
-        </label>
-        <label>
-          Colors (optional)
-          <input
-            placeholder="e.g. tomato,steelblue,goldenrod"
-            value={colors}
-            onChange={(e) => setColors(e.target.value)}
-          />
-        </label>
-        <label>
-          Explode (optional, 0-1 per slice)
-          <input
-            placeholder="e.g. 0,0.1,0,0"
-            value={explode}
-            onChange={(e) => setExplode(e.target.value)}
-          />
-        </label>
+        {!usingProjectData && (
+          <>
+            <div>
+              <label style={{ display: "block", marginBottom: 6 }}>
+                Import CSV (Label,Value[,Color])
+                <input
+                  type="file"
+                  accept=".csv"
+                  onChange={handleCsvUpload}
+                  style={{ display: "block", marginTop: 6 }}
+                />
+              </label>
+              {csvFileName && (
+                <p style={{ margin: "4px 0", color: "#9fb3d8" }}>
+                  Loaded: {csvFileName}
+                </p>
+              )}
+            </div>
+            <label>
+              Labels
+              <input value={labels} onChange={(e) => setLabels(e.target.value)} />
+            </label>
+            <label>
+              Values
+              <input value={values} onChange={(e) => setValues(e.target.value)} />
+            </label>
+            <label>
+              Colors (optional)
+              <input
+                placeholder="e.g. tomato,steelblue,goldenrod"
+                value={colors}
+                onChange={(e) => setColors(e.target.value)}
+              />
+            </label>
+            <label>
+              Explode (optional, 0-1 per slice)
+              <input
+                placeholder="e.g. 0,0.1,0,0"
+                value={explode}
+                onChange={(e) => setExplode(e.target.value)}
+              />
+            </label>
+          </>
+        )}
         <label>
           Title
           <input value={mainTitle} onChange={(e) => setMainTitle(e.target.value)} />

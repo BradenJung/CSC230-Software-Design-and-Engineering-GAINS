@@ -34,11 +34,67 @@ const IMPORTED_CSV_DATA_KEY = "importedCsvData";
 const LAST_USED_R_TOOL_KEY = "lastUsedRTool";
 const DEFAULT_TOOL_ID = "linear-regression";
 const TOOL_PREVIEW_COMPONENTS = {
-  "dot-plot": { title: "Dot Plot Preview", Component: ScatterplotTool },
-  "histogram": { title: "Histogram Preview", Component: HistogramTool },
-  "density-plot": { title: "Density Plot Preview", Component: DensityTool },
-  "pie-chart": { title: "Pie Chart Preview", Component: PieChartTool },
-  "box-plot": { title: "Box Plot Preview", Component: BoxplotTool }
+  "dot-plot": {
+    title: "Dot Plot Preview",
+    Component: ScatterplotTool,
+    isReady: ({ importedRows, xColumn, yColumn }) =>
+      Array.isArray(importedRows) && importedRows.length > 0 && Boolean(xColumn) && Boolean(yColumn),
+    getProps: ({ importedRows, xColumn, yColumn }) => ({
+      dataRows: importedRows,
+      xColumn,
+      yColumn,
+      defaultTitle: xColumn && yColumn ? `${xColumn} vs ${yColumn}` : "Dot Plot Preview"
+    })
+  },
+  "histogram": {
+    title: "Histogram Preview",
+    Component: HistogramTool,
+    isReady: ({ importedRows, valueColumn }) =>
+      Array.isArray(importedRows) && importedRows.length > 0 && Boolean(valueColumn),
+    getProps: ({ importedRows, valueColumn }) => ({
+      dataRows: importedRows,
+      valueColumn,
+      defaultTitle: valueColumn ? `${valueColumn} Histogram` : "Histogram Preview"
+    })
+  },
+  "density-plot": {
+    title: "Density Plot Preview",
+    Component: DensityTool,
+    isReady: ({ importedRows, valueColumn }) =>
+      Array.isArray(importedRows) && importedRows.length > 0 && Boolean(valueColumn),
+    getProps: ({ importedRows, valueColumn }) => ({
+      dataRows: importedRows,
+      valueColumn,
+      defaultTitle: valueColumn ? `${valueColumn} Density` : "Density Plot Preview"
+    })
+  },
+  "pie-chart": {
+    title: "Pie Chart Preview",
+    Component: PieChartTool,
+    isReady: ({ importedRows, categoryColumn, valueColumn }) =>
+      Array.isArray(importedRows) &&
+      importedRows.length > 0 &&
+      Boolean(categoryColumn) &&
+      Boolean(valueColumn),
+    getProps: ({ importedRows, categoryColumn, valueColumn }) => ({
+      dataRows: importedRows,
+      categoryColumn,
+      valueColumn,
+      defaultTitle: categoryColumn ? `${categoryColumn} Breakdown` : "Pie Chart Preview"
+    })
+  },
+  "box-plot": {
+    title: "Box Plot Preview",
+    Component: BoxplotTool,
+    isReady: ({ importedRows, valueColumn }) =>
+      Array.isArray(importedRows) && importedRows.length > 0 && Boolean(valueColumn),
+    getProps: ({ importedRows, valueColumn, categoryColumn }) => ({
+      dataRows: importedRows,
+      valueColumn,
+      groupColumn: categoryColumn || "",
+      defaultTitle: valueColumn ? `${valueColumn} Boxplot` : "Box Plot Preview"
+    })
+  }
 };
 // Shared map allows us to round-trip tool ids between React state and stored PascalCase values.
 // Map internal ids to storage-safe PascalCase variants (dot plot included)
@@ -570,6 +626,27 @@ print(paste("Degrees of freedom:", t_test_result$parameter))`;
   const [toolSearchQuery, setToolSearchQuery] = useState('');
   const [codeViewMode, setCodeViewMode] = useState('night'); // 'dark', 'light', or 'night'
   const previewConfig = TOOL_PREVIEW_COMPONENTS[selectedTool] || null;
+  const previewContext = useMemo(
+    () => ({
+      importedRows,
+      selectedTool,
+      xColumn,
+      yColumn,
+      valueColumn,
+      categoryColumn
+    }),
+    [importedRows, selectedTool, xColumn, yColumn, valueColumn, categoryColumn]
+  );
+  const previewAvailable = Boolean(
+    previewConfig &&
+      (typeof previewConfig.isReady === 'function'
+        ? previewConfig.isReady(previewContext)
+        : true)
+  );
+  const previewProps =
+    typeof previewConfig?.getProps === 'function'
+      ? previewConfig.getProps(previewContext)
+      : {};
 
   // Show a quick message when we copy code or fail to do so.
   const showCopyToast = useCallback((message, tone = 'success') => {
@@ -589,20 +666,20 @@ print(paste("Degrees of freedom:", t_test_result$parameter))`;
   }, []);
 
   const openPreviewModal = useCallback(() => {
-    if (previewConfig) {
+    if (previewAvailable) {
       setPreviewModalOpen(true);
     }
-  }, [previewConfig]);
+  }, [previewAvailable]);
 
   const closePreviewModal = useCallback(() => {
     setPreviewModalOpen(false);
   }, []);
 
   useEffect(() => {
-    if (!previewConfig && previewModalOpen) {
+    if ((!previewConfig || !previewAvailable) && previewModalOpen) {
       setPreviewModalOpen(false);
     }
-  }, [previewModalOpen, previewConfig]);
+  }, [previewModalOpen, previewConfig, previewAvailable]);
 
   // Save the latest table rows and tool choice into localStorage.
   const persistImportedCsvData = useCallback(
@@ -1828,7 +1905,6 @@ print(paste("Degrees of freedom:", t_test_result$parameter))`,
     const oneFunctionTools = ['iqr', 'standard-deviation', 'median', 'read-csv', 'combinations', 'permutations', 'z-value', 't-test'];
     return oneFunctionTools.includes(selectedTool);
   }, [selectedTool]);
-  const previewAvailable = Boolean(previewConfig);
   const PreviewComponent = previewConfig?.Component;
 
   return (
@@ -1860,7 +1936,7 @@ print(paste("Degrees of freedom:", t_test_result$parameter))`,
               </button>
             </div>
             <div className={styles.previewModalBody}>
-              {PreviewComponent && <PreviewComponent />}
+              {PreviewComponent && <PreviewComponent {...previewProps} />}
             </div>
           </div>
         </div>

@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Papa from "papaparse";
 import {
   AreaChart,
@@ -10,11 +10,15 @@ import {
   CartesianGrid
 } from "recharts";
 
-export default function DensityTool() {
+export default function DensityTool({
+  dataRows = [],
+  valueColumn = "",
+  defaultTitle = "Density Plot Example"
+} = {}) {
   const [values, setValues] = useState("5,7,8,9,10,12,13,15,16,18,20");
   const [kernel, setKernel] = useState("gaussian");
   const [bandwidth, setBandwidth] = useState("");
-  const [mainTitle, setMainTitle] = useState("Density Plot Example");
+  const [mainTitle, setMainTitle] = useState(defaultTitle || "Density Plot Example");
   const [xLabel, setXLabel] = useState("Values");
   const [lineColor, setLineColor] = useState("steelblue");
   const [fillColor, setFillColor] = useState("lightsteelblue");
@@ -26,7 +30,7 @@ export default function DensityTool() {
   const [csvPreview, setCsvPreview] = useState([]);
   const [csvRows, setCsvRows] = useState([]);
   const [csvColumns, setCsvColumns] = useState([]);
-  const [valueColumn, setValueColumn] = useState(null);
+  const [csvValueColumn, setCsvValueColumn] = useState(null);
   const [autoGenerateOnUpload, setAutoGenerateOnUpload] = useState(false);
   const MAX_PREVIEW_ROWS = 20;
 
@@ -35,6 +39,35 @@ export default function DensityTool() {
       .split(",")
       .map((value) => Number(value.trim()))
       .filter(Number.isFinite);
+
+  const usingProjectData =
+    Array.isArray(dataRows) &&
+    dataRows.length > 0 &&
+    Boolean(valueColumn);
+
+  const projectValues = useMemo(() => {
+    if (!usingProjectData) {
+      return [];
+    }
+    return dataRows
+      .map((row) => Number(row?.[valueColumn]))
+      .filter(Number.isFinite);
+  }, [dataRows, valueColumn, usingProjectData]);
+
+  useEffect(() => {
+    if (!usingProjectData) {
+      return;
+    }
+    setMainTitle(defaultTitle || "Density Plot Example");
+    setXLabel(valueColumn || "Values");
+    if (!projectValues.length) {
+      setValues("");
+      setError("Selected column has no numeric values.");
+      return;
+    }
+    setValues(projectValues.join(","));
+    setError("");
+  }, [usingProjectData, projectValues, valueColumn, defaultTitle]);
 
   // CSV handling (PapaParse) and helpers
   const handleCsvUpload = (event) => {
@@ -156,47 +189,56 @@ export default function DensityTool() {
   return (
     <div style={{ padding: 24, maxWidth: 800, margin: "0 auto" }}>
       <h1>R Density Plot</h1>
-      <p>Enter numeric values separated by commas to estimate their density curve.</p>
+      {usingProjectData ? (
+        <p>
+          Using <strong>{valueColumn}</strong> from the imported dataset ({projectValues.length} row
+          {projectValues.length === 1 ? "" : "s"}).
+        </p>
+      ) : (
+        <p>Enter numeric values separated by commas to estimate their density curve.</p>
+      )}
 
       <div style={{ display: "grid", gap: 12 }}>
-        {/* CSV Upload */}
-        <div style={{ marginBottom: 8 }}>
-          <label style={{ display: "block", marginBottom: 6 }}>
-            Upload CSV (comma/semicolon/tab). First numeric column will be suggested.
-            <input type="file" accept=".csv" onChange={handleCsvUpload} style={{ marginLeft: 8 }} />
-          </label>
-          <label style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
-            <input
-              type="checkbox"
-              checked={autoGenerateOnUpload}
-              onChange={(e) => setAutoGenerateOnUpload(e.target.checked)}
-            />
-            Auto-generate after upload
-          </label>
-          {csvFileName && <div style={{ marginTop: 8, fontSize: "0.9em", color: "green" }}>Loaded: {csvFileName}</div>}
+        {!usingProjectData && (
+          <div style={{ marginBottom: 8 }}>
+            <label style={{ display: "block", marginBottom: 6 }}>
+              Upload CSV (comma/semicolon/tab). First numeric column will be suggested.
+              <input type="file" accept=".csv" onChange={handleCsvUpload} style={{ marginLeft: 8 }} />
+            </label>
+            <label style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
+              <input
+                type="checkbox"
+                checked={autoGenerateOnUpload}
+                onChange={(e) => setAutoGenerateOnUpload(e.target.checked)}
+              />
+              Auto-generate after upload
+            </label>
+            {csvFileName && <div style={{ marginTop: 8, fontSize: "0.9em", color: "green" }}>Loaded: {csvFileName}</div>}
 
-          {csvColumns.length > 0 && (
-            <div style={{ marginTop: 8 }}>
-              <label style={{ display: "block", marginBottom: 6 }}>
-                Value column
-                <select
-                  value={valueColumn ?? ''}
-                  onChange={(e) => { const idx = e.target.value === '' ? null : Number(e.target.value); setValueColumn(idx); applyColumnSelection(idx); }}
-                  style={{ marginLeft: 8 }}
-                >
-                  {csvColumns.map((c, i) => (
-                    <option key={i} value={i}>{c}</option>
-                  ))}
-                </select>
-              </label>
-            </div>
-          )}
-        </div>
-
-        <label>
-          Values
-          <input value={values} onChange={(e) => setValues(e.target.value)} />
-        </label>
+              {csvColumns.length > 0 && (
+                <div style={{ marginTop: 8 }}>
+                  <label style={{ display: "block", marginBottom: 6 }}>
+                    Value column
+                    <select
+                      value={csvValueColumn ?? ''}
+                      onChange={(e) => { const idx = e.target.value === '' ? null : Number(e.target.value); setCsvValueColumn(idx); applyColumnSelection(idx); }}
+                      style={{ marginLeft: 8 }}
+                    >
+                    {csvColumns.map((c, i) => (
+                      <option key={i} value={i}>{c}</option>
+                    ))}
+                  </select>
+                </label>
+              </div>
+            )}
+          </div>
+        )}
+        {!usingProjectData && (
+          <label>
+            Values
+            <input value={values} onChange={(e) => setValues(e.target.value)} />
+          </label>
+        )}
 
         <div style={{ display: "flex", flexWrap: "wrap", gap: 12 }}>
           <label>
