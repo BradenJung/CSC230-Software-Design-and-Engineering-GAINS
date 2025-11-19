@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   PieChart,
   Pie,
@@ -53,6 +53,47 @@ const renderSlice = (props) => {
   );
 };
 
+const parseList = (input = "") =>
+  input
+    .split(",")
+    .map((value) => value.trim())
+    .filter((value) => value.length > 0);
+
+const parseNumbers = (input = "") =>
+  input
+    .split(",")
+    .map((value) => value.trim())
+    .filter((value) => value.length > 0)
+    .map((value) => Number(value))
+    .filter(Number.isFinite);
+
+const buildChartData = (labelList, valueList, colorList, explodeList) => {
+  if (!labelList.length || !valueList.length || labelList.length !== valueList.length) {
+    return { error: "Labels and values must be comma-separated lists of equal length." };
+  }
+
+  if (colorList.length && colorList.length !== valueList.length) {
+    return { error: "Provide the same number of colors as labels, or leave colors blank." };
+  }
+
+  if (explodeList.length && explodeList.length !== valueList.length) {
+    return { error: "Explode values must match the number of slices." };
+  }
+
+  const sanitizedColors =
+    colorList.length > 0
+      ? colorList
+      : DEFAULT_COLORS;
+
+  const preparedData = labelList.map((name, index) => ({
+    name,
+    value: valueList[index],
+    color: sanitizedColors[index % sanitizedColors.length],
+    explode: explodeList[index] ?? 0
+  }));
+  return { data: preparedData };
+};
+
 export default function PieChartTool({
   dataRows = [],
   categoryColumn = "",
@@ -73,48 +114,7 @@ export default function PieChartTool({
     Boolean(categoryColumn) &&
     Boolean(valueColumn);
 
-  const parseList = (input) =>
-    input
-      .split(",")
-      .map((value) => value.trim())
-      .filter((value) => value.length > 0);
-
-  const parseNumbers = (input) =>
-    input
-      .split(",")
-      .map((value) => value.trim())
-      .filter((value) => value.length > 0)
-      .map((value) => Number(value))
-      .filter(Number.isFinite);
-
-  const buildChartData = (labelList, valueList, colorList, explodeList) => {
-    if (!labelList.length || !valueList.length || labelList.length !== valueList.length) {
-      return { error: "Labels and values must be comma-separated lists of equal length." };
-    }
-
-    if (colorList.length && colorList.length !== valueList.length) {
-      return { error: "Provide the same number of colors as labels, or leave colors blank." };
-    }
-
-    if (explodeList.length && explodeList.length !== valueList.length) {
-      return { error: "Explode values must match the number of slices." };
-    }
-
-    const sanitizedColors =
-      colorList.length > 0
-        ? colorList
-        : DEFAULT_COLORS;
-
-    const preparedData = labelList.map((name, index) => ({
-      name,
-      value: valueList[index],
-      color: sanitizedColors[index % sanitizedColors.length],
-      explode: explodeList[index] ?? 0
-    }));
-    return { data: preparedData };
-  };
-
-  const runR = () => {
+  const runR = useCallback(() => {
     const labelList = parseList(labels);
     const valueList = parseNumbers(values);
     const colorList = parseList(colors);
@@ -129,7 +129,7 @@ export default function PieChartTool({
 
     setChartData(data);
     setError("");
-  };
+  }, [labels, values, colors, explode]);
 
   const projectSlices = useMemo(() => {
     if (!usingProjectData) {
@@ -152,6 +152,7 @@ export default function PieChartTool({
 
   useEffect(() => {
     if (!usingProjectData) {
+      runR();
       return;
     }
     setMainTitle(defaultTitle || "Pie Chart Example");
@@ -172,7 +173,7 @@ export default function PieChartTool({
     }
     setChartData(data);
     setError("");
-  }, [usingProjectData, projectSlices, defaultTitle]);
+  }, [usingProjectData, projectSlices, defaultTitle, runR]);
 
   const handleCsvUpload = (event) => {
     const file = event.target.files && event.target.files[0];
@@ -305,8 +306,6 @@ export default function PieChartTool({
           Title
           <input value={mainTitle} onChange={(e) => setMainTitle(e.target.value)} />
         </label>
-
-        <button onClick={runR}>Generate</button>
       </div>
 
       {error && (
@@ -350,7 +349,7 @@ export default function PieChartTool({
             </p>
           </>
         ) : (
-          <p style={{ color: "#9fb3d8" }}>Click Generate to build a preview.</p>
+          <p style={{ color: "#9fb3d8" }}>Adjust the slice details above to see a live preview.</p>
         )}
       </div>
     </div>
