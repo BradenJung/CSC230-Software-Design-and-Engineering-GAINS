@@ -1,5 +1,14 @@
 import { useState, useMemo } from "react";
 import Papa from "papaparse";
+import {
+  AreaChart,
+  Area,
+  Tooltip,
+  ResponsiveContainer,
+  XAxis,
+  YAxis,
+  CartesianGrid
+} from "recharts";
 
 export default function DensityTool() {
   const [values, setValues] = useState("5,7,8,9,10,12,13,15,16,18,20");
@@ -10,7 +19,6 @@ export default function DensityTool() {
   const [lineColor, setLineColor] = useState("steelblue");
   const [fillColor, setFillColor] = useState("lightsteelblue");
   const [fillArea, setFillArea] = useState(true);
-  const [imgSrc, setImgSrc] = useState("");
   const [error, setError] = useState("");
 
   // CSV & preview state
@@ -84,60 +92,65 @@ export default function DensityTool() {
     const mean = xs.reduce((a,b)=>a+b,0)/n;
     const sd = Math.sqrt(xs.reduce((a,b)=>a + Math.pow(b-mean,2),0)/n) || 1;
     const h = bandwidth ? Number(bandwidth) : (1.06 * sd * Math.pow(n, -1/5));
-    const kernel = (u) => Math.exp(-0.5 * u * u) / Math.sqrt(2 * Math.PI);
+    const kernelFn = (u) => Math.exp(-0.5 * u * u) / Math.sqrt(2 * Math.PI);
     const min = Math.min(...xs) - sd;
     const max = Math.max(...xs) + sd;
     const gridN = 120;
     const step = (max - min) / (gridN - 1);
-    const grid = Array.from({length: gridN}, (_,i) => min + i * step);
-    const dens = grid.map(x => {
-      const s = xs.reduce((acc, xi) => acc + kernel((x - xi)/h), 0);
-      return s / (n * h);
+    const points = Array.from({length: gridN}, (_,i) => {
+      const x = min + i * step;
+      const density =
+        xs.reduce((acc, xi) => acc + kernelFn((x - xi)/h), 0) / (n * h);
+      return { x, density };
     });
-    const maxD = Math.max(...dens);
-    return { grid, dens, min, max, maxD };
+    return points;
   }, [values, bandwidth]);
 
-  const runR = async () => {
+  const renderChart = () => {
+    if (!kdePreview || !kdePreview.length) {
+      return <p style={{ color: "#9fb3d8" }}>Enter values and click Generate to see the density curve.</p>;
+    }
+    return (
+      <ResponsiveContainer width="100%" height={320}>
+        <AreaChart data={kdePreview}>
+          <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.08)" />
+          <XAxis
+            dataKey="x"
+            tickFormatter={(value) => value.toFixed(1)}
+            tick={{ fill: "#b8c7e0", fontSize: 12 }}
+            label={{ value: xLabel, position: "insideBottom", offset: -4, fill: "#b8c7e0" }}
+          />
+          <YAxis tick={{ fill: "#b8c7e0" }} />
+          <Tooltip
+            formatter={(value) => value.toFixed(4)}
+            contentStyle={{ background: "#0f1b2b", borderRadius: 8, border: "1px solid rgba(255,255,255,0.08)" }}
+          />
+          <Area
+            type="monotone"
+            dataKey="density"
+            stroke={lineColor}
+            fill={fillArea ? fillColor : "transparent"}
+            fillOpacity={fillArea ? 0.4 : 0}
+            strokeWidth={2}
+            isAnimationActive={false}
+          />
+        </AreaChart>
+      </ResponsiveContainer>
+    );
+  };
+
+  const runR = () => {
     const numericValues = parseNumbers(values);
     if (!numericValues.length) {
       setError("Please provide at least one numeric value.");
-      setImgSrc("");
       return;
     }
 
-    setError("");
-
-    try {
-      const res = await fetch("/api/run-r", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          values: numericValues,
-          kernel,
-          bandwidth: bandwidth ? Number(bandwidth) : null,
-          mainTitle,
-          xLabel,
-          lineColor,
-          fillColor,
-          fillArea
-        })
-      });
-
-      if (!res.ok) {
-        throw new Error(`Request failed with status ${res.status}`);
-      }
-
-      const data = await res.json();
-      if (data.imageBase64) {
-        setImgSrc(`data:image/png;base64,${data.imageBase64}`);
-      } else {
-        setError("R script did not return an image. Check server logs for details.");
-        console.error(data);
-      }
-    } catch (err) {
-      setError(err.message || "Unable to generate density plot.");
+    if (!kdePreview || !kdePreview.length) {
+      setError("Unable to compute density curve. Check your inputs.");
+      return;
     }
+    setError("");
   };
 
   return (
@@ -235,44 +248,17 @@ export default function DensityTool() {
         </div>
 
         <button onClick={runR}>Generate</button>
-        {kdePreview && (
-          <div style={{ marginTop: 12 }}>
-            <svg width={600} height={160} style={{ display: 'block', background: '#fff', border: '1px solid #eee' }}>
-              {(() => {
-                const w = 600, h = 160, p = 28;
-                const { grid, dens, min, max, maxD } = kdePreview;
-                if (!grid || !grid.length) return null;
-                const scaleX = (x) => p + ((x - min) / (max - min || 1)) * (w - 2 * p);
-                const scaleY = (d) => h - p - (d / (maxD || 1)) * (h - 2 * p);
-                const points = grid.map((x, i) => `${scaleX(x)},${scaleY(dens[i])}`);
-                const path = 'M ' + points.join(' L ');
-                const areaPath = path + ` L ${scaleX(grid[grid.length-1])},${h-p} L ${scaleX(grid[0])},${h-p} Z`;
-                return (
-                  <g>
-                    {fillArea && <path d={areaPath} fill={fillColor} opacity={0.4} stroke="none" />}
-                    <path d={path} fill="none" stroke={lineColor} strokeWidth={2} />
-                  </g>
-                );
-              })()}
-            </svg>
-          </div>
-        )}
+      </div>
+
+      <div style={{ marginTop: 24, background: "#090f1a", borderRadius: 16, padding: 24, border: "1px solid rgba(255,255,255,0.08)" }}>
+        <h2 style={{ marginBottom: 12 }}>{mainTitle}</h2>
+        {renderChart()}
       </div>
 
       {error && (
         <p style={{ color: "crimson", marginTop: 12 }}>
           {error}
         </p>
-      )}
-
-      {imgSrc && (
-        <div style={{ marginTop: 16 }}>
-          <img
-            src={imgSrc}
-            alt="R Density Plot"
-            style={{ maxWidth: "100%", border: "1px solid #eee" }}
-          />
-        </div>
       )}
     </div>
   );
