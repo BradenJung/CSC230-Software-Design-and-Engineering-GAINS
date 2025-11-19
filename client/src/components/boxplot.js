@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState } from "react";
 
 export default function BoxplotTool() {
   const [values, setValues] = useState("5,7,8,9,10,12,13,15,16,18,20");
@@ -8,7 +8,7 @@ export default function BoxplotTool() {
   const [yLabel, setYLabel] = useState("Values");
   const [fillColor, setFillColor] = useState("lightblue");
   const [showNotch, setShowNotch] = useState(false);
-  const [imgSrc, setImgSrc] = useState("");
+  const [boxplotData, setBoxplotData] = useState([]);
   const [error, setError] = useState("");
 
   // CSV / preview state
@@ -34,52 +34,80 @@ export default function BoxplotTool() {
       .map((value) => value.trim())
       .filter((value) => value.length > 0);
 
-  const runR = async () => {
+  const median = (sortedValues) => {
+    const len = sortedValues.length;
+    const mid = Math.floor(len / 2);
+    if (len % 2 === 0) {
+      return (sortedValues[mid - 1] + sortedValues[mid]) / 2;
+    }
+    return sortedValues[mid];
+  };
+
+  const computeStats = (dataValues) => {
+    const sorted = [...dataValues].sort((a, b) => a - b);
+    const len = sorted.length;
+    if (!len) {
+      return null;
+    }
+    const q2 = median(sorted);
+    const mid = Math.floor(len / 2);
+    const lowerHalf = sorted.slice(0, mid);
+    const upperHalf = len % 2 === 0 ? sorted.slice(mid) : sorted.slice(mid + 1);
+    const q1 = lowerHalf.length ? median(lowerHalf) : sorted[0];
+    const q3 = upperHalf.length ? median(upperHalf) : sorted[len - 1];
+    return {
+      min: sorted[0],
+      max: sorted[len - 1],
+      q1,
+      q3,
+      median: q2
+    };
+  };
+
+  const runR = () => {
     const numericValues = parseNumbers(values);
     if (!numericValues.length) {
       setError("Please provide at least one numeric value.");
-      setImgSrc("");
+      setBoxplotData([]);
       return;
     }
 
     const groupValues = parseGroups(groups);
     if (groupValues.length && groupValues.length !== numericValues.length) {
       setError("Groups (if provided) must match the number of values.");
-      setImgSrc("");
+      setBoxplotData([]);
       return;
     }
 
-    setError("");
-
-    try {
-      const res = await fetch("/api/run-r", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          values: numericValues,
-          groups: groupValues.length ? groupValues : null,
-          mainTitle,
-          xLabel,
-          yLabel,
-          fillColor,
-          showNotch
-        })
+    const grouped = {};
+    if (groupValues.length) {
+      groupValues.forEach((groupLabel, index) => {
+        if (!grouped[groupLabel]) {
+          grouped[groupLabel] = [];
+        }
+        grouped[groupLabel].push(numericValues[index]);
       });
-
-      if (!res.ok) {
-        throw new Error(`Request failed with status ${res.status}`);
-      }
-
-      const data = await res.json();
-      if (data.imageBase64) {
-        setImgSrc(`data:image/png;base64,${data.imageBase64}`);
-      } else {
-        setError("R script did not return an image. Check server logs for details.");
-        console.error(data);
-      }
-    } catch (err) {
-      setError(err.message || "Unable to generate boxplot.");
+    } else {
+      grouped["Sample"] = numericValues;
     }
+
+    const computedData = Object.entries(grouped)
+      .map(([groupLabel, dataValues]) => {
+        const stats = computeStats(dataValues);
+        return stats
+          ? { label: groupLabel, ...stats }
+          : null;
+      })
+      .filter(Boolean);
+
+    if (!computedData.length) {
+      setError("Unable to compute box plot statistics.");
+      setBoxplotData([]);
+      return;
+    }
+
+    setBoxplotData(computedData);
+    setError("");
   };
 
   // --- CSV parsing utilities (delimiter detection + RFC4180-like parser)
@@ -244,23 +272,6 @@ export default function BoxplotTool() {
             </div>
           )}
 
-          {/* Preview table */}
-          {csvPreview.length > 0 && (
-            <div style={{ marginTop: 8, maxHeight: 240, overflow: 'auto', border: '1px solid #eee', padding: 8, background: '#fafafa' }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                <tbody>
-                  {csvPreview.map((row, ri) => (
-                    <tr key={ri} style={{ borderBottom: '1px solid #f0f0f0' }}>
-                      {row.map((cell, ci) => (
-                        <td key={ci} style={{ padding: 6, fontSize: 12, borderRight: '1px solid #f5f5f5' }}>{cell}</td>
-                      ))}
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-              {csvPreview.length === MAX_PREVIEW_ROWS && <div style={{ fontSize: 11, marginTop: 6 }}>Showing first {MAX_PREVIEW_ROWS} rows</div>}
-            </div>
-          )}
         </div>
 
         <label>
@@ -312,15 +323,144 @@ export default function BoxplotTool() {
         </p>
       )}
 
-      {imgSrc && (
-        <div style={{ marginTop: 16 }}>
-          <img
-            src={imgSrc}
-            alt="R Boxplot"
-            style={{ maxWidth: "100%", border: "1px solid #eee" }}
-          />
-        </div>
-      )}
+      <div style={{ marginTop: 24, background: "#090f1a", borderRadius: 16, padding: 24, border: "1px solid rgba(255,255,255,0.08)" }}>
+        <h2 style={{ marginBottom: 12 }}>{mainTitle}</h2>
+        {boxplotData.length ? (
+          <svg width="100%" height="320" viewBox="0 0 720 320">
+            {(() => {
+              const paddingX = 60;
+              const paddingY = 50;
+              const width = 720;
+              const height = 320;
+              const chartWidth = width - paddingX * 2;
+              const chartHeight = height - paddingY * 2;
+              const minValue = Math.min(...boxplotData.map(d => d.min));
+              const maxValue = Math.max(...boxplotData.map(d => d.max));
+              const range = maxValue - minValue || 1;
+              const scaleY = (value) =>
+                height - paddingY - ((value - minValue) / range) * chartHeight;
+              const spacing = chartWidth / boxplotData.length;
+              const boxWidth = Math.min(60, spacing * 0.6);
+
+              return (
+                <>
+                  {/* Horizontal axis labels */}
+                  {boxplotData.map((entry, index) => {
+                    const centerX = paddingX + spacing * index + spacing / 2;
+                    const minY = scaleY(entry.min);
+                    const maxY = scaleY(entry.max);
+                    const q1Y = scaleY(entry.q1);
+                    const q3Y = scaleY(entry.q3);
+                    const medianY = scaleY(entry.median);
+                    const leftX = centerX - boxWidth / 2;
+                    const rightX = centerX + boxWidth / 2;
+                    const notchWidth = boxWidth * 0.4;
+                    const notchLeft = centerX - notchWidth / 2;
+                    const notchRight = centerX + notchWidth / 2;
+                    const notchDepth = 8;
+
+                    return (
+                      <g key={entry.label}>
+                        {/* Whisker lines */}
+                        <line
+                          x1={centerX}
+                          x2={centerX}
+                          y1={maxY}
+                          y2={q3Y}
+                          stroke="#b8c7e0"
+                          strokeWidth="2"
+                        />
+                        <line
+                          x1={centerX}
+                          x2={centerX}
+                          y1={minY}
+                          y2={q1Y}
+                          stroke="#b8c7e0"
+                          strokeWidth="2"
+                        />
+                        {/* Min/Max caps */}
+                        <line
+                          x1={centerX - boxWidth / 4}
+                          x2={centerX + boxWidth / 4}
+                          y1={maxY}
+                          y2={maxY}
+                          stroke="#b8c7e0"
+                          strokeWidth="2"
+                        />
+                        <line
+                          x1={centerX - boxWidth / 4}
+                          x2={centerX + boxWidth / 4}
+                          y1={minY}
+                          y2={minY}
+                          stroke="#b8c7e0"
+                          strokeWidth="2"
+                        />
+                        {/* Box */}
+                        <rect
+                          x={leftX}
+                          y={q3Y}
+                          width={boxWidth}
+                          height={q1Y - q3Y}
+                          fill={fillColor}
+                          opacity="0.6"
+                          stroke="#1a2535"
+                          strokeWidth="2"
+                        />
+                        {/* Notch */}
+                        {showNotch && (
+                          <path
+                            d={`M ${leftX} ${q3Y}
+                                L ${notchLeft} ${medianY - notchDepth}
+                                L ${notchLeft} ${medianY + notchDepth}
+                                L ${leftX} ${q1Y}
+                                L ${rightX} ${q1Y}
+                                L ${notchRight} ${medianY + notchDepth}
+                                L ${notchRight} ${medianY - notchDepth}
+                                L ${rightX} ${q3Y}
+                                Z`}
+                            fill={fillColor}
+                            opacity="0.85"
+                          />
+                        )}
+                        {/* Median line */}
+                        <line
+                          x1={leftX}
+                          x2={rightX}
+                          y1={medianY}
+                          y2={medianY}
+                          stroke="#0f1b2b"
+                          strokeWidth="3"
+                        />
+                        {/* Labels */}
+                        <text
+                          x={centerX}
+                          y={height - paddingY / 2}
+                          textAnchor="middle"
+                          fill="#b8c7e0"
+                        >
+                          {entry.label}
+                        </text>
+                      </g>
+                    );
+                  })}
+                  {/* Y axis label */}
+                  <text
+                    x={20}
+                    y={height / 2}
+                    fill="#b8c7e0"
+                    transform={`rotate(-90, 20, ${height / 2})`}
+                    textAnchor="middle"
+                  >
+                    {yLabel}
+                  </text>
+                </>
+              );
+            })()}
+          </svg>
+        ) : (
+          <p style={{ color: "#9fb3d8" }}>Click Generate to preview the boxplot.</p>
+        )}
+      </div>
     </div>
   );
 }
