@@ -27,6 +27,41 @@ export default function BoxplotTool({
 
   const MAX_PREVIEW_ROWS = 20;
 
+  const panelStyle = {
+    background: "var(--surface-secondary, #151a24)",
+    border: "1px solid var(--border-muted, #2a3244)",
+    borderRadius: 16,
+    padding: 16,
+    display: "flex",
+    flexDirection: "column",
+    gap: 12
+  };
+
+  const fieldWrapperStyle = {
+    display: "flex",
+    flexDirection: "column",
+    gap: 6,
+    flex: "1 1 180px",
+    minWidth: 160
+  };
+
+  const labelTextStyle = {
+    fontSize: "0.9rem",
+    fontWeight: 600,
+    color: "var(--text-muted, #a8b3c9)"
+  };
+
+  const inputStyle = {
+    width: "100%",
+    borderRadius: 10,
+    border: "1px solid var(--border-muted, #2a3244)",
+    background: "var(--surface-tertiary, #0f1724)",
+    color: "var(--foreground, #f5f7fb)",
+    padding: "10px 12px",
+    fontSize: "0.95rem",
+    boxShadow: "inset 0 1px 0 rgba(255,255,255,0.05)"
+  };
+
   const usingProjectData =
     Array.isArray(dataRows) &&
     dataRows.length > 0 &&
@@ -270,8 +305,8 @@ export default function BoxplotTool({
         }).filter(i => i !== null);
 
         const suggestedValueCol = numericColIndexes.length ? numericColIndexes[0] : 0;
-        setValueColumn(suggestedValueCol);
-        setGroupColumn(null);
+        setValueColumnIndex(suggestedValueCol);
+        setGroupColumnIndex(null);
 
         // If auto-generate is enabled, fill values/groups and run
         if (autoGenerateOnUpload) {
@@ -293,12 +328,12 @@ export default function BoxplotTool({
 
   // helper to extract columns when user picks them from UI
   const applyColumnSelection = (valColIdx, grpColIdx) => {
-    if (!csvRows.length) return;
+    if (!csvRows.length || valColIdx === null || valColIdx === undefined) return;
     const hasHeader = csvColumns.length && csvRows.length && (csvColumns[0] !== `Col 1`);
     const dataRows = hasHeader ? csvRows.slice(1) : csvRows;
     const vals = dataRows.map(r => r[valColIdx]).map(v => (v||'').trim()).filter(v => v !== '');
     setValues(vals.join(','));
-    if (grpColIdx !== null) {
+    if (grpColIdx !== null && grpColIdx !== undefined) {
       const gr = dataRows.map(r => (r[grpColIdx]||'').trim()).filter(v => v !== '');
       setGroups(gr.join(','));
     }
@@ -321,96 +356,107 @@ export default function BoxplotTool({
         </p>
       )}
 
-      <div style={{ display: "grid", gap: 12 }}>
+      <div style={{ display: "grid", gap: 16 }}>
         {!usingProjectData && (
-          <>
-            {/* CSV Upload */}
-            <div style={{ marginBottom: 8 }}>
-              <label style={{ display: "block", marginBottom: 6 }}>
+          <div style={panelStyle}>
+            <label style={fieldWrapperStyle}>
+              <span style={labelTextStyle}>
                 Upload CSV file (supports comma, semicolon, tab). First two columns are suggested as Value/Group.
-                <input type="file" accept=".csv" onChange={handleCsvUpload} style={{ marginLeft: 8 }} />
-              </label>
-              <label style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
-                <input
-                  type="checkbox"
-                  checked={autoGenerateOnUpload}
-                  onChange={(e) => setAutoGenerateOnUpload(e.target.checked)}
-                />
-                Auto-generate after upload
-              </label>
-              {csvFileName && <div style={{ marginTop: 8, fontSize: "0.9em", color: "green" }}>Loaded: {csvFileName}</div>}
-
-              {csvColumns.length > 0 && (
-                <div style={{ marginTop: 8 }}>
-                  <label style={{ display: "block", marginBottom: 6 }}>
-                    Value column
-                  <select
-                    value={valueColumnIndex ?? ''}
-                    onChange={(e) => { const idx = e.target.value === '' ? null : Number(e.target.value); setValueColumnIndex(idx); applyColumnSelection(idx, groupColumnIndex); }}
-                    style={{ marginLeft: 8 }}
-                  >
-                      {csvColumns.map((c, i) => (
-                        <option key={i} value={i}>{c}</option>
-                      ))}
-                    </select>
-                  </label>
-                  <label style={{ display: "block", marginBottom: 6 }}>
-                    Group column (optional)
-                  <select
-                    value={groupColumnIndex ?? ''}
-                    onChange={(e) => { const idx = e.target.value === '' ? null : Number(e.target.value); setGroupColumnIndex(idx); applyColumnSelection(valueColumnIndex, idx); }}
-                    style={{ marginLeft: 8 }}
-                  >
-                      <option value="">(none)</option>
-                      {csvColumns.map((c, i) => (
-                        <option key={i} value={i}>{c}</option>
-                      ))}
-                    </select>
-                  </label>
-                </div>
-              )}
-
-            </div>
-
-            <label>
-              Values
-              <input value={values} onChange={(e) => setValues(e.target.value)} />
+              </span>
+              <input type="file" accept=".csv" onChange={handleCsvUpload} style={inputStyle} />
             </label>
-            <label>
-              Groups (optional)
+            <label style={{ ...fieldWrapperStyle, flexDirection: "row", alignItems: "center", gap: 8 }}>
+              <input
+                type="checkbox"
+                checked={autoGenerateOnUpload}
+                onChange={(e) => setAutoGenerateOnUpload(e.target.checked)}
+              />
+              <span style={labelTextStyle}>Auto-generate after upload</span>
+            </label>
+            {csvFileName && <div style={{ fontSize: "0.9em", color: "green" }}>Loaded: {csvFileName}</div>}
+
+            {csvColumns.length > 0 && (
+              <>
+                <label style={fieldWrapperStyle}>
+                  <span style={labelTextStyle}>Value column</span>
+                  <select
+                    value={valueColumnIndex ?? ""}
+                    onChange={(e) => {
+                      const idx = e.target.value === "" ? null : Number(e.target.value);
+                      setValueColumnIndex(idx);
+                      applyColumnSelection(idx, groupColumnIndex);
+                    }}
+                    style={inputStyle}
+                  >
+                    {csvColumns.map((c, i) => (
+                      <option key={i} value={i}>
+                        {c}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label style={fieldWrapperStyle}>
+                  <span style={labelTextStyle}>Group column (optional)</span>
+                  <select
+                    value={groupColumnIndex ?? ""}
+                    onChange={(e) => {
+                      const idx = e.target.value === "" ? null : Number(e.target.value);
+                      setGroupColumnIndex(idx);
+                      applyColumnSelection(valueColumnIndex, idx);
+                    }}
+                    style={inputStyle}
+                  >
+                    <option value="">(none)</option>
+                    {csvColumns.map((c, i) => (
+                      <option key={i} value={i}>
+                        {c}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              </>
+            )}
+
+            <label style={fieldWrapperStyle}>
+              <span style={labelTextStyle}>Values</span>
+              <input value={values} onChange={(e) => setValues(e.target.value)} style={inputStyle} />
+            </label>
+            <label style={fieldWrapperStyle}>
+              <span style={labelTextStyle}>Groups (optional)</span>
               <input
                 placeholder="e.g. A,A,A,B,B,B"
                 value={groups}
                 onChange={(e) => setGroups(e.target.value)}
+                style={inputStyle}
               />
             </label>
-          </>
+          </div>
         )}
 
-        <div style={{ display: "flex", flexWrap: "wrap", gap: 12 }}>
-          <label>
-            Title
-            <input value={mainTitle} onChange={(e) => setMainTitle(e.target.value)} />
+        <div style={{ ...panelStyle, flexDirection: "row", flexWrap: "wrap" }}>
+          <label style={fieldWrapperStyle}>
+            <span style={labelTextStyle}>Title</span>
+            <input value={mainTitle} onChange={(e) => setMainTitle(e.target.value)} style={inputStyle} />
           </label>
-          <label>
-            X Label
-            <input value={xLabel} onChange={(e) => setXLabel(e.target.value)} />
+          <label style={fieldWrapperStyle}>
+            <span style={labelTextStyle}>X Label</span>
+            <input value={xLabel} onChange={(e) => setXLabel(e.target.value)} style={inputStyle} />
           </label>
-          <label>
-            Y Label
-            <input value={yLabel} onChange={(e) => setYLabel(e.target.value)} />
+          <label style={fieldWrapperStyle}>
+            <span style={labelTextStyle}>Y Label</span>
+            <input value={yLabel} onChange={(e) => setYLabel(e.target.value)} style={inputStyle} />
           </label>
-          <label>
-            Fill Color
-            <input value={fillColor} onChange={(e) => setFillColor(e.target.value)} />
+          <label style={fieldWrapperStyle}>
+            <span style={labelTextStyle}>Fill Color</span>
+            <input value={fillColor} onChange={(e) => setFillColor(e.target.value)} style={inputStyle} />
           </label>
-          <label style={{ display: "flex", alignItems: "center", gap: 6 }}>
+          <label style={{ ...fieldWrapperStyle, flexDirection: "row", alignItems: "center", gap: 8 }}>
             <input
               type="checkbox"
               checked={showNotch}
               onChange={(e) => setShowNotch(e.target.checked)}
             />
-            Notched
+            <span style={labelTextStyle}>Notched</span>
           </label>
         </div>
 
@@ -422,7 +468,7 @@ export default function BoxplotTool({
         </p>
       )}
 
-      <div style={{ marginTop: 24, background: "#090f1a", borderRadius: 16, padding: 24, border: "1px solid rgba(255,255,255,0.08)" }}>
+      <div style={{ marginTop: 24, background: "#fff", borderRadius: 12, padding: 24, border: "1px solid #eee" }}>
         <h2 style={{ marginBottom: 12 }}>{mainTitle}</h2>
         {boxplotData.length ? (
           <svg width="100%" height="320" viewBox="0 0 720 320">
@@ -455,14 +501,14 @@ export default function BoxplotTool({
                           x2={width - paddingX}
                           y1={y}
                           y2={y}
-                          stroke="rgba(255,255,255,0.08)"
+                          stroke="#e5e7eb"
                           strokeDasharray="4 4"
                         />
                         <text
                           x={paddingX - 18}
                           y={y + 4}
                           textAnchor="end"
-                          fill="#b8c7e0"
+                          fill="#4b5563"
                           fontSize="12"
                         >
                           {Math.abs(tick) < 1e-6 ? "0" : Number.isInteger(tick) ? tick : tick.toFixed(1)}
@@ -493,7 +539,7 @@ export default function BoxplotTool({
                           x2={centerX}
                           y1={maxY}
                           y2={q3Y}
-                          stroke="#b8c7e0"
+                          stroke="#94a3b8"
                           strokeWidth="2"
                         />
                         <line
@@ -501,7 +547,7 @@ export default function BoxplotTool({
                           x2={centerX}
                           y1={minY}
                           y2={q1Y}
-                          stroke="#b8c7e0"
+                          stroke="#94a3b8"
                           strokeWidth="2"
                         />
                         {/* Min/Max caps */}
@@ -510,7 +556,7 @@ export default function BoxplotTool({
                           x2={centerX + boxWidth / 4}
                           y1={maxY}
                           y2={maxY}
-                          stroke="#b8c7e0"
+                          stroke="#94a3b8"
                           strokeWidth="2"
                         />
                         <line
@@ -518,7 +564,7 @@ export default function BoxplotTool({
                           x2={centerX + boxWidth / 4}
                           y1={minY}
                           y2={minY}
-                          stroke="#b8c7e0"
+                          stroke="#94a3b8"
                           strokeWidth="2"
                         />
                         {/* Box */}
@@ -529,7 +575,7 @@ export default function BoxplotTool({
                           height={q1Y - q3Y}
                           fill={fillColor}
                           opacity="0.6"
-                          stroke="#1a2535"
+                          stroke="#cbd5f5"
                           strokeWidth="2"
                         />
                         {/* Notch */}
@@ -554,7 +600,7 @@ export default function BoxplotTool({
                           x2={rightX}
                           y1={medianY}
                           y2={medianY}
-                          stroke="#0f1b2b"
+                          stroke="#1f2933"
                           strokeWidth="3"
                         />
                         {/* Labels */}
@@ -562,7 +608,7 @@ export default function BoxplotTool({
                           x={centerX}
                           y={height - paddingY / 2}
                           textAnchor="middle"
-                          fill="#b8c7e0"
+                          fill="#4b5563"
                         >
                           {entry.label}
                         </text>
@@ -573,7 +619,7 @@ export default function BoxplotTool({
                   <text
                     x={20}
                     y={height / 2}
-                    fill="#b8c7e0"
+                    fill="#4b5563"
                     transform={`rotate(-90, 20, ${height / 2})`}
                     textAnchor="middle"
                   >
@@ -584,7 +630,7 @@ export default function BoxplotTool({
             })()}
           </svg>
         ) : (
-          <p style={{ color: "#9fb3d8" }}>Adjust the inputs above to update the boxplot preview.</p>
+          <p style={{ color: "#4b5563" }}>Adjust the inputs above to update the boxplot preview.</p>
         )}
       </div>
     </div>

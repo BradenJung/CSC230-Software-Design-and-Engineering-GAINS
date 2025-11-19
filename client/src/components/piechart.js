@@ -246,6 +246,41 @@ export default function PieChartTool({
     [chartData]
   );
 
+  const panelStyle = {
+    background: "var(--surface-secondary, #151a24)",
+    border: "1px solid var(--border-muted, #2a3244)",
+    borderRadius: 16,
+    padding: 16,
+    display: "flex",
+    flexDirection: "column",
+    gap: 12
+  };
+
+  const fieldWrapperStyle = {
+    display: "flex",
+    flexDirection: "column",
+    gap: 6,
+    flex: "1 1 180px",
+    minWidth: 160
+  };
+
+  const labelTextStyle = {
+    fontSize: "0.9rem",
+    fontWeight: 600,
+    color: "var(--text-muted, #a8b3c9)"
+  };
+
+  const inputStyle = {
+    width: "100%",
+    borderRadius: 10,
+    border: "1px solid var(--border-muted, #2a3244)",
+    background: "var(--surface-tertiary, #0f1724)",
+    color: "var(--foreground, #f5f7fb)",
+    padding: "10px 12px",
+    fontSize: "0.95rem",
+    boxShadow: "inset 0 1px 0 rgba(255,255,255,0.05)"
+  };
+
   return (
     <div style={{ padding: 24, maxWidth: 800, margin: "0 auto" }}>
       <h1>R Pie Chart</h1>
@@ -257,55 +292,57 @@ export default function PieChartTool({
         <p>Configure slice labels, values, and optional colors to generate a pie chart.</p>
       )}
 
-      <div style={{ display: "grid", gap: 12 }}>
+      <div style={{ display: "grid", gap: 16 }}>
         {!usingProjectData && (
-          <>
-            <div>
-              <label style={{ display: "block", marginBottom: 6 }}>
-                Import CSV (Label,Value[,Color])
-                <input
-                  type="file"
-                  accept=".csv"
-                  onChange={handleCsvUpload}
-                  style={{ display: "block", marginTop: 6 }}
-                />
-              </label>
-              {csvFileName && (
-                <p style={{ margin: "4px 0", color: "#9fb3d8" }}>
-                  Loaded: {csvFileName}
-                </p>
-              )}
-            </div>
-            <label>
-              Labels
-              <input value={labels} onChange={(e) => setLabels(e.target.value)} />
+          <div style={panelStyle}>
+            <label style={fieldWrapperStyle}>
+              <span style={labelTextStyle}>Import CSV (Label,Value[,Color])</span>
+              <input
+                type="file"
+                accept=".csv"
+                onChange={handleCsvUpload}
+                style={inputStyle}
+              />
             </label>
-            <label>
-              Values
-              <input value={values} onChange={(e) => setValues(e.target.value)} />
+            {csvFileName && (
+              <p style={{ margin: 0, color: "#9fb3d8" }}>
+                Loaded: {csvFileName}
+              </p>
+            )}
+            <label style={fieldWrapperStyle}>
+              <span style={labelTextStyle}>Labels</span>
+              <input value={labels} onChange={(e) => setLabels(e.target.value)} style={inputStyle} />
             </label>
-            <label>
-              Colors (optional)
+            <label style={fieldWrapperStyle}>
+              <span style={labelTextStyle}>Values</span>
+              <input value={values} onChange={(e) => setValues(e.target.value)} style={inputStyle} />
+            </label>
+            <label style={fieldWrapperStyle}>
+              <span style={labelTextStyle}>Colors (optional)</span>
               <input
                 placeholder="e.g. tomato,steelblue,goldenrod"
                 value={colors}
                 onChange={(e) => setColors(e.target.value)}
+                style={inputStyle}
               />
             </label>
-            <label>
-              Explode (optional, 0-1 per slice)
+            <label style={fieldWrapperStyle}>
+              <span style={labelTextStyle}>Explode (optional, 0-1 per slice)</span>
               <input
                 placeholder="e.g. 0,0.1,0,0"
                 value={explode}
                 onChange={(e) => setExplode(e.target.value)}
+                style={inputStyle}
               />
             </label>
-          </>
+          </div>
         )}
-        <label>
-          Title
-          <input value={mainTitle} onChange={(e) => setMainTitle(e.target.value)} />
-        </label>
+        <div style={{ ...panelStyle, flexDirection: "row", flexWrap: "wrap" }}>
+          <label style={fieldWrapperStyle}>
+            <span style={labelTextStyle}>Title</span>
+            <input value={mainTitle} onChange={(e) => setMainTitle(e.target.value)} style={inputStyle} />
+          </label>
+        </div>
       </div>
 
       {error && (
@@ -314,7 +351,7 @@ export default function PieChartTool({
         </p>
       )}
 
-      <div style={{ marginTop: 24, background: "#090f1a", borderRadius: 16, padding: 24, border: "1px solid rgba(255,255,255,0.08)" }}>
+      <div style={{ marginTop: 24, background: "#fff", borderRadius: 12, padding: 24, border: "1px solid #eee" }}>
         {hasChart ? (
           <>
             <h2 style={{ marginBottom: 12 }}>{mainTitle || "Pie Chart"}</h2>
@@ -339,17 +376,17 @@ export default function PieChartTool({
                 </Pie>
                 <Tooltip
                   formatter={(value, name) => [`${value}`, `${name}`]}
-                  contentStyle={{ background: "#0f1b2b", borderRadius: 8, border: "1px solid rgba(255,255,255,0.08)" }}
+                  contentStyle={{ background: "#fff", borderRadius: 8, border: "1px solid #e5e7eb", color: "#111827" }}
                 />
                 <Legend />
               </PieChart>
             </ResponsiveContainer>
-            <p style={{ marginTop: 12, color: "#9fb3d8" }}>
+            <p style={{ marginTop: 12, color: "#4b5563" }}>
               Total value: <strong>{totalValue}</strong>
             </p>
           </>
         ) : (
-          <p style={{ color: "#9fb3d8" }}>Adjust the slice details above to see a live preview.</p>
+          <p style={{ color: "#4b5563" }}>Adjust the slice details above to see a live preview.</p>
         )}
       </div>
     </div>

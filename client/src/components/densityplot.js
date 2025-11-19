@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import Papa from "papaparse";
 import {
   AreaChart,
@@ -97,7 +97,7 @@ export default function DensityTool({
           return sample.every(r => !isNaN(Number(r[colIdx]))) ? colIdx : null;
         }).filter(i => i !== null);
         const suggested = numericCols.length ? numericCols[0] : 0;
-        setValueColumn(suggested);
+        setCsvValueColumn(suggested);
 
         if (autoGenerateOnUpload) {
           const vals = dataRows.map(r => r[suggested]).map(v => (v||'').trim()).filter(v => v !== '');
@@ -110,7 +110,7 @@ export default function DensityTool({
   };
 
   const applyColumnSelection = (colIdx) => {
-    if (!csvRows.length) return;
+    if (!csvRows.length || colIdx === null || colIdx === undefined) return;
     const hasHeader = csvColumns.length && csvRows.length && (csvColumns[0] !== `Col 1`);
     const dataRows = hasHeader ? csvRows.slice(1) : csvRows;
     const vals = dataRows.map(r => r[colIdx]).map(v => (v||'').trim()).filter(v => v !== '');
@@ -141,22 +141,22 @@ export default function DensityTool({
 
   const renderChart = () => {
     if (!kdePreview || !kdePreview.length) {
-      return <p style={{ color: "#9fb3d8" }}>Enter values and click Generate to see the density curve.</p>;
+      return <p style={{ color: "#4b5563" }}>Enter values to see the density curve.</p>;
     }
     return (
       <ResponsiveContainer width="100%" height={320}>
         <AreaChart data={kdePreview}>
-          <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.08)" />
+          <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
           <XAxis
             dataKey="x"
             tickFormatter={(value) => value.toFixed(1)}
-            tick={{ fill: "#b8c7e0", fontSize: 12 }}
-            label={{ value: xLabel, position: "insideBottom", offset: -4, fill: "#b8c7e0" }}
+            tick={{ fill: "#4b5563", fontSize: 12 }}
+            label={{ value: xLabel, position: "insideBottom", offset: -4, fill: "#4b5563" }}
           />
-          <YAxis tick={{ fill: "#b8c7e0" }} />
+          <YAxis tick={{ fill: "#4b5563" }} />
           <Tooltip
             formatter={(value) => value.toFixed(4)}
-            contentStyle={{ background: "#0f1b2b", borderRadius: 8, border: "1px solid rgba(255,255,255,0.08)" }}
+            contentStyle={{ background: "#fff", borderRadius: 8, border: "1px solid #e5e7eb", color: "#1f2933" }}
           />
           <Area
             type="monotone"
@@ -172,7 +172,7 @@ export default function DensityTool({
     );
   };
 
-  const runR = () => {
+  const runR = useCallback(() => {
     const numericValues = parseNumbers(values);
     if (!numericValues.length) {
       setError("Please provide at least one numeric value.");
@@ -184,6 +184,48 @@ export default function DensityTool({
       return;
     }
     setError("");
+  }, [values, kdePreview]);
+
+  useEffect(() => {
+    if (usingProjectData) {
+      return;
+    }
+    runR();
+  }, [usingProjectData, runR]);
+
+  const panelStyle = {
+    background: "var(--surface-secondary, #151a24)",
+    border: "1px solid var(--border-muted, #2a3244)",
+    borderRadius: 16,
+    padding: 16,
+    display: "flex",
+    flexDirection: "column",
+    gap: 12
+  };
+
+  const fieldWrapperStyle = {
+    display: "flex",
+    flexDirection: "column",
+    gap: 6,
+    flex: "1 1 180px",
+    minWidth: 160
+  };
+
+  const labelTextStyle = {
+    fontSize: "0.9rem",
+    fontWeight: 600,
+    color: "var(--text-muted, #a8b3c9)"
+  };
+
+  const inputStyle = {
+    width: "100%",
+    borderRadius: 10,
+    border: "1px solid var(--border-muted, #2a3244)",
+    background: "var(--surface-tertiary, #0f1724)",
+    color: "var(--foreground, #f5f7fb)",
+    padding: "10px 12px",
+    fontSize: "0.95rem",
+    boxShadow: "inset 0 1px 0 rgba(255,255,255,0.05)"
   };
 
   return (
@@ -198,52 +240,57 @@ export default function DensityTool({
         <p>Enter numeric values separated by commas to estimate their density curve.</p>
       )}
 
-      <div style={{ display: "grid", gap: 12 }}>
+      <div style={{ display: "grid", gap: 16 }}>
         {!usingProjectData && (
-          <div style={{ marginBottom: 8 }}>
-            <label style={{ display: "block", marginBottom: 6 }}>
-              Upload CSV (comma/semicolon/tab). First numeric column will be suggested.
-              <input type="file" accept=".csv" onChange={handleCsvUpload} style={{ marginLeft: 8 }} />
+          <div style={panelStyle}>
+            <label style={fieldWrapperStyle}>
+              <span style={labelTextStyle}>Upload CSV (comma/semicolon/tab). First numeric column will be suggested.</span>
+              <input type="file" accept=".csv" onChange={handleCsvUpload} style={inputStyle} />
             </label>
-            <label style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
+            <label style={{ ...fieldWrapperStyle, flexDirection: "row", alignItems: "center", gap: 8 }}>
               <input
                 type="checkbox"
                 checked={autoGenerateOnUpload}
                 onChange={(e) => setAutoGenerateOnUpload(e.target.checked)}
               />
-              Auto-generate after upload
+              <span style={labelTextStyle}>Auto-generate after upload</span>
             </label>
-            {csvFileName && <div style={{ marginTop: 8, fontSize: "0.9em", color: "green" }}>Loaded: {csvFileName}</div>}
+            {csvFileName && <div style={{ fontSize: "0.9em", color: "green" }}>Loaded: {csvFileName}</div>}
 
-              {csvColumns.length > 0 && (
-                <div style={{ marginTop: 8 }}>
-                  <label style={{ display: "block", marginBottom: 6 }}>
-                    Value column
-                    <select
-                      value={csvValueColumn ?? ''}
-                      onChange={(e) => { const idx = e.target.value === '' ? null : Number(e.target.value); setCsvValueColumn(idx); applyColumnSelection(idx); }}
-                      style={{ marginLeft: 8 }}
-                    >
-                    {csvColumns.map((c, i) => (
-                      <option key={i} value={i}>{c}</option>
-                    ))}
-                  </select>
-                </label>
-              </div>
+            {csvColumns.length > 0 && (
+              <label style={fieldWrapperStyle}>
+                <span style={labelTextStyle}>Value column</span>
+                <select
+                  value={csvValueColumn ?? ""}
+                  onChange={(e) => {
+                    const idx = e.target.value === "" ? null : Number(e.target.value);
+                    setCsvValueColumn(idx);
+                    if (idx !== null) {
+                      applyColumnSelection(idx);
+                    }
+                  }}
+                  style={inputStyle}
+                >
+                  {csvColumns.map((c, i) => (
+                    <option key={i} value={i}>
+                      {c}
+                    </option>
+                  ))}
+                </select>
+              </label>
             )}
+
+            <label style={fieldWrapperStyle}>
+              <span style={labelTextStyle}>Values</span>
+              <input value={values} onChange={(e) => setValues(e.target.value)} style={inputStyle} />
+            </label>
           </div>
         )}
-        {!usingProjectData && (
-          <label>
-            Values
-            <input value={values} onChange={(e) => setValues(e.target.value)} />
-          </label>
-        )}
 
-        <div style={{ display: "flex", flexWrap: "wrap", gap: 12 }}>
-          <label>
-            Kernel
-            <select value={kernel} onChange={(e) => setKernel(e.target.value)}>
+        <div style={{ ...panelStyle, flexDirection: "row", flexWrap: "wrap" }}>
+          <label style={fieldWrapperStyle}>
+            <span style={labelTextStyle}>Kernel</span>
+            <select value={kernel} onChange={(e) => setKernel(e.target.value)} style={inputStyle}>
               <option value="gaussian">gaussian</option>
               <option value="epanechnikov">epanechnikov</option>
               <option value="rectangular">rectangular</option>
@@ -253,46 +300,42 @@ export default function DensityTool({
               <option value="optcosine">optcosine</option>
             </select>
           </label>
-          <label>
-            Bandwidth (optional)
+          <label style={fieldWrapperStyle}>
+            <span style={labelTextStyle}>Bandwidth (optional)</span>
             <input
               type="number"
               min={0}
               step="any"
               value={bandwidth}
               onChange={(e) => setBandwidth(e.target.value)}
+              style={inputStyle}
             />
           </label>
-          <label>
-            Title
-            <input value={mainTitle} onChange={(e) => setMainTitle(e.target.value)} />
+          <label style={fieldWrapperStyle}>
+            <span style={labelTextStyle}>Title</span>
+            <input value={mainTitle} onChange={(e) => setMainTitle(e.target.value)} style={inputStyle} />
           </label>
-          <label>
-            X Label
-            <input value={xLabel} onChange={(e) => setXLabel(e.target.value)} />
+          <label style={fieldWrapperStyle}>
+            <span style={labelTextStyle}>X Label</span>
+            <input value={xLabel} onChange={(e) => setXLabel(e.target.value)} style={inputStyle} />
           </label>
-          <label>
-            Line Color
-            <input value={lineColor} onChange={(e) => setLineColor(e.target.value)} />
+          <label style={fieldWrapperStyle}>
+            <span style={labelTextStyle}>Line Color</span>
+            <input value={lineColor} onChange={(e) => setLineColor(e.target.value)} style={inputStyle} />
           </label>
-          <label>
-            Fill Color
-            <input value={fillColor} onChange={(e) => setFillColor(e.target.value)} />
+          <label style={fieldWrapperStyle}>
+            <span style={labelTextStyle}>Fill Color</span>
+            <input value={fillColor} onChange={(e) => setFillColor(e.target.value)} style={inputStyle} />
           </label>
-          <label style={{ display: "flex", alignItems: "center", gap: 6 }}>
-            <input
-              type="checkbox"
-              checked={fillArea}
-              onChange={(e) => setFillArea(e.target.checked)}
-            />
-            Fill Area
+          <label style={{ ...fieldWrapperStyle, flexDirection: "row", alignItems: "center", gap: 8 }}>
+            <input type="checkbox" checked={fillArea} onChange={(e) => setFillArea(e.target.checked)} />
+            <span style={labelTextStyle}>Fill Area</span>
           </label>
         </div>
 
-        <button onClick={runR}>Generate</button>
       </div>
 
-      <div style={{ marginTop: 24, background: "#090f1a", borderRadius: 16, padding: 24, border: "1px solid rgba(255,255,255,0.08)" }}>
+      <div style={{ marginTop: 24, background: "#fff", borderRadius: 12, padding: 24, border: "1px solid #eee" }}>
         <h2 style={{ marginBottom: 12 }}>{mainTitle}</h2>
         {renderChart()}
       </div>

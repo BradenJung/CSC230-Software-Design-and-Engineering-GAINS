@@ -139,6 +139,41 @@ export default function ScatterplotTool({
   const xTicks = makeTicks(minX, maxX);
   const yTicks = makeTicks(minY, maxY);
 
+  const panelStyle = {
+    background: "var(--surface-secondary, #151a24)",
+    border: "1px solid var(--border-muted, #2a3244)",
+    borderRadius: 16,
+    padding: 16,
+    display: "flex",
+    flexDirection: "column",
+    gap: 12
+  };
+
+  const fieldWrapperStyle = {
+    display: "flex",
+    flexDirection: "column",
+    gap: 6,
+    flex: "1 1 180px",
+    minWidth: 160
+  };
+
+  const labelTextStyle = {
+    fontSize: "0.9rem",
+    fontWeight: 600,
+    color: "var(--text-muted, #a8b3c9)"
+  };
+
+  const inputStyle = {
+    width: "100%",
+    borderRadius: 10,
+    border: "1px solid var(--border-muted, #2a3244)",
+    background: "var(--surface-tertiary, #0f1724)",
+    color: "var(--foreground, #f5f7fb)",
+    padding: "10px 12px",
+    fontSize: "0.95rem",
+    boxShadow: "inset 0 1px 0 rgba(255,255,255,0.05)"
+  };
+
   return (
     <div style={{ padding: 24, maxWidth: 980, margin: "0 auto" }}>
       <h1>{mainTitle}</h1>
@@ -151,9 +186,9 @@ export default function ScatterplotTool({
         <p>Provide X and Y values as comma-separated numbers or upload a CSV file.</p>
       )}
 
-      <div style={{ display: "grid", gap: 12 }}>
+      <div style={{ display: "grid", gap: 16 }}>
         {!usingProjectData && (
-          <>
+          <div style={panelStyle}>
             {/* CSV Upload */}
             <div style={{ marginBottom: 12 }}>
               <label style={{ display: "block", marginBottom: 8 }}>
@@ -168,43 +203,52 @@ export default function ScatterplotTool({
             </div>
 
             {/* Manual entry */}
-            <label>
-              X Values
-              <input value={xValues} onChange={(e) => setXValues(e.target.value)} style={{ width: "100%" }} />
+            <label style={fieldWrapperStyle}>
+              <span style={labelTextStyle}>X Values</span>
+              <input
+                value={xValues}
+                onChange={(e) => setXValues(e.target.value)}
+                style={inputStyle}
+              />
             </label>
-            <label>
-              Y Values
-              <input value={yValues} onChange={(e) => setYValues(e.target.value)} style={{ width: "100%" }} />
+            <label style={fieldWrapperStyle}>
+              <span style={labelTextStyle}>Y Values</span>
+              <input
+                value={yValues}
+                onChange={(e) => setYValues(e.target.value)}
+                style={inputStyle}
+              />
             </label>
-          </>
+          </div>
         )}
 
         {/* Options */}
-        <div style={{ display: "flex", flexWrap: "wrap", gap: 12 }}>
-          <label>
-            Title
-            <input value={mainTitle} onChange={(e) => setMainTitle(e.target.value)} />
+        <div style={{ ...panelStyle, flexDirection: "row", flexWrap: "wrap" }}>
+          <label style={fieldWrapperStyle}>
+            <span style={labelTextStyle}>Title</span>
+            <input value={mainTitle} onChange={(e) => setMainTitle(e.target.value)} style={inputStyle} />
           </label>
-          <label>
-            X Label
-            <input value={xLabel} onChange={(e) => setXLabel(e.target.value)} />
+          <label style={fieldWrapperStyle}>
+            <span style={labelTextStyle}>X Label</span>
+            <input value={xLabel} onChange={(e) => setXLabel(e.target.value)} style={inputStyle} />
           </label>
-          <label>
-            Y Label
-            <input value={yLabel} onChange={(e) => setYLabel(e.target.value)} />
+          <label style={fieldWrapperStyle}>
+            <span style={labelTextStyle}>Y Label</span>
+            <input value={yLabel} onChange={(e) => setYLabel(e.target.value)} style={inputStyle} />
           </label>
-          <label>
-            Point Color
-            <input value={pointColor} onChange={(e) => setPointColor(e.target.value)} />
+          <label style={fieldWrapperStyle}>
+            <span style={labelTextStyle}>Point Color</span>
+            <input value={pointColor} onChange={(e) => setPointColor(e.target.value)} style={inputStyle} />
           </label>
-          <label>
-            Point Size
+          <label style={fieldWrapperStyle}>
+            <span style={labelTextStyle}>Point Size</span>
             <input
               type="number"
               min={1}
               step={1}
               value={pointSize}
               onChange={(e) => setPointSize(Math.max(1, Number(e.target.value) || 1))}
+              style={inputStyle}
             />
           </label>
         </div>

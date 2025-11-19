@@ -148,6 +148,41 @@ export default function HistogramTool({
     [chartData]
   );
 
+  const panelStyle = {
+    background: "var(--surface-secondary, #151a24)",
+    border: "1px solid var(--border-muted, #2a3244)",
+    borderRadius: 16,
+    padding: 16,
+    display: "flex",
+    flexDirection: "column",
+    gap: 12
+  };
+
+  const fieldWrapperStyle = {
+    display: "flex",
+    flexDirection: "column",
+    gap: 6,
+    flex: "1 1 180px",
+    minWidth: 160
+  };
+
+  const labelTextStyle = {
+    fontSize: "0.9rem",
+    fontWeight: 600,
+    color: "var(--text-muted, #a8b3c9)"
+  };
+
+  const inputStyle = {
+    width: "100%",
+    borderRadius: 10,
+    border: "1px solid var(--border-muted, #2a3244)",
+    background: "var(--surface-tertiary, #0f1724)",
+    color: "var(--foreground, #f5f7fb)",
+    padding: "10px 12px",
+    fontSize: "0.95rem",
+    boxShadow: "inset 0 1px 0 rgba(255,255,255,0.05)"
+  };
+
   return (
     <div style={{ padding: 24, maxWidth: 800, margin: "0 auto" }}>
       <h1>R Histogram</h1>
@@ -159,57 +194,70 @@ export default function HistogramTool({
       ) : (
         <p>Enter values as comma-separated numbers or upload a CSV file.</p>
       )}
-      <div style={{ display: "grid", gap: 12 }}>
+      <div style={{ display: "grid", gap: 16 }}>
         {!usingProjectData && (
-          <>
-            <div style={{ marginBottom: 12 }}>
-              <label style={{ display: "block", marginBottom: 8 }}>
-                Upload CSV file
-                <input
-                  type="file"
-                  accept=".csv"
-                  onChange={handleCsvUpload}
-                  style={{ marginLeft: 8 }}
-                />
-              </label>
-              {csvFile && <p style={{ margin: "4px 0", fontSize: "0.9em", color: "green" }}>Loaded: {csvFile}</p>}
-              {error && <p style={{ margin: "4px 0", fontSize: "0.9em", color: "crimson" }}>{error}</p>}
-            </div>
-            <input value={values} onChange={e=>setValues(e.target.value)} />
-          </>
+          <div style={panelStyle}>
+            <label style={fieldWrapperStyle}>
+              <span style={labelTextStyle}>Upload CSV file</span>
+              <input
+                type="file"
+                accept=".csv"
+                onChange={handleCsvUpload}
+                style={inputStyle}
+              />
+            </label>
+            {csvFile && <p style={{ margin: 0, fontSize: "0.9em", color: "green" }}>Loaded: {csvFile}</p>}
+            {error && <p style={{ margin: 0, fontSize: "0.9em", color: "crimson" }}>{error}</p>}
+            <label style={fieldWrapperStyle}>
+              <span style={labelTextStyle}>Values</span>
+              <input value={values} onChange={(e)=>setValues(e.target.value)} style={inputStyle} />
+            </label>
+          </div>
         )}
-        <div style={{ display: "flex", gap: 12 }}>
-          <label>Breaks: <input type="number" min={1} value={breaks} onChange={e=>setBreaks(+e.target.value)} /></label>
-          <label>Title: <input value={mainTitle} onChange={e=>setMainTitle(e.target.value)} /></label>
-          <label>X Label: <input value={xLabel} onChange={e=>setXLabel(e.target.value)} /></label>
-          <label>Color: <input value={color} onChange={e=>setColor(e.target.value)} /></label>
+        <div style={{ ...panelStyle, flexDirection: "row", flexWrap: "wrap" }}>
+          <label style={fieldWrapperStyle}>
+            <span style={labelTextStyle}>Breaks</span>
+            <input type="number" min={1} value={breaks} onChange={e=>setBreaks(+e.target.value)} style={inputStyle} />
+          </label>
+          <label style={fieldWrapperStyle}>
+            <span style={labelTextStyle}>Title</span>
+            <input value={mainTitle} onChange={e=>setMainTitle(e.target.value)} style={inputStyle} />
+          </label>
+          <label style={fieldWrapperStyle}>
+            <span style={labelTextStyle}>X Label</span>
+            <input value={xLabel} onChange={e=>setXLabel(e.target.value)} style={inputStyle} />
+          </label>
+          <label style={fieldWrapperStyle}>
+            <span style={labelTextStyle}>Bar Color</span>
+            <input value={color} onChange={e=>setColor(e.target.value)} style={inputStyle} />
+          </label>
         </div>
         <button onClick={runR}>Generate</button>
       </div>
 
-      <div style={{ marginTop: 24, background: "#090f1a", borderRadius: 16, padding: 24, border: "1px solid rgba(255,255,255,0.08)" }}>
+      <div style={{ marginTop: 24, background: "#fff", borderRadius: 12, padding: 24, border: "1px solid #eee" }}>
         {chartData.length ? (
           <>
             <h2 style={{ marginBottom: 12 }}>{mainTitle}</h2>
             <ResponsiveContainer width="100%" height={320}>
               <BarChart data={chartData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.08)" />
-                <XAxis dataKey="label" tick={{ fill: "#b8c7e0", fontSize: 12 }} />
-                <YAxis allowDecimals={false} tick={{ fill: "#b8c7e0" }} />
+                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                <XAxis dataKey="label" tick={{ fill: "#4b5563", fontSize: 12 }} />
+                <YAxis allowDecimals={false} tick={{ fill: "#4b5563" }} />
                 <Tooltip
-                  contentStyle={{ background: "#0f1b2b", borderRadius: 8, border: "1px solid rgba(255,255,255,0.08)" }}
-                  labelStyle={{ color: "#fff", fontWeight: "bold" }}
+                  contentStyle={{ background: "#fff", borderRadius: 8, border: "1px solid #e5e7eb" }}
+                  labelStyle={{ color: "#111827", fontWeight: "bold" }}
                 />
                 <Bar dataKey="count" fill={color} />
               </BarChart>
             </ResponsiveContainer>
-            <p style={{ marginTop: 12, color: "#9fb3d8" }}>
+            <p style={{ marginTop: 12, color: "#4b5563" }}>
               Total observations: <strong>{totalCount}</strong>
             </p>
-            <p style={{ marginTop: 4, color: "#9fb3d8" }}>{xLabel}</p>
+            <p style={{ marginTop: 4, color: "#4b5563" }}>{xLabel}</p>
           </>
         ) : (
-          <p style={{ color: "#9fb3d8" }}>Click Generate after importing or entering values to view the histogram.</p>
+          <p style={{ color: "#4b5563" }}>Click Generate after importing or entering values to view the histogram.</p>
         )}
       </div>
 
