@@ -158,6 +158,14 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: "Missing messages array" });
   }
 
+  const lastUserMessage =
+    [...messages].reverse().find((message) => message?.role === "user")?.content || "";
+  const preview =
+    typeof lastUserMessage === "string"
+      ? lastUserMessage.slice(0, 120).replace(/\s+/g, " ").trim()
+      : "";
+  console.log(`[CHAT] Send: ${messages.length} message(s)${preview ? ` | latest: "${preview}"` : ""}`);
+
   // If we have project data, slip it in as an extra system message so the model sees it first.
   const contextMessage = formatProjectContext(projectContext);
   const requestMessages = [
