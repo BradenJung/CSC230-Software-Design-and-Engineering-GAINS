@@ -5,50 +5,20 @@ import Header from "../components/header";
 import styles from "../styles/Home.module.css";
 import AccessibilityButton from "../components/AccessibilityButton";
 import CodexTool from "../components/CodexTool";
+import { signup as signupRequest } from "../api/api";
+
+const ACTIVE_ACCOUNT_KEY = "gains.activeAccount";
+const AUTH_CHANGE_EVENT = "gains-auth-change";
 
 const initialState = {
-  accountName: "",
+  name: "",
+  email: "",
   password: "",
   confirmPassword: "",
 };
 
-async function handleSignup(e) {
-  e.preventDefault();
-  const fd = new FormData(e.currentTarget);
-  const username = String(fd.get("username") || "");
-  const password = String(fd.get("password") || "");
-  try {
-    const { message } = await signupRequest({ username, password });
-    alert(message || "Signup successful");
-    // optional: redirect after success
-    // router.push("/login");
-  } catch (err) {
-    alert(err.message);
-  }
-}
-
-const ACCOUNTS_STORAGE_KEY = "gains.accounts";
-const ACTIVE_ACCOUNT_KEY = "gains.activeAccount";
-
-const notifyBackend = async (path, payload) => {
-  try {
-    const response = await fetch(`http://localhost:3000${path}`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    });
-
-    if (!response.ok) {
-      console.warn(`Backend ${path} responded with status ${response.status}`);
-    }
-  } catch (error) {
-    console.warn(`Unable to reach backend endpoint ${path}`, error);
-  }
-};
-
 export default function Signup() {
   const [formState, setFormState] = useState(initialState);
-  // Provide inline status messaging for the auth flow
   const [status, setStatus] = useState(null);
 
   const handleChange = (event) => {
@@ -57,63 +27,41 @@ export default function Signup() {
     setStatus(null);
   };
 
-  const handleSubmit = (event) => {
+  const handleSubmit = async (event) => {
     event.preventDefault();
+    const { name, email, password, confirmPassword } = formState;
 
-    if (!formState.accountName || !formState.password || !formState.confirmPassword) {
+    if (!name || !email || !password || !confirmPassword) {
       setStatus({ type: "error", message: "Please fill out every field." });
       return;
     }
 
-    if (formState.password !== formState.confirmPassword) {
+    if (password !== confirmPassword) {
       setStatus({ type: "error", message: "Passwords do not match." });
       return;
     }
 
-    if (typeof window === "undefined") {
-      setStatus({
-        type: "error",
-        message: "Local storage is not available in this environment.",
-      });
-      return;
-    }
-
-    const storage = window.localStorage;
-    let accounts = {};
-
     try {
-      const storedAccounts = storage.getItem(ACCOUNTS_STORAGE_KEY);
-      accounts = storedAccounts ? JSON.parse(storedAccounts) : {};
-    } catch (error) {
-      console.warn("Unable to parse stored account data", error);
-      setStatus({ type: "error", message: "Stored account data is corrupted." });
-      return;
+      const data = await signupRequest({
+        name: name.trim(),
+        email: email.trim(),
+        password,
+      });
+
+      const accountName = name.trim() || email.trim();
+      if (typeof window !== "undefined" && accountName) {
+        window.localStorage.setItem(ACTIVE_ACCOUNT_KEY, accountName);
+        window.dispatchEvent(new CustomEvent(AUTH_CHANGE_EVENT, { detail: { accountName } }));
+      }
+
+      setStatus({
+        type: "success",
+        message: data.message || "Signup successful. You can now sign in.",
+      });
+      setFormState(initialState);
+    } catch (err) {
+      setStatus({ type: "error", message: err.message });
     }
-
-    const trimmedAccountName = formState.accountName.trim();
-    const normalizedAccountName = trimmedAccountName.toLowerCase();
-
-    if (accounts[normalizedAccountName]) {
-      setStatus({ type: "error", message: "That account name is already taken." });
-      return;
-    }
-
-    accounts[normalizedAccountName] = {
-      accountName: trimmedAccountName,
-      password: formState.password,
-      createdAt: new Date().toISOString(),
-    };
-
-    storage.setItem(ACCOUNTS_STORAGE_KEY, JSON.stringify(accounts));
-    storage.setItem(ACTIVE_ACCOUNT_KEY, trimmedAccountName);
-    window.dispatchEvent(new CustomEvent("gains-auth-change", { detail: { accountName: trimmedAccountName } }));
-
-    setStatus({
-      type: "success",
-      message: "Account created. You can now sign in with your credentials.",
-    });
-    setFormState(initialState);
-    notifyBackend("/api/auth/signup", { accountName: trimmedAccountName });
   };
 
   return (
@@ -138,18 +86,34 @@ export default function Signup() {
             </aside>
 
             <div className={styles.authCard}>
-              <form onSubmit={handleSignup} className={styles.authForm}>
+              <form onSubmit={handleSubmit} className={styles.authForm}>
                 <div className={styles.inputGroup}>
-                  <label htmlFor="accountName" className={styles.inputLabel}>
-                    Account name
+                  <label htmlFor="name" className={styles.inputLabel}>
+                    Full name
                   </label>
                   <input
-                    id="accountName"
-                    name="accountName"
+                    id="name"
+                    name="name"
                     type="text"
-                    autoComplete="username"
-                    placeholder="your-account-name"
-                    value={formState.accountName}
+                    placeholder="Jordan Gaines"
+                    value={formState.name}
+                    onChange={handleChange}
+                    className={styles.inputField}
+                    required
+                  />
+                </div>
+
+                <div className={styles.inputGroup}>
+                  <label htmlFor="email" className={styles.inputLabel}>
+                    Email
+                  </label>
+                  <input
+                    id="email"
+                    name="email"
+                    type="email"
+                    autoComplete="email"
+                    placeholder="you@example.com"
+                    value={formState.email}
                     onChange={handleChange}
                     className={styles.inputField}
                     required
@@ -213,9 +177,9 @@ export default function Signup() {
           </section>
         </main>
         {/*Adds Accessibility Button to page */}
-      <AccessibilityButton />
-      {/*Adds Chat Option to the current page */}
-      <CodexTool />
+        <AccessibilityButton />
+        {/*Adds Chat Option to the current page */}
+        <CodexTool />
       </div>
     </>
   );

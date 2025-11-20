@@ -5,32 +5,19 @@ import Header from "../components/header";
 import styles from "../styles/Home.module.css";
 import AccessibilityButton from "../components/AccessibilityButton";
 import CodexTool from "../components/CodexTool";
+import { login as loginRequest } from "../api/api";
+import { useRouter } from "next/router";
 
-const ACCOUNTS_STORAGE_KEY = "gains.accounts";
 const ACTIVE_ACCOUNT_KEY = "gains.activeAccount";
 
-const initialState = { accountName: "", password: "" };
+const initialState = { email: "", password: "" };
 
-const notifyBackend = async (path, payload) => {
-  try {
-    const response = await fetch(`http://localhost:3000${path}`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    });
-
-    if (!response.ok) {
-      console.warn(`Backend ${path} responded with status ${response.status}`);
-    }
-  } catch (error) {
-    console.warn(`Unable to reach backend endpoint ${path}`, error);
-  }
-};
+const AUTH_CHANGE_EVENT = "gains-auth-change";
 
 export default function Login() {
   const [formState, setFormState] = useState(initialState);
-  // Provide inline status messaging for the auth flow
   const [status, setStatus] = useState(null);
+  const router = useRouter();
 
   const handleChange = (event) => {
     const { name, value } = event.target;
@@ -38,51 +25,33 @@ export default function Login() {
     setStatus(null);
   };
 
-  const handleSubmit = (event) => {
+  const handleSubmit = async (event) => {
     event.preventDefault();
-    if (!formState.accountName || !formState.password) {
-      setStatus({ type: "error", message: "Please enter your account name and password." });
+
+    const { email, password } = formState;
+    if (!email || !password) {
+      setStatus({ type: "error", message: "Please enter your email and password." });
       return;
     }
-
-    if (typeof window === "undefined") {
-      setStatus({
-        type: "error",
-        message: "Local storage is not available in this environment.",
-      });
-      return;
-    }
-
-    const storage = window.localStorage;
-    let accounts = {};
 
     try {
-      const storedAccounts = storage.getItem(ACCOUNTS_STORAGE_KEY);
-      accounts = storedAccounts ? JSON.parse(storedAccounts) : {};
-    } catch (error) {
-      console.warn("Unable to parse stored account data", error);
-      setStatus({ type: "error", message: "Stored account data is corrupted." });
-      return;
+      const data = await loginRequest({ email: email.trim(), password });
+      const resolvedAccount = data.user?.name || data.user?.email || email.trim();
+
+      if (typeof window !== "undefined" && resolvedAccount) {
+        window.localStorage.setItem(ACTIVE_ACCOUNT_KEY, resolvedAccount);
+        window.dispatchEvent(new CustomEvent(AUTH_CHANGE_EVENT, { detail: { accountName: resolvedAccount } }));
+      }
+
+      setStatus({
+        type: "success",
+        message: "Login successful. Redirecting...",
+      });
+      setFormState(initialState);
+      router.push("/linear-regression");
+    } catch (err) {
+      setStatus({ type: "error", message: err.message });
     }
-
-    const normalizedAccountName = formState.accountName.trim().toLowerCase();
-    const existingAccount = accounts[normalizedAccountName];
-
-    if (!existingAccount || existingAccount.password !== formState.password) {
-      setStatus({ type: "error", message: "Account name or password is incorrect." });
-      return;
-    }
-
-    storage.setItem(ACTIVE_ACCOUNT_KEY, existingAccount.accountName);
-    window.dispatchEvent(
-      new CustomEvent("gains-auth-change", { detail: { accountName: existingAccount.accountName } })
-    );
-    setStatus({
-      type: "success",
-      message: `Welcome back, ${existingAccount.accountName}!`,
-    });
-    setFormState(initialState);
-    notifyBackend("/api/auth/login", { accountName: existingAccount.accountName });
   };
 
   return (
@@ -110,16 +79,16 @@ export default function Login() {
             <div className={styles.authCard}>
               <form onSubmit={handleSubmit} className={styles.authForm}>
                 <div className={styles.inputGroup}>
-                  <label htmlFor="accountName" className={styles.inputLabel}>
-                    Account name
+                  <label htmlFor="email" className={styles.inputLabel}>
+                    Email
                   </label>
                   <input
-                    id="accountName"
-                    name="accountName"
-                    type="text"
-                    autoComplete="username"
-                    placeholder="your-account-name"
-                    value={formState.accountName}
+                    id="email"
+                    name="email"
+                    type="email"
+                    autoComplete="email"
+                    placeholder="you@example.com"
+                    value={formState.email}
                     onChange={handleChange}
                     className={styles.inputField}
                     required
@@ -141,11 +110,11 @@ export default function Login() {
                     className={styles.inputField}
                     required
                   />
-                </div>
+              </div>
 
-                <button type="submit" className={styles.submitButton}>
-                  Sign in
-                </button>
+              <button type="submit" className={styles.submitButton}>
+                Sign in
+              </button>
               </form>
 
               {status && (
