@@ -1,14 +1,14 @@
 # GAINS Toolkit
 
 ## Overview
-- Frontend: Next.js 15 + React 19 client that demonstrates the GAINS analytics experience with sample data.
-- Backend: Lightweight Express server that exposes placeholder routes so the client can simulate authentication and API calls.
+- Frontend: Next.js 15 + React 19 client that renders the GAINS analytics experience with sample data and charts.
+- Backend: Express 4 service with Mongo helpers, auth routes, and a simple health check; currently used as a mock API surface for the UI.
 - Storage model: All account and project data lives in browser `localStorage`. Nothing is persisted on the server, so switching browsers, using private mode, or clearing storage resets the app to the default guest projects.
 
 ## Tech Stack
-- Next.js (Pages Router) with CSS Modules for UI composition.
-- Express 4 with CORS enabled for local development.
-- Node.js/npm tooling and a helper shell script for combined startup.
+- Next.js (Pages Router) with CSS Modules for UI composition and Recharts/Framer Motion for data viz/animation.
+- Express 4 with CORS enabled for local development; MongoDB driver ready for persistence.
+- npm workspaces join the `client` and `server` packages; root scripts orchestrate both.
 
 ## Local Account Storage
 - Active account key: `gains.activeAccount` stores the selected account name. Changing it fires a `gains-auth-change` event to keep multiple tabs in sync.
@@ -21,17 +21,22 @@
 .
 ├── Benchmark 1/                # Project documentation PDFs and planning artifacts
 ├── client/                     # Next.js frontend
-│   ├── package.json            # Client dependencies and scripts
-│   ├── public/                 # Static assets
-│   └── src/
-│       ├── components/         # Shared UI (header, footer, cards)
-│       ├── pages/              # Route definitions (home, auth, analytics, projects)
-│       └── styles/             # CSS Modules and global styles
+│   ├── src/
+│   │   ├── pages/              # Routes (home, auth, analytics, projects)
+│   │   ├── components/         # Shared UI elements
+│   │   ├── logic/              # Client-side helpers and localStorage glue
+│   │   └── styles/             # CSS Modules and globals
+│   └── package.json            # Client scripts: dev/build/start
 ├── server/                     # Express backend scaffold
-│   ├── index.js                # Entry point with sample routes
-│   ├── package.json            # Server dependencies and scripts
-│   └── ...                     # Placeholder folders for future controllers/services/models
-└── start-services.sh           # Convenience script that runs both client and server together
+│   ├── express.js              # API entry point (CORS + auth routes + DB health check)
+│   ├── routes/                 # Route definitions mounted under /api
+│   ├── controllers/            # Request handlers
+│   ├── services/               # Business logic helpers (auth/user)
+│   ├── models/                 # Mongo models
+│   ├── config/                 # DB connection + env loader
+│   └── middleware/             # Auth and error handling helpers
+├── package.json                # npm workspace root scripts (runs client + server together)
+└── start-services.sh           # Convenience script that installs deps if needed and runs both apps
 ```
 
 ## Prerequisites
@@ -57,7 +62,13 @@ npm run dev
 ```
 Set `CORS_ORIGIN=http://localhost:3000` (or your chosen frontend URL) when starting the backend if you need to customize ports.
 
-## Running Both Services via Script
+### Running both from the workspace root
+```bash
+# Start backend + frontend concurrently (uses npm workspaces)
+npm run dev
+```
+
+## Running both services via script
 ```bash
 # Make sure the script is executable
 chmod +x start-services.sh
@@ -66,8 +77,6 @@ chmod +x start-services.sh
 ./start-services.sh
 ```
 The script installs missing dependencies (via `npm install` at the repo root) and then delegates to `npm run dev`, which starts the backend watcher and the Next.js dev server in parallel. Press `Ctrl+C` once to stop both processes.
-
-You can also run `npm run dev` directly from the repository root if you prefer not to use the shell script.
 
 ## Development Tips
 - Inspect `localStorage` in your browser developer tools to watch account keys update (`gains.activeAccount`, `gains-projects`).

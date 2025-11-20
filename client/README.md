@@ -1,51 +1,37 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/pages/api-reference/create-next-app).
+# GAINS Client (Next.js)
 
-## Getting Started
-First, change directory:
+Next.js 15 + React 19 frontend that renders the GAINS analytics experience with local project storage, animated dashboards, and hooks to the Express backend.
 
-```bash
-cd client
+## Project layout
+```
+client/
+├── src/
+│   ├── pages/          # Routes (home, auth, analytics, projects)
+│   ├── components/     # Shared UI building blocks
+│   ├── logic/          # Client-side helpers and localStorage glue
+│   └── styles/         # CSS Modules and global styles
+├── public/             # Static assets
+└── package.json        # Scripts: dev/build/start
 ```
 
-Second, install:
-
+## Setup
 ```bash
+# From repo root (preferred, installs workspaces)
+npm install
+
+# Or locally
+cd client
 npm install
 ```
 
-Third, run the development server:
-
+## Run
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+cd client
+npm run dev        # http://localhost:3000
+# npm run build && npm start  # production build / serve
 ```
+The UI expects the backend at `http://localhost:4000` by default. Adjust CORS on the server if you change ports.
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
-
-You can start editing the page by modifying `pages/index.js`. The page auto-updates as you edit the file.
-
-[API routes](https://nextjs.org/docs/pages/building-your-application/routing/api-routes) can be accessed on [http://localhost:3000/api/hello](http://localhost:3000/api/hello). This endpoint can be edited in `pages/api/hello.js`.
-
-The `pages/api` directory is mapped to `/api/*`. Files in this directory are treated as [API routes](https://nextjs.org/docs/pages/building-your-application/routing/api-routes) instead of React pages.
-
-This project uses [`next/font`](https://nextjs.org/docs/pages/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn-pages-router) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/pages/building-your-application/deploying) for more details.
+## Notes
+- Project/account data is stored in browser `localStorage` only.
+- For a one-command workflow, run `npm run dev` or `./start-services.sh` from the repository root to start both client and server together.
