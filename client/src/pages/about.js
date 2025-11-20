@@ -4,6 +4,7 @@ import Header from "../components/header";
 import styles from "../styles/Home.module.css";
 import AccessibilityButton from "../components/AccessibilityButton";
 import CodexTool from "../components/CodexTool";
+import RCodeHighlight from "../components/RCodeHighlight";
 
 const workflowSteps = [
   {
@@ -158,8 +159,8 @@ const workflowSteps = [
             <div className={styles.mockupCodeSection}>
               <h4>Code Snippet</h4>
               <div className={styles.mockupCodeBlock}>
-                <pre>
-{`# Initialize data
+                <RCodeHighlight 
+                  code={`# Initialize data
 df <- data.frame(
   y = c(5, 7, 8, 6, 9),
   x1 = c(1, 2, 3, 4, 5),
@@ -168,7 +169,8 @@ df <- data.frame(
 
 # Fit linear model
 model <- lm(y ~ x1 + x2, data = df)`}
-                </pre>
+                  theme="dark"
+                />
               </div>
             </div>
           </div>

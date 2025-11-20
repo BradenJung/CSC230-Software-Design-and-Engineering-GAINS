@@ -26,6 +26,7 @@ import DensityTool from "../components/densityplot";
 import PieChartTool from "../components/piechart";
 import BoxplotTool from "../components/boxplot";
 import BarChartTool from "../components/barchart";
+import RCodeHighlight from "../components/RCodeHighlight";
 
 const STORAGE_KEY = "gains-projects";
 const ACTIVE_ACCOUNT_KEY = "gains.activeAccount";
@@ -2218,7 +2219,7 @@ print(paste("Degrees of freedom:", t_test_result$parameter))`,
                 </div>
               </div>
               <div className={`${styles.codeBlock} ${styles['codeBlock' + codeViewMode.charAt(0).toUpperCase() + codeViewMode.slice(1)]}`}>
-                <pre><code>{generatedRCode}</code></pre>
+                <RCodeHighlight code={generatedRCode} theme={codeViewMode} />
               </div>
               <p className={styles.codeDescription}>
                 {importedRows.length > 0 && getCurrentSelectionsValid() 
