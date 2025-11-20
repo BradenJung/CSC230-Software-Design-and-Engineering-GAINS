@@ -4,6 +4,7 @@ import Link from "next/link";
 import Header from "../components/header";
 import styles from "../styles/Home.module.css";
 import { useRouter } from "next/router";
+import { apiUrl } from "../lib/api";
 
 const initialState = { email: "", password: "" };
 
@@ -20,26 +21,41 @@ export default function Login() {
 
   async function handleSubmit(event) {
     event.preventDefault();
-  
+    setStatus(null);
+
     const { email, password } = formState;
-  
+
+    if (!email || !password) {
+      setStatus({ type: "error", message: "Please enter your email and password." });
+      return;
+    }
+
+    const minLength = 8;
+    const hasNumber = /\d/.test(password);
+
+    if (password.length < minLength || !hasNumber) {
+      setStatus({
+        type: "error",
+        message: `Password must be at least ${minLength} characters and include a number.`,
+      });
+      return;
+    }
+
     try {
-      const res = await fetch("http://localhost:4000/api/login", {
+      const res = await fetch(apiUrl("/api/login"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify({ email, password }),
       });
-  
+
       const data = await res.json();
-  
+
       if (!res.ok) throw new Error(data.error || "Login failed");
-  
-      // Optional: save logged-in user
-      // localStorage.setItem("user", JSON.stringify(data.user));
-  
-      // Redirect after login
+
+      setStatus({ type: "success", message: "Signed in. Redirecting..." });
       router.push("/linear-regression");
-  
+
     } catch (err) {
       setStatus({ type: "error", message: err.message });
     }
@@ -118,6 +134,7 @@ export default function Login() {
 
             <div className={styles.supportLinks}>
               <Link href="/signup">Need an account?</Link>
+              <Link href="/forgot-password">Forgot password?</Link>
               <Link href="/linear-regression">Preview the tools</Link>
             </div>
           </div>
@@ -126,4 +143,3 @@ export default function Login() {
     </>
   );
 }
-

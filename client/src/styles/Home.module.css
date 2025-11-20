@@ -37,6 +37,44 @@
   color: #4a9eff;
 }
 
+.healthChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: 600;
+  border: 1px solid transparent;
+}
+
+.healthChipOk {
+  background: rgba(52, 199, 89, 0.14);
+  color: #7ee0a0;
+  border-color: rgba(52, 199, 89, 0.3);
+}
+
+.healthChipDown {
+  background: rgba(255, 69, 58, 0.14);
+  color: #ff8074;
+  border-color: rgba(255, 69, 58, 0.3);
+}
+
+.healthChipLoading {
+  background: rgba(255, 204, 0, 0.12);
+  color: #ffd666;
+  border-color: rgba(255, 204, 0, 0.25);
+}
+
+.userBadge {
+  background: #1f2734;
+  border: 1px solid #2f3745;
+  color: #dce7ff;
+  padding: 8px 12px;
+  border-radius: 12px;
+  font-size: 13px;
+}
+
 .navButton {
   background: #4a9eff;
   color: #ffffff;

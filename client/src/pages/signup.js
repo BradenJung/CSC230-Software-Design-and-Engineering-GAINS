@@ -3,6 +3,7 @@ import { useState } from "react";
 import Link from "next/link";
 import Header from "../components/header";
 import styles from "../styles/Home.module.css";
+import { apiUrl } from "../lib/api";
 
 const initialState = {
   name: "",
@@ -11,47 +12,8 @@ const initialState = {
   confirmPassword: "",
 };
 
-async function handleSignup(e) {
-  e.preventDefault();
-
-  const fd = new FormData(e.currentTarget);
-  const name = String(fd.get("name") || "");
-  const email = String(fd.get("email") || "");
-  const password = String(fd.get("password") || "");
-  const confirmPassword = String(fd.get("confirmPassword") || "");
-
-  if (!name || !email || !password || !confirmPassword) {
-    alert("Please fill out every field.");
-    return;
-  }
-
-  if (password !== confirmPassword) {
-    alert("Passwords do not match.");
-    return;
-  }
-
-  try {
-    const res = await fetch("http://localhost:4000/api/signup", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name, email, password })
-    });
-
-
-    const data = await res.json();
-
-    if (!res.ok) throw new Error(data.message);
-
-    alert(data.message || "Signup successful!");
-  } catch (err) {
-    alert(err.message);
-  }
-}
-
-
 export default function Signup() {
   const [formState, setFormState] = useState(initialState);
-  // Provide temporary messaging until the signup endpoint is live
   const [status, setStatus] = useState(null);
 
   const handleChange = (event) => {
@@ -59,24 +21,49 @@ export default function Signup() {
     setFormState((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleSubmit = (event) => {
+  const handleSubmit = async (event) => {
     event.preventDefault();
+    setStatus(null);
 
-    if (!formState.name || !formState.email || !formState.password || !formState.confirmPassword) {
+    const { name, email, password, confirmPassword } = formState;
+    const minLength = 8;
+    const hasNumber = /\d/.test(password);
+
+    if (!name || !email || !password || !confirmPassword) {
       setStatus({ type: "error", message: "Please fill out every field." });
       return;
     }
 
-    if (formState.password !== formState.confirmPassword) {
+    if (password !== confirmPassword) {
       setStatus({ type: "error", message: "Passwords do not match." });
       return;
     }
 
-    // Placeholder success message so backend integration can slot in later
-    setStatus({
-      type: "success",
-      message: "Signup submitted. Connect this form to the backend to finalize onboarding.",
-    });
+    if (password.length < minLength || !hasNumber) {
+      setStatus({
+        type: "error",
+        message: `Password must be at least ${minLength} characters and include a number.`,
+      });
+      return;
+    }
+
+    try {
+      const res = await fetch(apiUrl("/api/signup"), {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ name, email, password }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) throw new Error(data.error || data.message || "Signup failed");
+
+      setStatus({ type: "success", message: data.message || "Signup successful!" });
+      setFormState(initialState);
+    } catch (err) {
+      setStatus({ type: "error", message: err.message });
+    }
   };
 
   return (
@@ -100,7 +87,7 @@ export default function Signup() {
           </aside>
 
           <div className={styles.authCard}>
-            <form onSubmit={handleSignup} className={styles.authForm}>
+            <form onSubmit={handleSubmit} className={styles.authForm}>
               <div className={styles.inputGroup}>
                 <label htmlFor="name" className={styles.inputLabel}>
                   Full name
