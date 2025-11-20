@@ -6,7 +6,7 @@ async function request(path, payload) {
   const res = await fetch(`${API_BASE}/api/${path}`, {
     method: "POST",
     headers: jsonHeaders,
-    body: JSON.stringify(payload),
+    body: JSON.stringify(payload ?? {}),
   });
 
   const data = await res.json().catch(() => ({}));
@@ -23,4 +23,8 @@ export async function signup(body) {
 
 export async function login(body) {
   return request("login", body);
+}
+
+export async function logout(body) {
+  return request("logout", body);
 }

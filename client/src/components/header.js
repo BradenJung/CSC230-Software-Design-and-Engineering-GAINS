@@ -2,6 +2,7 @@ import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/router";
 import styles from "../styles/Home.module.css";
+import { logout } from "../api/api";
 
 const ACTIVE_ACCOUNT_KEY = "gains.activeAccount";
 const AUTH_CHANGE_EVENT = "gains-auth-change";
@@ -90,10 +91,21 @@ export default function Header({
   };
 
   // Clear auth state, notify listeners, and route the user back to login
-  const handleSignOut = () => {
+  const handleSignOut = async () => {
+    const identifier =
+      typeof window !== "undefined"
+        ? window.localStorage.getItem(ACTIVE_ACCOUNT_KEY)
+        : activeAccount;
+
     if (typeof window !== "undefined") {
       window.localStorage.removeItem(ACTIVE_ACCOUNT_KEY);
       window.dispatchEvent(new CustomEvent(AUTH_CHANGE_EVENT, { detail: { accountName: null } }));
+    }
+
+    try {
+      await logout({ accountName: identifier });
+    } catch (error) {
+      console.warn("Unable to record logout", error);
     }
 
     setActiveAccount(null);

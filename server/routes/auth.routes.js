@@ -13,6 +13,7 @@ router.post("/signup", async (req, res) => {
 
     const id = await createUser({ name, email, password });
 
+    console.log(`[AUTH] Signup created: ${email} (${id})`);
     res.json({
       message: "Signup successful",
       userId: id,
@@ -32,6 +33,7 @@ router.post("/login", async (req, res) => {
     if (!user)
       return res.status(401).json({ error: "Invalid email or password" });
 
+    console.log(`[AUTH] Login success: ${email}`);
     res.json({
       message: "Login successful",
       user: {
@@ -45,5 +47,12 @@ router.post("/login", async (req, res) => {
   }
 });
 
-export default router;
+// Logout (stateless; logs event server-side)
+router.post("/logout", async (req, res) => {
+  const { accountName, email } = req.body || {};
+  const identifier = email || accountName || "unknown user";
+  console.log(`[AUTH] Logout: ${identifier}`);
+  res.json({ message: "Logout recorded" });
+});
 
+export default router;
