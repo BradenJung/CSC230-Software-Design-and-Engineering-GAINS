@@ -3,12 +3,7 @@ import { useState } from "react";
 import Link from "next/link";
 import Header from "../components/header";
 import styles from "../styles/Home.module.css";
-import AccessibilityButton from "../components/AccessibilityButton";
-import CodexTool from "../components/CodexTool";
-import { signup as signupRequest } from "../api/api";
-
-const ACTIVE_ACCOUNT_KEY = "gains.activeAccount";
-const AUTH_CHANGE_EVENT = "gains-auth-change";
+import { apiUrl } from "../lib/api";
 
 const initialState = {
   name: "",
@@ -29,7 +24,11 @@ export default function Signup() {
 
   const handleSubmit = async (event) => {
     event.preventDefault();
+    setStatus(null);
+
     const { name, email, password, confirmPassword } = formState;
+    const minLength = 8;
+    const hasNumber = /\d/.test(password);
 
     if (!name || !email || !password || !confirmPassword) {
       setStatus({ type: "error", message: "Please fill out every field." });
@@ -41,23 +40,27 @@ export default function Signup() {
       return;
     }
 
-    try {
-      const data = await signupRequest({
-        name: name.trim(),
-        email: email.trim(),
-        password,
-      });
-
-      const accountName = name.trim() || email.trim();
-      if (typeof window !== "undefined" && accountName) {
-        window.localStorage.setItem(ACTIVE_ACCOUNT_KEY, accountName);
-        window.dispatchEvent(new CustomEvent(AUTH_CHANGE_EVENT, { detail: { accountName } }));
-      }
-
+    if (password.length < minLength || !hasNumber) {
       setStatus({
-        type: "success",
-        message: data.message || "Signup successful. You can now sign in.",
+        type: "error",
+        message: `Password must be at least ${minLength} characters and include a number.`,
       });
+      return;
+    }
+
+    try {
+      const res = await fetch(apiUrl("/api/signup"), {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ name, email, password }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) throw new Error(data.error || data.message || "Signup failed");
+
+      setStatus({ type: "success", message: data.message || "Signup successful!" });
       setFormState(initialState);
     } catch (err) {
       setStatus({ type: "error", message: err.message });
@@ -176,10 +179,6 @@ export default function Signup() {
             </div>
           </section>
         </main>
-        {/*Adds Accessibility Button to page */}
-        <AccessibilityButton />
-        {/*Adds Chat Option to the current page */}
-        <CodexTool />
       </div>
     </>
   );

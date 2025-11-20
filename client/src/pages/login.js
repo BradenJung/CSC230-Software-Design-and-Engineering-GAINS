@@ -3,16 +3,10 @@ import { useState } from "react";
 import Link from "next/link";
 import Header from "../components/header";
 import styles from "../styles/Home.module.css";
-import AccessibilityButton from "../components/AccessibilityButton";
-import CodexTool from "../components/CodexTool";
-import { login as loginRequest } from "../api/api";
 import { useRouter } from "next/router";
-
-const ACTIVE_ACCOUNT_KEY = "gains.activeAccount";
+import { apiUrl } from "../lib/api";
 
 const initialState = { email: "", password: "" };
-
-const AUTH_CHANGE_EVENT = "gains-auth-change";
 
 export default function Login() {
   const [formState, setFormState] = useState(initialState);
@@ -25,34 +19,47 @@ export default function Login() {
     setStatus(null);
   };
 
-  const handleSubmit = async (event) => {
+  async function handleSubmit(event) {
     event.preventDefault();
+    setStatus(null);
 
     const { email, password } = formState;
+
     if (!email || !password) {
       setStatus({ type: "error", message: "Please enter your email and password." });
       return;
     }
 
-    try {
-      const data = await loginRequest({ email: email.trim(), password });
-      const resolvedAccount = data.user?.name || data.user?.email || email.trim();
+    const minLength = 8;
+    const hasNumber = /\d/.test(password);
 
-      if (typeof window !== "undefined" && resolvedAccount) {
-        window.localStorage.setItem(ACTIVE_ACCOUNT_KEY, resolvedAccount);
-        window.dispatchEvent(new CustomEvent(AUTH_CHANGE_EVENT, { detail: { accountName: resolvedAccount } }));
-      }
-
+    if (password.length < minLength || !hasNumber) {
       setStatus({
-        type: "success",
-        message: "Login successful. Redirecting...",
+        type: "error",
+        message: `Password must be at least ${minLength} characters and include a number.`,
       });
-      setFormState(initialState);
+      return;
+    }
+
+    try {
+      const res = await fetch(apiUrl("/api/login"), {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ email, password }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) throw new Error(data.error || "Login failed");
+
+      setStatus({ type: "success", message: "Signed in. Redirecting..." });
       router.push("/linear-regression");
+
     } catch (err) {
       setStatus({ type: "error", message: err.message });
     }
-  };
+  }  
 
   return (
     <>
@@ -60,84 +67,78 @@ export default function Login() {
         <title>Sign in · GAINS Toolkit</title>
       </Head>
 
-      <div className={styles.home}>
-        <Header />
+      <Header />
 
-        <main className={styles.authMain}>
-          {/* Global header already renders navigation; keep only the auth layout here */}
-          <section className={styles.authLayout}>
-            <aside className={styles.authIntro}>
-              <h1>Welcome back</h1>
-              <p>Access personalized analytics, saved workspaces, and collaborative tools.</p>
-              <ul className={styles.authBenefits}>
-                <li>Continue where you left off</li>
-                <li>Share insights with teammates</li>
-                <li>Download R-ready code snippets</li>
-              </ul>
-            </aside>
+      <div className={styles.dashboard}>
+        <section className={styles.authLayout}>
+          <aside className={styles.authIntro}>
+            <h1>Welcome back</h1>
+            <p>Access personalized analytics, saved workspaces, and collaborative tools.</p>
+            <ul className={styles.authBenefits}>
+              <li>Continue where you left off</li>
+              <li>Share insights with teammates</li>
+              <li>Download R-ready code snippets</li>
+            </ul>
+          </aside>
 
-            <div className={styles.authCard}>
-              <form onSubmit={handleSubmit} className={styles.authForm}>
-                <div className={styles.inputGroup}>
-                  <label htmlFor="email" className={styles.inputLabel}>
-                    Email
-                  </label>
-                  <input
-                    id="email"
-                    name="email"
-                    type="email"
-                    autoComplete="email"
-                    placeholder="you@example.com"
-                    value={formState.email}
-                    onChange={handleChange}
-                    className={styles.inputField}
-                    required
-                  />
-                </div>
+          <div className={styles.authCard}>
+            <form onSubmit={handleSubmit} className={styles.authForm}>
+              <div className={styles.inputGroup}>
+                <label htmlFor="email" className={styles.inputLabel}>
+                  Email
+                </label>
+                <input
+                  id="email"
+                  name="email"
+                  type="email"
+                  autoComplete="email"
+                  placeholder="you@example.com"
+                  value={formState.email}
+                  onChange={handleChange}
+                  className={styles.inputField}
+                  required
+                />
+              </div>
 
-                <div className={styles.inputGroup}>
-                  <label htmlFor="password" className={styles.inputLabel}>
-                    Password
-                  </label>
-                  <input
-                    id="password"
-                    name="password"
-                    type="password"
-                    autoComplete="current-password"
-                    placeholder="••••••••"
-                    value={formState.password}
-                    onChange={handleChange}
-                    className={styles.inputField}
-                    required
-                  />
+              <div className={styles.inputGroup}>
+                <label htmlFor="password" className={styles.inputLabel}>
+                  Password
+                </label>
+                <input
+                  id="password"
+                  name="password"
+                  type="password"
+                  autoComplete="current-password"
+                  placeholder="••••••••"
+                  value={formState.password}
+                  onChange={handleChange}
+                  className={styles.inputField}
+                  required
+                />
               </div>
 
               <button type="submit" className={styles.submitButton}>
                 Sign in
               </button>
-              </form>
+            </form>
 
-              {status && (
-                <p
-                  className={`${styles.statusMessage} ${
-                    status.type === "success" ? styles.statusSuccess : styles.statusError
-                  }`}
-                >
-                  {status.message}
-                </p>
-              )}
+            {status && (
+              <p
+                className={`${styles.statusMessage} ${
+                  status.type === "success" ? styles.statusSuccess : styles.statusError
+                }`}
+              >
+                {status.message}
+              </p>
+            )}
 
-              <div className={styles.supportLinks}>
-                <Link href="/signup">Need an account?</Link>
-                <Link href="/linear-regression">Preview the tools</Link>
-              </div>
+            <div className={styles.supportLinks}>
+              <Link href="/signup">Need an account?</Link>
+              <Link href="/forgot-password">Forgot password?</Link>
+              <Link href="/linear-regression">Preview the tools</Link>
             </div>
-          </section>
-        </main>
-        {/*Adds Accessibility Button to page */}
-      <AccessibilityButton />
-      {/*Adds Chat Option to the current page */}
-      <CodexTool />
+          </div>
+        </section>
       </div>
     </>
   );
