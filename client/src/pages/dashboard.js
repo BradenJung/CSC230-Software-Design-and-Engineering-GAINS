@@ -26,6 +26,7 @@ import DensityTool from "../components/densityplot";
 import PieChartTool from "../components/piechart";
 import BoxplotTool from "../components/boxplot";
 import BarChartTool from "../components/barchart";
+import LinearRegressionPreview from "../components/linearregression";
 import RCodeHighlight from "../components/RCodeHighlight";
 
 const STORAGE_KEY = "gains-projects";
@@ -36,6 +37,25 @@ const IMPORTED_CSV_DATA_KEY = "importedCsvData";
 const LAST_USED_R_TOOL_KEY = "lastUsedRTool";
 const DEFAULT_TOOL_ID = "linear-regression";
 const TOOL_PREVIEW_COMPONENTS = {
+  "linear-regression": {
+    title: "Linear Regression Preview",
+    Component: LinearRegressionPreview,
+    isReady: ({ importedRows, responseColumn, predictorColumns }) =>
+      Array.isArray(importedRows) &&
+      importedRows.length > 0 &&
+      Boolean(responseColumn) &&
+      Array.isArray(predictorColumns) &&
+      predictorColumns.length > 0,
+    getProps: ({ importedRows, responseColumn, predictorColumns }) => ({
+      dataRows: importedRows,
+      responseColumn,
+      predictorColumns,
+      defaultTitle:
+        responseColumn && predictorColumns?.length
+          ? `${responseColumn} ~ ${predictorColumns.join(", ")}`
+          : "Linear Regression Preview"
+    })
+  },
   "bar-chart": {
     title: "Bar Chart Preview",
     Component: BarChartTool,
@@ -650,9 +670,11 @@ print(paste("Degrees of freedom:", t_test_result$parameter))`;
       xColumn,
       yColumn,
       valueColumn,
-      categoryColumn
+      categoryColumn,
+      responseColumn,
+      predictorColumns
     }),
-    [importedRows, selectedTool, xColumn, yColumn, valueColumn, categoryColumn]
+    [importedRows, selectedTool, xColumn, yColumn, valueColumn, categoryColumn, responseColumn, predictorColumns]
   );
   const previewAvailable = Boolean(
     previewConfig &&
