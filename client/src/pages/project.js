@@ -172,7 +172,6 @@ export default function Project() {
   // Set once localStorage has been read on the client
   const [hydrated, setHydrated] = useState(false);
   const [activeAccount, setActiveAccount] = useState(null);
-  const [expandedProjectId, setExpandedProjectId] = useState(null);
 
   // Keep the active account in sync with localStorage and custom auth events
   useEffect(() => {
@@ -339,17 +338,6 @@ export default function Project() {
     }
   }
 
-  function handleSettingsClick(event, projectId) {
-    event.stopPropagation();
-    setExpandedProjectId((prev) => (prev === projectId ? null : projectId));
-  }
-
-  useEffect(() => {
-    if (deleteMode) {
-      setExpandedProjectId(null);
-    }
-  }, [deleteMode]);
-
   const projectHighlights = useMemo(
     () => [
       {
@@ -426,9 +414,9 @@ export default function Project() {
             <div className={projectStyles.heroChecklist}>
               <p className={projectStyles.heroChecklistTitle}>Quick actions</p>
               <ul className={layoutStyles.previewList}>
-                <li>Click a project to reopen it on the regression workspace.</li>
-                <li>Toggle delete mode to archive older scenarios in bulk.</li>
-                <li>Use settings to prep workflows before sharing with teammates.</li>
+                <li>Create a fresh scenario with “New project +”.</li>
+                <li>Click any project to reopen it on the dashboard with saved data and tool.</li>
+                <li>Toggle Delete mode to remove projects, or Select all to clear the list.</li>
               </ul>
             </div>
           </div>
@@ -453,53 +441,15 @@ export default function Project() {
               {projects.map((project) => (
                 <div
                   key={project.id}
-                  className={
-                    expandedProjectId === project.id
-                      ? `${cardClassName} ${projectStyles.projectCardExpanded}`
-                      : cardClassName
-                  }
+                  className={cardClassName}
                   role="button"
                   tabIndex={0}
                   onClick={() => handleProjectCardClick(project)}
                   onKeyDown={(event) => handleCardKeyDown(event, project)}
                 >
                   <div className={projectStyles.cardHeader}>
-                    <span className={projectStyles.cardSpacer} aria-hidden="true" />
                     <div className={projectStyles.projectName}>{project.name}</div>
-                    <button
-                      type="button"
-                      className={projectStyles.settingsButton}
-                      onClick={(event) => handleSettingsClick(event, project.id)}
-                      aria-label={`Settings for ${project.name}`}
-                    >
-                      <img
-                        src="/settings.svg"
-                        alt=""
-                        aria-hidden="true"
-                        className={projectStyles.settingsIcon}
-                        draggable={false}
-                      />
-                    </button>
                   </div>
-                  {expandedProjectId === project.id && (
-                    <>
-                      <p className={projectStyles.projectSettingsLabel}>Settings</p>
-                      <div className={projectStyles.projectActions}>
-                        <button
-                          type="button"
-                          className={`${layoutStyles.primaryButton} ${projectStyles.projectActionButton}`}
-                        >
-                          Save
-                        </button>
-                        <button
-                          type="button"
-                          className={`${layoutStyles.secondaryButton} ${projectStyles.projectActionButton}`}
-                        >
-                          Cancel
-                        </button>
-                      </div>
-                    </>
-                  )}
                 </div>
               ))}
             </div>
