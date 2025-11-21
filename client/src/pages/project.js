@@ -21,13 +21,39 @@ const TOOL_ID_TO_STORAGE_VALUE = {
   "linear-regression": "LinearRegression",
   "line-chart": "LineChart",
   "bar-chart": "BarChart",
-  "dot-plot": "DotPlot"
+  "dot-plot": "DotPlot",
+  "pie-chart": "PieChart",
+  "histogram": "Histogram",
+  "density-plot": "DensityPlot",
+  "box-plot": "BoxPlot",
+  "iqr": "IQR",
+  "standard-deviation": "StandardDeviation",
+  "median": "Median",
+  "read-csv": "ReadCSV",
+  "combinations": "Combinations",
+  "permutations": "Permutations",
+  "anova": "ANOVA",
+  "z-value": "ZValue",
+  "t-test": "TTest"
 };
 const TOOL_STORAGE_VALUE_TO_ID = {
   LinearRegression: "linear-regression",
   LineChart: "line-chart",
   BarChart: "bar-chart",
-  DotPlot: "dot-plot"
+  DotPlot: "dot-plot",
+  PieChart: "pie-chart",
+  Histogram: "histogram",
+  DensityPlot: "density-plot",
+  BoxPlot: "box-plot",
+  IQR: "iqr",
+  StandardDeviation: "standard-deviation",
+  Median: "median",
+  ReadCSV: "read-csv",
+  Combinations: "combinations",
+  Permutations: "permutations",
+  ANOVA: "anova",
+  ZValue: "z-value",
+  TTest: "t-test"
 };
 const TOTAL_TOOL_COUNT = Object.keys(TOOL_ID_TO_STORAGE_VALUE).length;
 
