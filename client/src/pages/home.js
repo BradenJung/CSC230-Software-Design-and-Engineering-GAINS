@@ -103,7 +103,7 @@ export default function Home() {
               <Link href="/signup" className={styles.primaryButton}>
                 Create an account
               </Link>
-              <Link href="/linear-regression" className={styles.secondaryButton}>
+              <Link href="/dashboard" className={styles.secondaryButton}>
                 Sign In
               </Link>
             </div>

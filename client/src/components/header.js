@@ -113,8 +113,8 @@ export default function Header({
     router.push("/login");
   };
 
-  // Check if we're on the linear regression page
-  const isLinearRegressionPage = router.pathname === '/linear-regression';
+  // Check if we're on the dashboard page
+  const isDashboardPage = router.pathname === '/dashboard';
 
   const [projectNameDraft, setProjectNameDraft] = useState(currentProjectName || "");
   const renameInputRef = useRef(null);
@@ -163,7 +163,7 @@ export default function Header({
     { href: "/chat", label: "Chat"}
   ];
 
-  // Tool-specific navigation items for linear regression page
+  // Tool-specific navigation items for the dashboard page
   const toolNavItems = [
     { label: "Edit", onClick: onEditClick },
     { label: "Import", onClick: onImportClick },
@@ -178,10 +178,10 @@ export default function Header({
 
   return (
     <nav className={styles.navbar}>
-      <div className={isLinearRegressionPage ? styles.navFlexThreeColumn : styles.navFlex}>
-        {/* Leading side - Home and My Projects for linear regression page, or full nav for other pages */}
+      <div className={isDashboardPage ? styles.navFlexThreeColumn : styles.navFlex}>
+        {/* Leading side - Home and My Projects for dashboard page, or full nav for other pages */}
         <div className={styles.navLinks}>
-          {isLinearRegressionPage ? (
+          {isDashboardPage ? (
             <>
               <Link href="/home" className={styles.navLink}>Home</Link>
               <Link href="/project" className={styles.navLink}>My Projects</Link>
@@ -233,8 +233,8 @@ export default function Header({
           )}
         </div>
 
-        {/* Center - Tool navigation for linear regression page */}
-        {isLinearRegressionPage && (
+        {/* Center - Tool navigation for dashboard page */}
+        {isDashboardPage && (
           <div className={styles.navCenter}>
             <div
               style={{
@@ -297,7 +297,7 @@ export default function Header({
         )}
 
         {/* Trailing side - Auth buttons or account menu */}
-        <div className={styles.navLinks} style={{ justifyContent: isLinearRegressionPage ? 'flex-end' : 'flex-start' }}>
+        <div className={styles.navLinks} style={{ justifyContent: isDashboardPage ? 'flex-end' : 'flex-start' }}>
           {activeAccount ? (
             <div className={styles.accountContainer} ref={containerRef}>
               <button

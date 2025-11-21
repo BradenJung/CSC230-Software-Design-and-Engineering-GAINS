@@ -277,7 +277,7 @@ export default function About() {
                 <li>Scatter Plots for correlation analysis</li>
                 <li>Statistical tests and hypothesis testing tools</li>
               </ul>
-              <Link href="/linear-regression" className={styles.inlineLink}>
+              <Link href="/dashboard" className={styles.inlineLink}>
                 Explore the R Tools →
               </Link>
             </div>
@@ -321,7 +321,7 @@ export default function About() {
               </p>
             </div>
             <div className={styles.ctaActions}>
-              <Link href="/linear-regression" className={styles.primaryButton}>
+              <Link href="/dashboard" className={styles.primaryButton}>
                 Start Using GAINS
               </Link>
               <Link href="/home" className={styles.secondaryButton}>

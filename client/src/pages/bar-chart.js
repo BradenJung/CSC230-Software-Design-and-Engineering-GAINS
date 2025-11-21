@@ -23,7 +23,7 @@ export default function BarChart() {
             <li>Upload a CSV or select a sample dataset to pre-populate categories.</li>
             <li>Adjust grouping, sorting, and annotations before sharing results.</li>
             <li>
-              Need to explore now? Head to the <Link href="/linear-regression">linear regression demo</Link>
+              Need to explore now? Head to the <Link href="/dashboard">dashboard demo</Link>
               for a live preview of the toolkit experience.
             </li>
           </ul>

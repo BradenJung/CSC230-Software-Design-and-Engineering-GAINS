@@ -118,7 +118,7 @@ export default function FAQ() {
               </p>
             </div>
             <div className={styles.ctaActions}>
-              <Link href="/linear-regression" className={styles.primaryButton}>
+              <Link href="/dashboard" className={styles.primaryButton}>
                 Try GAINS Now
               </Link>
               <Link href="/about" className={styles.secondaryButton}>

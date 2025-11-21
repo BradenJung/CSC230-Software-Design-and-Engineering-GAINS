@@ -171,7 +171,7 @@ export default function Signup() {
 
               <div className={styles.supportLinks}>
                 <Link href="/login">Already have an account?</Link>
-                <Link href="/linear-regression">Explore the tools</Link>
+                <Link href="/dashboard">Explore the tools</Link>
               </div>
             </div>
           </section>

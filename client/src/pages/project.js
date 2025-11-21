@@ -55,7 +55,7 @@ const INITIAL_PROJECTS = [
   { id: 4, name: "Sample Project 4" }
 ];
 
-// Keep a guaranteed CSV payload shell on every project record for the linear regression page.
+// Keep a guaranteed CSV payload shell on every project record for the dashboard page.
 const withImportedCsvData = (project) => {
   if (!project || typeof project !== "object") {
     return project;
@@ -282,7 +282,7 @@ export default function Project() {
     persistActiveProjectSelection(project.id);
     router
       .push({
-        pathname: "/linear-regression",
+        pathname: "/dashboard",
         query: { projectId: project.id }
       })
       .catch((err) => console.error("Failed to navigate to project page", err));

@@ -590,7 +590,7 @@ is_even(7)  # FALSE`}</code></pre>
             linear regressions, charts, and more with your own data!
           </p>
           <div className={styles.actionButtons}>
-            <a href="/linear-regression" className={styles.primaryButton}>
+            <a href="/dashboard" className={styles.primaryButton}>
               Try R Tools
             </a>
             <a href="/home" className={styles.secondaryButton}>
