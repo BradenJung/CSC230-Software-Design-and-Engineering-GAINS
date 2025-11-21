@@ -129,6 +129,7 @@ export default function Login() {
 
               <div className={styles.supportLinks}>
                 <Link href="/signup">Need an account?</Link>
+                <Link href="/forgot-password">Forgot password</Link>
                 <Link href="/linear-regression">Preview the tools</Link>
               </div>
             </div>
