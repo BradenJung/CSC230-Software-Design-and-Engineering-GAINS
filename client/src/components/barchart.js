@@ -226,7 +226,7 @@ export default function BarChartTool({
     <div style={{ padding: 24, maxWidth: 800, margin: "0 auto" }}>
       <h1>R Bar Chart</h1>
       {usingProjectData ? (
-        <p>
+        <p style={{ marginBottom: "20px", color: "lightgray" }}>
           Using <strong>{categoryColumn}</strong> vs <strong>{valueColumn}</strong> from the imported dataset.
         </p>
       ) : (

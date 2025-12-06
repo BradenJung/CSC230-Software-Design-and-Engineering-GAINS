@@ -48,7 +48,7 @@ export default function Login() {
         message: "Login successful. Redirecting...",
       });
       setFormState(initialState);
-      router.push("/linear-regression");
+      router.push("/dashboard");
     } catch (err) {
       setStatus({ type: "error", message: err.message });
     }
@@ -130,7 +130,7 @@ export default function Login() {
               <div className={styles.supportLinks}>
                 <Link href="/signup">Need an account?</Link>
                 <Link href="/forgot-password">Forgot password</Link>
-                <Link href="/linear-regression">Preview the tools</Link>
+                <Link href="/dashboard">Preview the tools</Link>
               </div>
             </div>
           </section>
