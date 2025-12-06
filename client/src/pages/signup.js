@@ -3,6 +3,12 @@ import { useState } from "react";
 import Link from "next/link";
 import Header from "../components/header";
 import styles from "../styles/Home.module.css";
+import AccessibilityButton from "../components/AccessibilityButton";
+import CodexTool from "../components/CodexTool";
+import { signup as signupRequest } from "../api/api";
+
+const ACTIVE_ACCOUNT_KEY = "gains.activeAccount";
+const AUTH_CHANGE_EVENT = "gains-auth-change";
 
 const initialState = {
   name: "",
@@ -11,72 +17,51 @@ const initialState = {
   confirmPassword: "",
 };
 
-async function handleSignup(e) {
-  e.preventDefault();
-
-  const fd = new FormData(e.currentTarget);
-  const name = String(fd.get("name") || "");
-  const email = String(fd.get("email") || "");
-  const password = String(fd.get("password") || "");
-  const confirmPassword = String(fd.get("confirmPassword") || "");
-
-  if (!name || !email || !password || !confirmPassword) {
-    alert("Please fill out every field.");
-    return;
-  }
-
-  if (password !== confirmPassword) {
-    alert("Passwords do not match.");
-    return;
-  }
-
-  try {
-    const res = await fetch("http://localhost:4000/api/signup", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name, email, password })
-    });
-
-
-    const data = await res.json();
-
-    if (!res.ok) throw new Error(data.message);
-
-    alert(data.message || "Signup successful!");
-  } catch (err) {
-    alert(err.message);
-  }
-}
-
-
 export default function Signup() {
   const [formState, setFormState] = useState(initialState);
-  // Provide temporary messaging until the signup endpoint is live
   const [status, setStatus] = useState(null);
 
   const handleChange = (event) => {
     const { name, value } = event.target;
     setFormState((prev) => ({ ...prev, [name]: value }));
+    setStatus(null);
   };
 
-  const handleSubmit = (event) => {
+  const handleSubmit = async (event) => {
     event.preventDefault();
+    const { name, email, password, confirmPassword } = formState;
 
-    if (!formState.name || !formState.email || !formState.password || !formState.confirmPassword) {
+    if (!name || !email || !password || !confirmPassword) {
       setStatus({ type: "error", message: "Please fill out every field." });
       return;
     }
 
-    if (formState.password !== formState.confirmPassword) {
+    if (password !== confirmPassword) {
       setStatus({ type: "error", message: "Passwords do not match." });
       return;
     }
 
-    // Placeholder success message so backend integration can slot in later
-    setStatus({
-      type: "success",
-      message: "Signup submitted. Connect this form to the backend to finalize onboarding.",
-    });
+    try {
+      const data = await signupRequest({
+        name: name.trim(),
+        email: email.trim(),
+        password,
+      });
+
+      const accountName = name.trim() || email.trim();
+      if (typeof window !== "undefined" && accountName) {
+        window.localStorage.setItem(ACTIVE_ACCOUNT_KEY, accountName);
+        window.dispatchEvent(new CustomEvent(AUTH_CHANGE_EVENT, { detail: { accountName } }));
+      }
+
+      setStatus({
+        type: "success",
+        message: data.message || "Signup successful. You can now sign in.",
+      });
+      setFormState(initialState);
+    } catch (err) {
+      setStatus({ type: "error", message: err.message });
+    }
   };
 
   return (
@@ -85,109 +70,116 @@ export default function Signup() {
         <title>Create account · GAINS Toolkit</title>
       </Head>
 
-      <Header />
+      <div className={styles.home}>
+        <Header />
 
-      <div className={styles.dashboard}>
-        <section className={styles.authLayout}>
-          <aside className={styles.authIntro}>
-            <h1>Join the GAINS community</h1>
-            <p>Set up your account to unlock collaborative analytics and guided R tooling.</p>
-            <ul className={styles.authBenefits}>
-              <li>Create and save custom tool configurations</li>
-              <li>Collaborate with classmates in shared workspaces</li>
-              <li>Export reproducible code in a single click</li>
-            </ul>
-          </aside>
+        <main className={styles.authMain}>
+          <section className={styles.authLayout}>
+            <aside className={styles.authIntro}>
+              <h1>Join the GAINS community</h1>
+              <p>Set up your account to unlock collaborative analytics and guided R tooling.</p>
+              <ul className={styles.authBenefits}>
+                <li>Create and save custom tool configurations</li>
+                <li>Collaborate with classmates in shared workspaces</li>
+                <li>Export reproducible code in a single click</li>
+              </ul>
+            </aside>
 
-          <div className={styles.authCard}>
-            <form onSubmit={handleSignup} className={styles.authForm}>
-              <div className={styles.inputGroup}>
-                <label htmlFor="name" className={styles.inputLabel}>
-                  Full name
-                </label>
-                <input
-                  id="name"
-                  name="name"
-                  type="text"
-                  placeholder="Jordan Gaines"
-                  value={formState.name}
-                  onChange={handleChange}
-                  className={styles.inputField}
-                  required
-                />
-              </div>
+            <div className={styles.authCard}>
+              <form onSubmit={handleSubmit} className={styles.authForm}>
+                <div className={styles.inputGroup}>
+                  <label htmlFor="name" className={styles.inputLabel}>
+                    Full name
+                  </label>
+                  <input
+                    id="name"
+                    name="name"
+                    type="text"
+                    placeholder="Jordan Gaines"
+                    value={formState.name}
+                    onChange={handleChange}
+                    className={styles.inputField}
+                    required
+                  />
+                </div>
 
-              <div className={styles.inputGroup}>
-                <label htmlFor="email" className={styles.inputLabel}>
-                  Email
-                </label>
-                <input
-                  id="email"
-                  name="email"
-                  type="email"
-                  autoComplete="email"
-                  placeholder="you@example.com"
-                  value={formState.email}
-                  onChange={handleChange}
-                  className={styles.inputField}
-                  required
-                />
-              </div>
+                <div className={styles.inputGroup}>
+                  <label htmlFor="email" className={styles.inputLabel}>
+                    Email
+                  </label>
+                  <input
+                    id="email"
+                    name="email"
+                    type="email"
+                    autoComplete="email"
+                    placeholder="you@example.com"
+                    value={formState.email}
+                    onChange={handleChange}
+                    className={styles.inputField}
+                    required
+                  />
+                </div>
 
-              <div className={styles.inputGroup}>
-                <label htmlFor="password" className={styles.inputLabel}>
-                  Password
-                </label>
-                <input
-                  id="password"
-                  name="password"
-                  type="password"
-                  autoComplete="new-password"
-                  placeholder="••••••••"
-                  value={formState.password}
-                  onChange={handleChange}
-                  className={styles.inputField}
-                  required
-                />
-              </div>
+                <div className={styles.inputGroup}>
+                  <label htmlFor="password" className={styles.inputLabel}>
+                    Password
+                  </label>
+                  <input
+                    id="password"
+                    name="password"
+                    type="password"
+                    autoComplete="new-password"
+                    placeholder="••••••••"
+                    value={formState.password}
+                    onChange={handleChange}
+                    className={styles.inputField}
+                    required
+                  />
+                </div>
 
-              <div className={styles.inputGroup}>
-                <label htmlFor="confirmPassword" className={styles.inputLabel}>
-                  Confirm password
-                </label>
-                <input
-                  id="confirmPassword"
-                  name="confirmPassword"
-                  type="password"
-                  autoComplete="new-password"
-                  placeholder="••••••••"
-                  value={formState.confirmPassword}
-                  onChange={handleChange}
-                  className={styles.inputField}
-                  required
-                />
-              </div>
+                <div className={styles.inputGroup}>
+                  <label htmlFor="confirmPassword" className={styles.inputLabel}>
+                    Confirm password
+                  </label>
+                  <input
+                    id="confirmPassword"
+                    name="confirmPassword"
+                    type="password"
+                    autoComplete="new-password"
+                    placeholder="••••••••"
+                    value={formState.confirmPassword}
+                    onChange={handleChange}
+                    className={styles.inputField}
+                    required
+                  />
+                </div>
 
-              <button type="submit" className={styles.submitButton}>
-                Create account
-              </button>
-            </form>
+                <button type="submit" className={styles.submitButton}>
+                  Create account
+                </button>
+              </form>
 
-            {status && (
-              <p
-                className={`${styles.statusMessage} ${status.type === "success" ? styles.statusSuccess : styles.statusError
+              {status && (
+                <p
+                  className={`${styles.statusMessage} ${
+                    status.type === "success" ? styles.statusSuccess : styles.statusError
                   }`}
-              >
-                {status.message}
-              </p>
-            )}
+                >
+                  {status.message}
+                </p>
+              )}
 
-            <div className={styles.supportLinks}>
-              <Link href="/login">Already have an account?</Link>
-              <Link href="/linear-regression">Explore the tools</Link>
+              <div className={styles.supportLinks}>
+                <Link href="/login">Already have an account?</Link>
+                <Link href="/dashboard">Explore the tools</Link>
+              </div>
             </div>
-          </div>
-        </section>
+          </section>
+        </main>
+        {/*Adds Accessibility Button to page */}
+        <AccessibilityButton />
+        {/*Adds Chat Option to the current page */}
+        <CodexTool />
       </div>
     </>
   );

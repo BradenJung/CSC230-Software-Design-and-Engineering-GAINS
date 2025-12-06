@@ -3,6 +3,8 @@ import { useState } from "react";
 import Link from "next/link";
 import Header from "../components/header";
 import styles from "../styles/Home.module.css";
+import AccessibilityButton from "../components/AccessibilityButton";
+import CodexTool from "../components/CodexTool";
 
 const faqData = [
   {
@@ -116,7 +118,7 @@ export default function FAQ() {
               </p>
             </div>
             <div className={styles.ctaActions}>
-              <Link href="/linear-regression" className={styles.primaryButton}>
+              <Link href="/dashboard" className={styles.primaryButton}>
                 Try GAINS Now
               </Link>
               <Link href="/about" className={styles.secondaryButton}>
@@ -125,6 +127,10 @@ export default function FAQ() {
             </div>
           </section>
         </main>
+        {/*Adds Accessibility Button to page */}
+      <AccessibilityButton />
+      {/*Adds Chat Option to the current page */}
+      <CodexTool />
       </div>
     </>
   );

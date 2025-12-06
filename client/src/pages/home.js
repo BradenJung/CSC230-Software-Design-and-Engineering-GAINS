@@ -1,6 +1,9 @@
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import Header from "../components/header";
 import styles from "../styles/Home.module.css";
+import AccessibilityButton from "../components/AccessibilityButton";
+import CodexTool from "../components/CodexTool";
 
 const metrics = [
   { label: "Datasets Analyzed", value: "1,200+" },
@@ -36,6 +39,46 @@ const previewChecklist = [
 ];
 
 export default function Home() {
+  const [backendMessage, setBackendMessage] = useState(null);
+  const [backendError, setBackendError] = useState(null);
+
+  useEffect(() => {
+    async function fetchBackendMessage() {
+      try {
+        const response = await fetch("/api/health/db");
+        if (!response.ok) {
+          let message = `Request failed with status ${response.status}`;
+          try {
+            const errorData = await response.json();
+            if (errorData?.error) message = errorData.error;
+          } catch {
+            // ignore JSON parse issues for non-JSON responses
+          }
+          throw new Error(message);
+        }
+        const data = await response.json();
+        if (data?.ok) {
+          const collectionsCount = Array.isArray(data.collections)
+            ? data.collections.length
+            : null;
+          const successMessage =
+            collectionsCount !== null
+              ? `Backend online · MongoDB collections detected: ${collectionsCount}`
+              : "Backend online · Successfully reached the API health endpoint.";
+          setBackendMessage(successMessage);
+          setBackendError(null);
+          return;
+        }
+        throw new Error(data?.error || "Backend responded without ok=true");
+      } catch (error) {
+        setBackendMessage(null);
+        setBackendError(error.message || "Unable to reach backend");
+      }
+    }
+
+    fetchBackendMessage();
+  }, []);
+
   return (
     <div className={styles.home}>
       <Header />
@@ -43,7 +86,11 @@ export default function Home() {
         <section className={styles.heroSection}>
           <div className={styles.heroCopy}>
             <p className={styles.heroEyebrow}>CSC 230 Software Design</p>
-            
+
+            {backendMessage && (
+              <p className={styles.backendStatus}>{backendMessage}</p>
+            )}
+
             <h1 className={styles.heroTitle}>
               Prototype, analyze, and present data stories in minutes.
             </h1>
@@ -56,10 +103,14 @@ export default function Home() {
               <Link href="/signup" className={styles.primaryButton}>
                 Create an account
               </Link>
-              <Link href="/linear-regression" className={styles.secondaryButton}>
+              <Link href="/dashboard" className={styles.secondaryButton}>
                 Sign In
               </Link>
             </div>
+
+            {backendError && (
+              <p className={styles.backendStatusError}>{backendError}</p>
+            )}
           </div>
           <div className={styles.heroIllustration} aria-hidden="true">
             <div className={styles.illustrationHeader}>
@@ -96,7 +147,6 @@ export default function Home() {
         <section className={styles.featuresSection}>
           <div className={styles.sectionHeaderRow}>
             <h2 className={styles.sectionTitle}>Tools that make analysis approachable</h2>
-            
           </div>
           <div className={styles.metricsGrid}>
             {metrics.map(({ value, label }) => (
@@ -110,7 +160,7 @@ export default function Home() {
 
         <section className={styles.featuresSection}>
           <div className={styles.sectionHeaderRow}>
-          <h2 className={styles.sectionTitle}>Built for fast classroom experimentation</h2>
+            <h2 className={styles.sectionTitle}>Built for fast classroom experimentation</h2>
             <p className={styles.sectionSubtitle}>
               Mix and match visualizations, run regressions, and document findings without leaving the
               workspace.
@@ -188,6 +238,10 @@ export default function Home() {
           </div>
         </section>
       </main>
+      {/*Adds Accessibility Button to page */}
+      <AccessibilityButton />
+      {/*Adds Chat Option to the current page */}
+      <CodexTool />
     </div>
   );
 }

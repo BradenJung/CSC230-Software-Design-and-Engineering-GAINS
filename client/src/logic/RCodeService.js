@@ -1,0 +1,1846 @@
+/**
+ * RCodeService - Business logic for R code generation and data processing
+ * Follows Next.js best practices for service layer architecture
+ */
+
+export class RCodeService {
+  /**
+   * Parse CSV text into structured data
+   * @param {string} text - Raw CSV text
+   * @returns {Array<Object>} Parsed data as array of objects
+   */
+  static parseCsv(text) {
+    const rows = [];
+    let current = '';
+    let inQuotes = false;
+    let row = [];
+    
+    for (let i = 0; i < text.length; i++) {
+      const char = text[i];
+      const next = text[i + 1];
+      
+      if (char === '"') {
+        if (inQuotes && next === '"') {
+          current += '"';
+          i++;
+        } else {
+          inQuotes = !inQuotes;
+        }
+      } else if (char === ',' && !inQuotes) {
+        row.push(current.trim());
+        current = '';
+      } else if ((char === '\n' || char === '\r') && !inQuotes) {
+        if (current.length > 0 || row.length > 0) {
+          row.push(current.trim());
+          rows.push(row);
+          row = [];
+          current = '';
+        }
+        // Handle \r\n pairs
+        if (char === '\r' && next === '\n') i++;
+      } else {
+        current += char;
+      }
+    }
+    
+    if (current.length > 0 || row.length > 0) {
+      row.push(current.trim());
+      rows.push(row);
+    }
+    
+    // Clean up empty rows
+    const cleaned = rows.filter(r => r.some(c => c !== ''));
+    if (cleaned.length === 0) return [];
+    
+    // Generate headers and convert to objects
+    const headers = cleaned[0].map(h => (h || `col_${Math.random().toString(36).slice(2, 6)}`));
+    const data = cleaned.slice(1).map(r => {
+      const obj = {};
+      headers.forEach((h, idx) => {
+        obj[h] = r[idx] ?? '';
+      });
+      return obj;
+    });
+    
+    return data;
+  }
+
+  /**
+   * Generate R code based on tool type and data
+   * @param {string} toolId - Tool identifier (linear-regression, bar-chart, line-chart, dot-plot)
+   * @param {Array<Object>} data - Parsed CSV data
+   * @param {Object} selections - Tool-specific selections (responseColumn, predictorColumns, etc.)
+   * @returns {string} Generated R code
+   */
+  static generateCode(toolId, data, selections = {}) {
+    switch (toolId) {
+      case 'linear-regression':
+        return this.generateLinearRegressionCode(data, selections.responseColumn, selections.predictorColumns);
+      case 'bar-chart':
+        return this.generateBarChartCode(data, selections.categoryColumn, selections.valueColumn);
+      case 'line-chart':
+        return this.generateLineChartCode(data, selections.timeColumn, selections.valueColumn);
+      case 'dot-plot':
+        return this.generateDotPlotCode(data, selections.xColumn, selections.yColumn);
+      case 'pie-chart':
+        return this.generatePieChartCode(data, selections.categoryColumn, selections.valueColumn);
+      case 'histogram':
+        return this.generateHistogramCode(data, selections.valueColumn);
+      case 'density-plot':
+        return this.generateDensityPlotCode(data, selections.valueColumn);
+      case 'box-plot':
+        return this.generateBoxPlotCode(data, selections.valueColumn);
+      case 'anova':
+        return this.generateANOVACode(data, selections.categoryColumn, selections.valueColumn);
+      case 'iqr':
+      case 'standard-deviation':
+      case 'median':
+      case 'read-csv':
+      case 'combinations':
+      case 'permutations':
+      case 'z-value':
+      case 't-test':
+        return this.getDefaultCode(toolId);
+      default:
+        return this.getDefaultCode(toolId);
+    }
+  }
+
+   /**
+   * Generate R code with custom arguments
+   * @param {string} toolId - Tool identifier
+   * @param {Array<Object>} data - Parsed CSV data
+   * @param {Object} selections - Tool-specific selections
+   * @param {Object} customArgs - Custom argument values from user
+   * @returns {string} Generated R code with custom arguments
+   */
+  static generateCodeWithCustomArguments(toolId, data, selections = {}, customArgs = {}) {
+    switch (toolId) {
+      case 'linear-regression':
+        return this.generateLinearRegressionCodeWithCustomArgs(data, selections.responseColumn, selections.predictorColumns, customArgs);
+      case 'bar-chart':
+        return this.generateBarChartCodeWithCustomArgs(data, selections.categoryColumn, selections.valueColumn, customArgs);
+      case 'line-chart':
+        return this.generateLineChartCodeWithCustomArgs(data, selections.timeColumn, selections.valueColumn, customArgs);
+      case 'dot-plot':
+        return this.generateDotPlotCodeWithCustomArgs(data, selections.xColumn, selections.yColumn, customArgs);
+      case 'pie-chart':
+        return this.generatePieChartCodeWithCustomArgs(data, selections.categoryColumn, selections.valueColumn, customArgs);
+      case 'histogram':
+        return this.generateHistogramCodeWithCustomArgs(data, selections.valueColumn, customArgs);
+      case 'density-plot':
+        return this.generateDensityPlotCodeWithCustomArgs(data, selections.valueColumn, customArgs);
+      case 'box-plot':
+        return this.generateBoxPlotCodeWithCustomArgs(data, selections.valueColumn, customArgs);
+      case 'anova':
+        return this.generateANOVACodeWithCustomArgs(data, selections.categoryColumn, selections.valueColumn, customArgs);
+      default:
+        return this.generateCode(toolId, data, selections);
+    }
+  }
+  /**
+   * Generate R code for linear regression based on data
+   * @param {Array<Object>} data - Parsed CSV data
+   * @param {string} responseColumn - Name of the response variable column
+   * @param {Array<string>} predictorColumns - Names of predictor variable columns
+   * @returns {string} Generated R code
+   */
+  static generateLinearRegressionCode(data, responseColumn, predictorColumns) {
+    if (!data || data.length === 0) {
+      return this.getDefaultLinearRegressionCode();
+    }
+
+    // Extract data values for each column
+    const responseValues = data.map(row => row[responseColumn]).filter(val => val !== '');
+    const predictorData = {};
+    
+    predictorColumns.forEach(col => {
+      predictorData[col] = data.map(row => row[col]).filter(val => val !== '');
+    });
+
+    // Generate data frame initialization
+    const dataFrameLines = [];
+    dataFrameLines.push('df <- data.frame(');
+    
+    // Add response variable
+    dataFrameLines.push(`  ${responseColumn} = c(${responseValues.join(', ')}),`);
+    
+    // Add predictor variables
+    predictorColumns.forEach((col, index) => {
+      const values = predictorData[col];
+      const comma = index === predictorColumns.length - 1 ? '' : ',';
+      dataFrameLines.push(`  ${col} = c(${values.join(', ')})${comma}`);
+    });
+    
+    dataFrameLines.push(')');
+
+    // Generate formula
+    const formula = `${responseColumn} ~ ${predictorColumns.join(' + ')}`;
+
+    // Generate complete R code
+    const rCode = `${dataFrameLines.join('\n')}
+
+# Fit linear model
+model <- lm(
+  formula = ${formula},
+  data = df,
+  subset = NULL,
+  weights = NULL,
+  na.action = na.omit,
+  method = "qr",
+  model = TRUE,
+  x = FALSE,
+  y = TRUE,
+  qr = TRUE,
+  singular.ok = TRUE,
+  contrasts = NULL,
+  offset = NULL
+)
+
+# Display model summary
+summary(model)
+
+# Plot the model
+plot(model)`;
+
+    return rCode;
+  }
+
+  /**
+   * Generate R code for bar chart based on data
+   * @param {Array<Object>} data - Parsed CSV data
+   * @param {string} categoryColumn - Name of the category column
+   * @param {string} valueColumn - Name of the value column
+   * @returns {string} Generated R code
+   */
+  static generateBarChartCode(data, categoryColumn, valueColumn) {
+    if (!data || data.length === 0) {
+      return this.getDefaultBarChartCode();
+    }
+
+    const categories = data.map(row => row[categoryColumn]).filter(val => val !== '');
+    const values = data.map(row => row[valueColumn]).filter(val => val !== '');
+
+    const rCode = `# Initialize data
+categories <- c(${categories.map(cat => `"${cat}"`).join(', ')})
+values <- c(${values.join(', ')})
+
+# Create data frame
+df <- data.frame(
+  category = categories,
+  value = values
+)
+
+# Create bar chart
+barplot(
+  height = df$value,
+  names.arg = df$category,
+  main = "Bar Chart",
+  xlab = "Categories",
+  ylab = "Values",
+  col = rainbow(length(categories)),
+  border = "black"
+)`;
+
+    return rCode;
+  }
+
+  /**
+   * Generate R code for line chart based on data
+   * @param {Array<Object>} data - Parsed CSV data
+   * @param {string} timeColumn - Name of the time/index column
+   * @param {string} valueColumn - Name of the value column
+   * @returns {string} Generated R code
+   */
+  static generateLineChartCode(data, timeColumn, valueColumn) {
+    if (!data || data.length === 0) {
+      return this.getDefaultLineChartCode();
+    }
+
+    const timePoints = data.map(row => row[timeColumn]).filter(val => val !== '');
+    const values = data.map(row => row[valueColumn]).filter(val => val !== '');
+
+    const rCode = `# Initialize data
+time_points <- c(${timePoints.join(', ')})
+values <- c(${values.join(', ')})
+
+# Create data frame
+df <- data.frame(
+  time = time_points,
+  value = values
+)
+
+# Create line chart
+plot(
+  x = df$time,
+  y = df$value,
+  type = "l",
+  main = "Line Chart",
+  xlab = "Time Points",
+  ylab = "Values",
+  col = "blue",
+  lwd = 2,
+  pch = 16
+)
+
+# Add points
+points(df$time, df$value, col = "red", pch = 16)`;
+
+    return rCode;
+  }
+
+  /**
+   * Generate R code for dot plot (scatter plot) based on data
+   * @param {Array<Object>} data - Parsed CSV data
+   * @param {string} xColumn - Name of the x-axis column
+   * @param {string} yColumn - Name of the y-axis column
+   * @returns {string} Generated R code
+   */
+  static generateDotPlotCode(data, xColumn, yColumn) {
+    if (!data || data.length === 0) {
+      return this.getDefaultDotPlotCode();
+    }
+
+    // Preserve numeric literals while safely quoting strings for R
+    const formatValues = (values) =>
+      values
+        .map((value) => {
+          if (value === null || value === undefined || value === '') {
+            return 'NA';
+          }
+          const numericValue = Number(value);
+          if (!Number.isNaN(numericValue) && Number.isFinite(numericValue)) {
+            return `${numericValue}`;
+          }
+          const escaped = String(value).replace(/"/g, '\\"');
+          return `"${escaped}"`;
+        })
+        .join(', ');
+
+    const xValues = data.map(row => row[xColumn]).filter(val => val !== undefined && val !== null && val !== '');
+    const yValues = data.map(row => row[yColumn]).filter(val => val !== undefined && val !== null && val !== '');
+
+    if (!xValues.length || !yValues.length) {
+      return this.getDefaultDotPlotCode();
+    }
+
+    const formattedX = formatValues(xValues);
+    const formattedY = formatValues(yValues);
+
+    const rCode = `# Initialize data
+x_values <- c(${formattedX})
+y_values <- c(${formattedY})
+
+# Create data frame
+df <- data.frame(
+  x = x_values,
+  y = y_values
+)
+
+# Create dot plot / scatter plot
+plot(
+  x = df$x,
+  y = df$y,
+  main = "Dot Plot",
+  xlab = "${xColumn || 'X Values'}",
+  ylab = "${yColumn || 'Y Values'}",
+  pch = 19,
+  col = "darkgreen"
+)
+
+# Add grid for readability
+grid(col = "lightgray")`;
+
+    return rCode;
+  }
+
+  /**
+   * Generate R code for pie chart based on data
+   * @param {Array<Object>} data - Parsed CSV data
+   * @param {string} categoryColumn - Name of the category column
+   * @param {string} valueColumn - Name of the value column
+   * @returns {string} Generated R code
+   */
+  static generatePieChartCode(data, categoryColumn, valueColumn) {
+    if (!data || data.length === 0) {
+      return this.getDefaultPieChartCode();
+    }
+
+    const categories = data.map(row => row[categoryColumn]).filter(val => val !== '');
+    const values = data.map(row => row[valueColumn]).filter(val => val !== '');
+
+    const rCode = `# Define the data vector with values
+x <- c(${values.join(', ')})
+
+# Define labels for each value in x
+names(x) <- c(${categories.map(cat => `"${cat}"`).join(', ')})
+
+# Set the output to be a PNG file
+png(file = "piechart.png")
+
+# Create the pie chart
+pie(x, labels = names(x), col = "white",
+    main = "Pie Chart", radius = -1,
+    col.main = "darkgreen")
+
+# Save the file
+dev.off()`;
+
+    return rCode;
+  }
+
+  /**
+   * Generate R code for histogram based on data
+   * @param {Array<Object>} data - Parsed CSV data
+   * @param {string} valueColumn - Name of the value column
+   * @returns {string} Generated R code
+   */
+  static generateHistogramCode(data, valueColumn) {
+    if (!data || data.length === 0 || !valueColumn) {
+      return this.getDefaultHistogramCode();
+    }
+
+    const values = data.map(row => row[valueColumn]).filter(val => val !== '');
+
+    const rCode = `# Initialize data
+values <- c(${values.join(', ')})
+
+# Create histogram
+hist(
+  values,
+  main = "Histogram",
+  xlab = "${valueColumn || 'Values'}",
+  ylab = "Frequency",
+  col = "lightblue",
+  border = "black",
+  breaks = 10
+)`;
+
+    return rCode;
+  }
+
+  /**
+   * Generate R code for density plot based on data
+   * @param {Array<Object>} data - Parsed CSV data
+   * @param {string} valueColumn - Name of the value column
+   * @returns {string} Generated R code
+   */
+  static generateDensityPlotCode(data, valueColumn) {
+    if (!data || data.length === 0 || !valueColumn) {
+      return this.getDefaultDensityPlotCode();
+    }
+
+    const values = data.map(row => row[valueColumn]).filter(val => val !== '');
+
+    const rCode = `# Initialize data
+values <- c(${values.join(', ')})
+
+# Create density plot
+plot(
+  density(values),
+  main = "Density Plot",
+  xlab = "${valueColumn || 'Values'}",
+  ylab = "Density",
+  col = "blue",
+  lwd = 2
+)
+
+# Add polygon for filled area
+polygon(density(values), col = "lightblue", border = "blue")`;
+
+    return rCode;
+  }
+
+  /**
+   * Generate R code for box plot based on data
+   * @param {Array<Object>} data - Parsed CSV data
+   * @param {string} valueColumn - Name of the value column
+   * @returns {string} Generated R code
+   */
+  static generateBoxPlotCode(data, valueColumn) {
+    if (!data || data.length === 0 || !valueColumn) {
+      return this.getDefaultBoxPlotCode();
+    }
+
+    const values = data.map(row => row[valueColumn]).filter(val => val !== '');
+
+    const rCode = `# Initialize data
+values <- c(${values.join(', ')})
+
+# Create box plot
+boxplot(
+  values,
+  main = "Box Plot",
+  ylab = "${valueColumn || 'Values'}",
+  col = "lightgreen",
+  border = "darkgreen",
+  horizontal = FALSE
+)`;
+
+    return rCode;
+  }
+
+  /**
+   * Generate R code for ANOVA based on data
+   * @param {Array<Object>} data - Parsed CSV data
+   * @param {string} categoryColumn - Name of the group column
+   * @param {string} valueColumn - Name of the value column
+   * @returns {string} Generated R code
+   */
+  static generateANOVACode(data, categoryColumn, valueColumn) {
+    if (!data || data.length === 0 || !categoryColumn || !valueColumn) {
+      return this.getDefaultANOVACode();
+    }
+
+    const categories = data.map(row => row[categoryColumn]).filter(val => val !== '');
+    const values = data.map(row => row[valueColumn]).filter(val => val !== '');
+
+    // Get unique category values
+    const uniqueCategories = [...new Set(categories)];
+
+    // Group values by category
+    const groupedData = {};
+    uniqueCategories.forEach(cat => {
+      groupedData[cat] = [];
+    });
+    
+    data.forEach(row => {
+      const cat = row[categoryColumn];
+      const val = row[valueColumn];
+      if (cat && val !== '') {
+        groupedData[cat].push(val);
+      }
+    });
+
+    // Generate group variable declarations
+    const groupDeclarations = uniqueCategories.map((cat, index) => {
+      const groupName = `group${index + 1}`;
+      const groupValues = groupedData[cat];
+      return `${groupName} <- c(${groupValues.join(', ')})`;
+    }).join('\n');
+
+    // Generate group labels
+    const groupLabels = uniqueCategories.map((cat, index) => `rep("${cat}", length(group${index + 1}))`).join(', ');
+
+    // Generate combined values
+    const groupValues = uniqueCategories.map((_, index) => `group${index + 1}`).join(', ');
+
+    const rCode = `# Initialize data by groups
+${groupDeclarations}
+
+# Combine all groups into data frame
+df <- data.frame(
+  value = c(${groupValues}),
+  group = factor(c(${groupLabels}))
+)
+
+# Fit ANOVA model
+anova_model <- aov(value ~ group, data = df)
+
+# Display summary
+summary(anova_model)
+
+# Post-hoc test (Tukey's HSD)
+TukeyHSD(anova_model)`;
+
+    return rCode;
+  }
+
+  /**
+   * Generate ANOVA code with custom arguments
+   * @param {Array<Object>} data - Parsed CSV data
+   * @param {string} categoryColumn - Name of the group column
+   * @param {string} valueColumn - Name of the value column
+   * @param {Object} customArgs - Custom argument values
+   * @returns {string} Generated R code
+   */
+  static generateANOVACodeWithCustomArgs(data, categoryColumn, valueColumn, customArgs) {
+    if (!data || data.length === 0 || !categoryColumn || !valueColumn) {
+      return this.getDefaultANOVACode();
+    }
+
+    const categories = data.map(row => row[categoryColumn]).filter(val => val !== '');
+    const values = data.map(row => row[valueColumn]).filter(val => val !== '');
+    const uniqueCategories = [...new Set(categories)];
+
+    // Group values by category
+    const groupedData = {};
+    uniqueCategories.forEach(cat => {
+      groupedData[cat] = [];
+    });
+    
+    data.forEach(row => {
+      const cat = row[categoryColumn];
+      const val = row[valueColumn];
+      if (cat && val !== '') {
+        groupedData[cat].push(val);
+      }
+    });
+
+    // Generate group variable declarations
+    const groupDeclarations = uniqueCategories.map((cat, index) => {
+      const groupName = `group${index + 1}`;
+      const groupValues = groupedData[cat];
+      return `${groupName} <- c(${groupValues.join(', ')})`;
+    }).join('\n');
+
+    // Generate group labels
+    const groupLabels = uniqueCategories.map((cat, index) => `rep("${cat}", length(group${index + 1}))`).join(', ');
+
+    // Generate combined values
+    const groupValues = uniqueCategories.map((_, index) => `group${index + 1}`).join(', ');
+
+    // Get formula from custom args or use default
+    const formula = customArgs['Formula'] || `value ~ group`;
+
+    const rCode = `# Initialize data by groups
+${groupDeclarations}
+
+# Combine all groups into data frame
+df <- data.frame(
+  value = c(${groupValues}),
+  group = factor(c(${groupLabels}))
+)
+
+# Fit ANOVA model using formula: ${formula}
+anova_model <- aov(${formula}, data = df)
+
+# Display summary
+summary(anova_model)
+
+# Post-hoc test (Tukey's HSD)
+TukeyHSD(anova_model)`;
+
+    return rCode;
+  }
+
+  /**
+   * Generate histogram code with custom arguments
+   * @param {Array<Object>} data - Parsed CSV data
+   * @param {string} valueColumn - Name of the value column
+   * @param {Object} customArgs - Custom argument values
+   * @returns {string} Generated R code
+   */
+  static generateHistogramCodeWithCustomArgs(data, valueColumn, customArgs) {
+    if (!data || data.length === 0 || !valueColumn) {
+      return this.getDefaultHistogramCode();
+    }
+
+    const values = data.map(row => row[valueColumn]).filter(val => val !== '');
+    const mainTitle = customArgs['Main Title'] || 'Histogram';
+    const xLabel = customArgs['X-axis Label'] || valueColumn || 'Values';
+    const yLabel = customArgs['Y-axis Label'] || 'Frequency';
+    const color = customArgs['Color'] || 'lightblue';
+    const bins = customArgs['Number of Bins'] || '10';
+
+    const rCode = `# Initialize data
+values <- c(${values.join(', ')})
+
+# Create histogram
+hist(
+  values,
+  main = "${mainTitle}",
+  xlab = "${xLabel}",
+  ylab = "${yLabel}",
+  col = "${color}",
+  border = "black",
+  breaks = ${bins}
+)`;
+
+    return rCode;
+  }
+
+  /**
+   * Generate density plot code with custom arguments
+   * @param {Array<Object>} data - Parsed CSV data
+   * @param {string} valueColumn - Name of the value column
+   * @param {Object} customArgs - Custom argument values
+   * @returns {string} Generated R code
+   */
+  static generateDensityPlotCodeWithCustomArgs(data, valueColumn, customArgs) {
+    if (!data || data.length === 0 || !valueColumn) {
+      return this.getDefaultDensityPlotCode();
+    }
+
+    const values = data.map(row => row[valueColumn]).filter(val => val !== '');
+    const mainTitle = customArgs['Main Title'] || 'Density Plot';
+    const xLabel = customArgs['X-axis Label'] || valueColumn || 'Values';
+    const yLabel = customArgs['Y-axis Label'] || 'Density';
+    const lineColor = customArgs['Line Color'] || 'blue';
+    const lineWidth = customArgs['Line Width'] || '2';
+
+    const rCode = `# Initialize data
+values <- c(${values.join(', ')})
+
+# Create density plot
+plot(
+  density(values),
+  main = "${mainTitle}",
+  xlab = "${xLabel}",
+  ylab = "${yLabel}",
+  col = "${lineColor}",
+  lwd = ${lineWidth}
+)
+
+# Add polygon for filled area
+polygon(density(values), col = "lightblue", border = "${lineColor}")`;
+
+    return rCode;
+  }
+
+  /**
+   * Generate box plot code with custom arguments
+   * @param {Array<Object>} data - Parsed CSV data
+   * @param {string} valueColumn - Name of the value column
+   * @param {Object} customArgs - Custom argument values
+   * @returns {string} Generated R code
+   */
+  static generateBoxPlotCodeWithCustomArgs(data, valueColumn, customArgs) {
+    if (!data || data.length === 0 || !valueColumn) {
+      return this.getDefaultBoxPlotCode();
+    }
+
+    const values = data.map(row => row[valueColumn]).filter(val => val !== '');
+    const mainTitle = customArgs['Main Title'] || 'Box Plot';
+    const yLabel = customArgs['Y-axis Label'] || valueColumn || 'Values';
+    const color = customArgs['Color'] || 'lightgreen';
+    const borderColor = customArgs['Border Color'] || 'darkgreen';
+    const horizontal = customArgs['Horizontal'] || 'FALSE';
+
+    const rCode = `# Initialize data
+values <- c(${values.join(', ')})
+
+# Create box plot
+boxplot(
+  values,
+  main = "${mainTitle}",
+  ylab = "${yLabel}",
+  col = "${color}",
+  border = "${borderColor}",
+  horizontal = ${horizontal}
+)`;
+
+    return rCode;
+  }
+
+  /**
+   * Generate bar chart code with custom arguments
+   * @param {Array<Object>} data - Parsed CSV data
+   * @param {string} categoryColumn - Name of the category column
+   * @param {string} valueColumn - Name of the value column
+   * @param {Object} customArgs - Custom argument values
+   * @returns {string} Generated R code
+   */
+  static generateBarChartCodeWithCustomArgs(data, categoryColumn, valueColumn, customArgs) {
+    if (!data || data.length === 0) {
+      return this.getDefaultBarChartCode();
+    }
+
+    const categories = data.map(row => row[categoryColumn]).filter(val => val !== '');
+    const values = data.map(row => row[valueColumn]).filter(val => val !== '');
+    const mainTitle = customArgs['Main Title'] || 'Bar Chart';
+    const xLabel = customArgs['X-axis Label'] || 'Categories';
+    const yLabel = customArgs['Y-axis Label'] || 'Values';
+
+    const rCode = `# Initialize data
+categories <- c(${categories.map(cat => `"${cat}"`).join(', ')})
+values <- c(${values.join(', ')})
+
+# Create data frame
+df <- data.frame(
+  category = categories,
+  value = values
+)
+
+# Create bar chart
+barplot(
+  height = df$value,
+  names.arg = df$category,
+  main = "${mainTitle}",
+  xlab = "${xLabel}",
+  ylab = "${yLabel}",
+  col = rainbow(length(categories)),
+  border = "black"
+)`;
+
+    return rCode;
+  }
+
+  /**
+   * Generate line chart code with custom arguments
+   * @param {Array<Object>} data - Parsed CSV data
+   * @param {string} timeColumn - Name of the time/index column
+   * @param {string} valueColumn - Name of the value column
+   * @param {Object} customArgs - Custom argument values
+   * @returns {string} Generated R code
+   */
+  static generateLineChartCodeWithCustomArgs(data, timeColumn, valueColumn, customArgs) {
+    if (!data || data.length === 0) {
+      return this.getDefaultLineChartCode();
+    }
+
+    const timePoints = data.map(row => row[timeColumn]).filter(val => val !== '');
+    const values = data.map(row => row[valueColumn]).filter(val => val !== '');
+    const mainTitle = customArgs['Main Title'] || 'Line Chart';
+    const xLabel = customArgs['X-axis Label'] || 'Time Points';
+    const yLabel = customArgs['Y-axis Label'] || 'Values';
+    const lineColor = customArgs['Line Color'] || 'blue';
+
+    const rCode = `# Initialize data
+time_points <- c(${timePoints.join(', ')})
+values <- c(${values.join(', ')})
+
+# Create data frame
+df <- data.frame(
+  time = time_points,
+  value = values
+)
+
+# Create line chart
+plot(
+  x = df$time,
+  y = df$value,
+  type = "l",
+  main = "${mainTitle}",
+  xlab = "${xLabel}",
+  ylab = "${yLabel}",
+  col = "${lineColor}",
+  lwd = 2,
+  pch = 16
+)
+
+# Add points
+points(df$time, df$value, col = "red", pch = 16)`;
+
+    return rCode;
+  }
+
+  /**
+   * Generate dot plot code with custom arguments
+   * @param {Array<Object>} data - Parsed CSV data
+   * @param {string} xColumn - Name of the x-axis column
+   * @param {string} yColumn - Name of the y-axis column
+   * @param {Object} customArgs - Custom argument values
+   * @returns {string} Generated R code
+   */
+  static generateDotPlotCodeWithCustomArgs(data, xColumn, yColumn, customArgs) {
+    if (!data || data.length === 0) {
+      return this.getDefaultDotPlotCode();
+    }
+
+    const formatValues = (values) =>
+      values
+        .map((value) => {
+          if (value === null || value === undefined || value === '') {
+            return 'NA';
+          }
+          const numericValue = Number(value);
+          if (!Number.isNaN(numericValue) && Number.isFinite(numericValue)) {
+            return `${numericValue}`;
+          }
+          const escaped = String(value).replace(/"/g, '\\"');
+          return `"${escaped}"`;
+        })
+        .join(', ');
+
+    const xValues = data.map(row => row[xColumn]).filter(val => val !== undefined && val !== null && val !== '');
+    const yValues = data.map(row => row[yColumn]).filter(val => val !== undefined && val !== null && val !== '');
+
+    if (!xValues.length || !yValues.length) {
+      return this.getDefaultDotPlotCode();
+    }
+
+    const formattedX = formatValues(xValues);
+    const formattedY = formatValues(yValues);
+    const mainTitle = customArgs['Main Title'] || 'Dot Plot';
+    const xLabel = customArgs['X-axis Label'] || xColumn || 'X Values';
+    const yLabel = customArgs['Y-axis Label'] || yColumn || 'Y Values';
+    const pointColor = customArgs['Point Color'] || 'darkgreen';
+
+    const rCode = `# Initialize data
+x_values <- c(${formattedX})
+y_values <- c(${formattedY})
+
+# Create data frame
+df <- data.frame(
+  x = x_values,
+  y = y_values
+)
+
+# Create dot plot / scatter plot
+plot(
+  x = df$x,
+  y = df$y,
+  main = "${mainTitle}",
+  xlab = "${xLabel}",
+  ylab = "${yLabel}",
+  pch = 19,
+  col = "${pointColor}"
+)
+
+# Add grid for readability
+grid(col = "lightgray")`;
+
+    return rCode;
+  }
+
+  /**
+   * Generate pie chart code with custom arguments
+   * @param {Array<Object>} data - Parsed CSV data
+   * @param {string} categoryColumn - Name of the category column
+   * @param {string} valueColumn - Name of the value column
+   * @param {Object} customArgs - Custom argument values
+   * @returns {string} Generated R code
+   */
+  static generatePieChartCodeWithCustomArgs(data, categoryColumn, valueColumn, customArgs) {
+    if (!data || data.length === 0) {
+      return this.getDefaultPieChartCode();
+    }
+
+    const categories = data.map(row => row[categoryColumn]).filter(val => val !== '');
+    const values = data.map(row => row[valueColumn]).filter(val => val !== '');
+    const mainTitle = customArgs['Main Title'] || 'Pie Chart';
+    const outputFile = customArgs['Output File'] || 'piechart.png';
+    const colors = customArgs['Colors'] || 'white';
+    const titleColor = customArgs['Title Color'] || 'darkgreen';
+
+    const rCode = `# Define the data vector with values
+x <- c(${values.join(', ')})
+
+# Define labels for each value in x
+names(x) <- c(${categories.map(cat => `"${cat}"`).join(', ')})
+
+# Set the output to be a PNG file
+png(file = "${outputFile}")
+
+# Create the pie chart
+pie(x, labels = names(x), col = "${colors}",
+    main = "${mainTitle}", radius = -1,
+    col.main = "${titleColor}")
+
+# Save the file
+dev.off()`;
+
+    return rCode;
+  }
+
+  /**
+   * Generate linear regression code with custom arguments
+   * @param {Array<Object>} data - Parsed CSV data
+   * @param {string} responseColumn - Name of the response variable column
+   * @param {Array<string>} predictorColumns - Names of predictor variable columns
+   * @param {Object} customArgs - Custom argument values
+   * @returns {string} Generated R code
+   */
+  static generateLinearRegressionCodeWithCustomArgs(data, responseColumn, predictorColumns, customArgs) {
+    // For linear regression, the formula and data initialization are typically not customized
+    // So we'll just return the regular code for now
+    return this.generateLinearRegressionCode(data, responseColumn, predictorColumns);
+  }
+
+  /**
+   * Get default code for a specific tool when no data is available
+   * @param {string} toolId - Tool identifier
+   * @returns {string} Default R code
+   */
+  static getDefaultCode(toolId) {
+    switch (toolId) {
+      case 'linear-regression':
+        return this.getDefaultLinearRegressionCode();
+      case 'bar-chart':
+        return this.getDefaultBarChartCode();
+      case 'line-chart':
+        return this.getDefaultLineChartCode();
+      case 'dot-plot':
+        return this.getDefaultDotPlotCode();
+      case 'pie-chart':
+        return this.getDefaultPieChartCode();
+      case 'histogram':
+        return this.getDefaultHistogramCode();
+      case 'density-plot':
+        return this.getDefaultDensityPlotCode();
+      case 'box-plot':
+        return this.getDefaultBoxPlotCode();
+      case 'iqr':
+        return this.getDefaultIQRCode();
+      case 'standard-deviation':
+        return this.getDefaultStandardDeviationCode();
+      case 'median':
+        return this.getDefaultMedianCode();
+      case 'read-csv':
+        return this.getDefaultReadCSVCode();
+      case 'combinations':
+        return this.getDefaultCombinationsCode();
+      case 'permutations':
+        return this.getDefaultPermutationsCode();
+      case 'anova':
+        return this.getDefaultANOVACode();
+      case 'z-value':
+        return this.getDefaultZValueCode();
+      case 't-test':
+        return this.getDefaultTTestCode();
+      default:
+        return this.getDefaultLinearRegressionCode();
+    }
+  }
+
+  /**
+   * Get default linear regression code when no data is available
+   * @returns {string} Default R code
+   */
+  static getDefaultLinearRegressionCode() {
+    return `# Initialize data
+df <- data.frame(
+  y = c(5, 7, 8, 6, 9),
+  x1 = c(1, 2, 3, 4, 5),
+  x2 = c(2, 3, 4, 5, 6)
+)
+
+# Fit linear model
+model <- lm(
+  formula = y ~ x1 + x2,
+  data = df,
+  subset = NULL,
+  weights = NULL,
+  na.action = na.omit,
+  method = "qr",
+  model = TRUE,
+  x = FALSE,
+  y = TRUE,
+  qr = TRUE,
+  singular.ok = TRUE,
+  contrasts = NULL,
+  offset = NULL
+)
+
+# Display model summary
+summary(model)
+
+# Plot the model
+plot(model)`;
+  }
+
+  /**
+   * Get default bar chart code when no data is available
+   * @returns {string} Default R code
+   */
+  static getDefaultBarChartCode() {
+    return `# Initialize data
+categories <- c("A", "B", "C", "D", "E")
+values <- c(23, 45, 56, 78, 32)
+
+# Create data frame
+df <- data.frame(
+  category = categories,
+  value = values
+)
+
+# Create bar chart
+barplot(
+  height = df$value,
+  names.arg = df$category,
+  main = "Bar Chart Example",
+  xlab = "Categories",
+  ylab = "Values",
+  col = rainbow(length(categories)),
+  border = "black"
+)`;
+  }
+
+  /**
+   * Get default line chart code when no data is available
+   * @returns {string} Default R code
+   */
+  static getDefaultLineChartCode() {
+    return `# Initialize data
+time_points <- c(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)
+values <- c(12, 15, 18, 22, 25, 23, 28, 32, 30, 35)
+
+# Create data frame
+df <- data.frame(
+  time = time_points,
+  value = values
+)
+
+# Create line chart
+plot(
+  x = df$time,
+  y = df$value,
+  type = "l",
+  main = "Line Chart Example",
+  xlab = "Time Points",
+  ylab = "Values",
+  col = "blue",
+  lwd = 2,
+  pch = 16
+)
+
+# Add points
+points(df$time, df$value, col = "red", pch = 16)`;
+  }
+
+  /**
+   * Get default dot plot code when no data is available
+   * @returns {string} Default R code
+   */
+  static getDefaultDotPlotCode() {
+    return `# Initialize data
+x_values <- c(1, 2, 3, 4, 5, 6)
+y_values <- c(2.5, 3.1, 4.8, 3.6, 5.2, 4.9)
+
+# Create data frame
+df <- data.frame(
+  x = x_values,
+  y = y_values
+)
+
+# Create dot plot / scatter plot
+plot(
+  x = df$x,
+  y = df$y,
+  main = "Dot Plot Example",
+  xlab = "X Values",
+  ylab = "Y Values",
+  pch = 19,
+  col = "darkgreen"
+)
+
+# Add grid for readability
+grid(col = "lightgray")`;
+  }
+
+  /**
+   * Get default pie chart code when no data is available
+   * @returns {string} Default R code
+   */
+  static getDefaultPieChartCode() {
+    return `# Define the data vector with the number of articles
+x <- c(210, 450, 250, 100, 50, 90)
+
+# Define labels for each value in x
+names(x) <- c("Algo", "DS", "Java", "C", "C++", "Python")
+
+# Set the output to be a PNG file
+png(file = "piechart.png")
+
+# Create the pie chart
+pie(x, labels = names(x), col = "white",
+    main = "Articles on GeeksforGeeks", radius = -1,
+    col.main = "darkgreen")
+
+# Save the file
+dev.off()`;
+  }
+
+  /**
+   * Get default histogram code when no data is available
+   * @returns {string} Default R code
+   */
+  static getDefaultHistogramCode() {
+    return `# Initialize data
+values <- c(12, 15, 18, 22, 25, 23, 28, 32, 30, 35, 18, 22, 25, 28, 30)
+
+# Create histogram
+hist(
+  values,
+  main = "Histogram Example",
+  xlab = "Values",
+  ylab = "Frequency",
+  col = "lightblue",
+  border = "black",
+  breaks = 10
+)`;
+  }
+
+  /**
+   * Get default density plot code when no data is available
+   * @returns {string} Default R code
+   */
+  static getDefaultDensityPlotCode() {
+    return `# Initialize data
+values <- c(12, 15, 18, 22, 25, 23, 28, 32, 30, 35, 18, 22, 25, 28, 30)
+
+# Create density plot
+plot(
+  density(values),
+  main = "Density Plot Example",
+  xlab = "Values",
+  ylab = "Density",
+  col = "blue",
+  lwd = 2
+)
+
+# Add polygon for filled area
+polygon(density(values), col = "lightblue", border = "blue")`;
+  }
+
+  /**
+   * Get default box plot code when no data is available
+   * @returns {string} Default R code
+   */
+  static getDefaultBoxPlotCode() {
+    return `# Initialize data
+values <- c(12, 15, 18, 22, 25, 23, 28, 32, 30, 35, 18, 22, 25, 28, 30)
+
+# Create box plot
+boxplot(
+  values,
+  main = "Box Plot Example",
+  ylab = "Values",
+  col = "lightgreen",
+  border = "darkgreen",
+  horizontal = FALSE
+)`;
+  }
+
+  /**
+   * Generate arguments configuration based on tool type and data
+   * @param {string} toolId - Tool identifier
+   * @param {Array<Object>} data - Parsed CSV data
+   * @param {Object} selections - Tool-specific selections
+   * @returns {Array<Object>} Arguments configuration
+   */
+  static generateArguments(toolId, data, selections = {}) {
+    switch (toolId) {
+      case 'linear-regression':
+        return this.generateLinearRegressionArguments(data, selections.responseColumn, selections.predictorColumns);
+      case 'bar-chart':
+        return this.generateBarChartArguments(data, selections.categoryColumn, selections.valueColumn);
+      case 'line-chart':
+        return this.generateLineChartArguments(data, selections.timeColumn, selections.valueColumn);
+      case 'dot-plot':
+        return this.generateDotPlotArguments(data, selections.xColumn, selections.yColumn);
+      case 'pie-chart':
+        return this.generatePieChartArguments(data, selections.categoryColumn, selections.valueColumn);
+      case 'histogram':
+        return this.generateHistogramArguments(data, selections.valueColumn);
+      case 'density-plot':
+        return this.generateDensityPlotArguments(data, selections.valueColumn);
+      case 'box-plot':
+        return this.generateBoxPlotArguments(data, selections.valueColumn);
+      case 'anova':
+        return this.generateANOVAArguments(data, selections.categoryColumn, selections.valueColumn);
+      default:
+        return this.getDefaultArguments(toolId);
+    }
+  }
+
+  /**
+   * Generate arguments configuration for linear regression
+   * @param {Array<Object>} data - Parsed CSV data
+   * @param {string} responseColumn - Name of the response variable column
+   * @param {Array<string>} predictorColumns - Names of predictor variable columns
+   * @returns {Array<Object>} Arguments configuration
+   */
+  static generateLinearRegressionArguments(data, responseColumn, predictorColumns) {
+    if (!data || data.length === 0) {
+      return this.getDefaultArguments('linear-regression');
+    }
+
+    const args = [];
+    
+    // Add formula argument
+    const formula = `${responseColumn} ~ ${predictorColumns.join(' + ')}`;
+    args.push({
+      name: "Formula",
+      value: formula,
+      readOnly: true
+    });
+
+    // Add data initialization argument
+    const dataConfig = [];
+    dataConfig.push({ label: `${responseColumn}:`, value: data.map(row => row[responseColumn]).filter(val => val !== '').join(', ') });
+    
+    predictorColumns.forEach(col => {
+      dataConfig.push({ 
+        label: `${col}:`, 
+        value: data.map(row => row[col]).filter(val => val !== '').join(', ') 
+      });
+    });
+
+    args.push({
+      name: "df (Initialize data)",
+      type: "data",
+      data: dataConfig
+    });
+
+    return args;
+  }
+
+  /**
+   * Generate arguments configuration for bar chart
+   * @param {Array<Object>} data - Parsed CSV data
+   * @param {string} categoryColumn - Name of the category column
+   * @param {string} valueColumn - Name of the value column
+   * @returns {Array<Object>} Arguments configuration
+   */
+  static generateBarChartArguments(data, categoryColumn, valueColumn) {
+    if (!data || data.length === 0) {
+      return this.getDefaultArguments('bar-chart');
+    }
+
+    const categories = data.map(row => row[categoryColumn]).filter(val => val !== '');
+    const values = data.map(row => row[valueColumn]).filter(val => val !== '');
+
+    return [
+      { name: "Categories", value: categories.join(', '), readOnly: true },
+      { name: "Values", value: values.join(', '), readOnly: true },
+      { name: "Main Title", value: "Bar Chart", readOnly: false },
+      { name: "X-axis Label", value: "Categories", readOnly: false },
+      { name: "Y-axis Label", value: "Values", readOnly: false }
+    ];
+  }
+
+  /**
+   * Generate arguments configuration for line chart
+   * @param {Array<Object>} data - Parsed CSV data
+   * @param {string} timeColumn - Name of the time/index column
+   * @param {string} valueColumn - Name of the value column
+   * @returns {Array<Object>} Arguments configuration
+   */
+  static generateLineChartArguments(data, timeColumn, valueColumn) {
+    if (!data || data.length === 0) {
+      return this.getDefaultArguments('line-chart');
+    }
+
+    const timePoints = data.map(row => row[timeColumn]).filter(val => val !== '');
+    const values = data.map(row => row[valueColumn]).filter(val => val !== '');
+
+    return [
+      { name: "Time Points", value: timePoints.join(', '), readOnly: true },
+      { name: "Values", value: values.join(', '), readOnly: true },
+      { name: "Main Title", value: "Line Chart", readOnly: false },
+      { name: "X-axis Label", value: "Time Points", readOnly: false },
+      { name: "Y-axis Label", value: "Values", readOnly: false },
+      { name: "Line Color", value: "blue", readOnly: false }
+    ];
+  }
+
+  /**
+   * Generate arguments configuration for dot plot
+   * @param {Array<Object>} data - Parsed CSV data
+   * @param {string} xColumn - Name of the x-axis column
+   * @param {string} yColumn - Name of the y-axis column
+   * @returns {Array<Object>} Arguments configuration
+   */
+  static generateDotPlotArguments(data, xColumn, yColumn) {
+    if (!data || data.length === 0) {
+      return this.getDefaultArguments('dot-plot');
+    }
+
+    // Handoff raw string lists so the UI mirrors current data selections
+    const xValues = data.map(row => row[xColumn]).filter(val => val !== undefined && val !== null && val !== '');
+    const yValues = data.map(row => row[yColumn]).filter(val => val !== undefined && val !== null && val !== '');
+
+    return [
+      { name: "X Values", value: xValues.join(', '), readOnly: true },
+      { name: "Y Values", value: yValues.join(', '), readOnly: true },
+      { name: "Main Title", value: "Dot Plot", readOnly: false },
+      { name: "X-axis Label", value: xColumn || "X Values", readOnly: false },
+      { name: "Y-axis Label", value: yColumn || "Y Values", readOnly: false },
+      { name: "Point Color", value: "darkgreen", readOnly: false },
+      { name: "Point Size", value: "1.2", readOnly: false }
+    ];
+  }
+
+  /**
+   * Generate arguments configuration for pie chart
+   * @param {Array<Object>} data - Parsed CSV data
+   * @param {string} categoryColumn - Name of the category column
+   * @param {string} valueColumn - Name of the value column
+   * @returns {Array<Object>} Arguments configuration
+   */
+  static generatePieChartArguments(data, categoryColumn, valueColumn) {
+    if (!data || data.length === 0) {
+      return this.getDefaultArguments('pie-chart');
+    }
+
+    const categories = data.map(row => row[categoryColumn]).filter(val => val !== '');
+    const values = data.map(row => row[valueColumn]).filter(val => val !== '');
+
+    return [
+      { name: "Categories", value: categories.join(', '), readOnly: true },
+      { name: "Values", value: values.join(', '), readOnly: true },
+      { name: "Main Title", value: "Pie Chart", readOnly: false },
+      { name: "Output File", value: "piechart.png", readOnly: false },
+      { name: "Colors", value: "white", readOnly: false },
+      { name: "Title Color", value: "darkgreen", readOnly: false }
+    ];
+  }
+
+  /**
+   * Generate arguments configuration for histogram
+   * @param {Array<Object>} data - Parsed CSV data
+   * @param {string} valueColumn - Name of the value column
+   * @returns {Array<Object>} Arguments configuration
+   */
+  static generateHistogramArguments(data, valueColumn) {
+    if (!data || data.length === 0 || !valueColumn) {
+      return this.getDefaultArguments('histogram');
+    }
+
+    const values = data.map(row => row[valueColumn]).filter(val => val !== '');
+
+    return [
+      { name: "Values", value: values.join(', '), readOnly: true },
+      { name: "Main Title", value: "Histogram", readOnly: false },
+      { name: "X-axis Label", value: valueColumn || "Values", readOnly: false },
+      { name: "Y-axis Label", value: "Frequency", readOnly: false },
+      { name: "Color", value: "lightblue", readOnly: false },
+      { name: "Number of Bins", value: "10", readOnly: false }
+    ];
+  }
+
+  /**
+   * Generate arguments configuration for density plot
+   * @param {Array<Object>} data - Parsed CSV data
+   * @param {string} valueColumn - Name of the value column
+   * @returns {Array<Object>} Arguments configuration
+   */
+  static generateDensityPlotArguments(data, valueColumn) {
+    if (!data || data.length === 0 || !valueColumn) {
+      return this.getDefaultArguments('density-plot');
+    }
+
+    const values = data.map(row => row[valueColumn]).filter(val => val !== '');
+
+    return [
+      { name: "Values", value: values.join(', '), readOnly: true },
+      { name: "Main Title", value: "Density Plot", readOnly: false },
+      { name: "X-axis Label", value: valueColumn || "Values", readOnly: false },
+      { name: "Y-axis Label", value: "Density", readOnly: false },
+      { name: "Line Color", value: "blue", readOnly: false },
+      { name: "Line Width", value: "2", readOnly: false }
+    ];
+  }
+
+  /**
+   * Generate arguments configuration for box plot
+   * @param {Array<Object>} data - Parsed CSV data
+   * @param {string} valueColumn - Name of the value column
+   * @returns {Array<Object>} Arguments configuration
+   */
+  static generateBoxPlotArguments(data, valueColumn) {
+    if (!data || data.length === 0 || !valueColumn) {
+      return this.getDefaultArguments('box-plot');
+    }
+
+    const values = data.map(row => row[valueColumn]).filter(val => val !== '');
+
+    return [
+      { name: "Values", value: values.join(', '), readOnly: true },
+      { name: "Main Title", value: "Box Plot", readOnly: false },
+      { name: "Y-axis Label", value: valueColumn || "Values", readOnly: false },
+      { name: "Color", value: "lightgreen", readOnly: false },
+      { name: "Border Color", value: "darkgreen", readOnly: false },
+      { name: "Horizontal", value: "FALSE", readOnly: false }
+    ];
+  }
+
+  /**
+   * Generate arguments configuration for ANOVA
+   * @param {Array<Object>} data - Parsed CSV data
+   * @param {string} categoryColumn - Name of the group column
+   * @param {string} valueColumn - Name of the value column
+   * @returns {Array<Object>} Arguments configuration
+   */
+  static generateANOVAArguments(data, categoryColumn, valueColumn) {
+    if (!data || data.length === 0 || !categoryColumn || !valueColumn) {
+      return this.getDefaultArguments('anova');
+    }
+
+    return [
+      { name: "Formula", value: "value ~ group", readOnly: false }
+    ];
+  }
+
+  /**
+   * Get default arguments when no data is available
+   * @param {string} toolId - Tool identifier
+   * @returns {Array<Object>} Default arguments
+   */
+  static getDefaultArguments(toolId) {
+    switch (toolId) {
+      case 'linear-regression':
+        return [
+          { name: "Formula", value: "y ~ x1 + x2", readOnly: true },
+          { 
+            name: "df (Initialize data)", 
+            type: "data",
+            data: [
+              { label: "y:", value: "5, 7, 8, 6, 9" },
+              { label: "x1:", value: "1, 2, 3, 4, 5" },
+              { label: "x2:", value: "2, 3, 4, 5, 6" }
+            ]
+          }
+        ];
+      case 'bar-chart':
+        return [
+          { name: "Categories", value: "A, B, C, D, E", readOnly: false },
+          { name: "Values", value: "23, 45, 56, 78, 32", readOnly: false },
+          { name: "Main Title", value: "Bar Chart Example", readOnly: false },
+          { name: "X-axis Label", value: "Categories", readOnly: false },
+          { name: "Y-axis Label", value: "Values", readOnly: false }
+        ];
+      case 'line-chart':
+        return [
+          { name: "Time Points", value: "1, 2, 3, 4, 5, 6, 7, 8, 9, 10", readOnly: false },
+          { name: "Values", value: "12, 15, 18, 22, 25, 23, 28, 32, 30, 35", readOnly: false },
+          { name: "Main Title", value: "Line Chart Example", readOnly: false },
+          { name: "X-axis Label", value: "Time Points", readOnly: false },
+          { name: "Y-axis Label", value: "Values", readOnly: false },
+          { name: "Line Color", value: "blue", readOnly: false }
+        ];
+      case 'dot-plot':
+        // Dot-plot defaults mirror the standalone sample shown in the tool details
+        return [
+          { name: "X Values", value: "1, 2, 3, 4, 5, 6", readOnly: false },
+          { name: "Y Values", value: "2.5, 3.1, 4.8, 3.6, 5.2, 4.9", readOnly: false },
+          { name: "Main Title", value: "Dot Plot Example", readOnly: false },
+          { name: "X-axis Label", value: "X Values", readOnly: false },
+          { name: "Y-axis Label", value: "Y Values", readOnly: false },
+          { name: "Point Color", value: "darkgreen", readOnly: false },
+          { name: "Point Size", value: "1.2", readOnly: false }
+        ];
+      case 'pie-chart':
+        return [
+          { name: "Categories", value: "Algo, DS, Java, C, C++, Python", readOnly: false },
+          { name: "Values", value: "210, 450, 250, 100, 50, 90", readOnly: false },
+          { name: "Main Title", value: "Articles on GeeksforGeeks", readOnly: false },
+          { name: "Output File", value: "piechart.png", readOnly: false },
+          { name: "Colors", value: "white", readOnly: false },
+          { name: "Title Color", value: "darkgreen", readOnly: false }
+        ];
+      case 'histogram':
+        return [
+          { name: "Values", value: "12, 15, 18, 22, 25, 23, 28, 32, 30, 35", readOnly: false },
+          { name: "Main Title", value: "Histogram Example", readOnly: false },
+          { name: "X-axis Label", value: "Values", readOnly: false },
+          { name: "Y-axis Label", value: "Frequency", readOnly: false },
+          { name: "Color", value: "lightblue", readOnly: false },
+          { name: "Number of Bins", value: "10", readOnly: false }
+        ];
+      case 'density-plot':
+        return [
+          { name: "Values", value: "12, 15, 18, 22, 25, 23, 28, 32, 30, 35", readOnly: false },
+          { name: "Main Title", value: "Density Plot Example", readOnly: false },
+          { name: "X-axis Label", value: "Values", readOnly: false },
+          { name: "Y-axis Label", value: "Density", readOnly: false },
+          { name: "Line Color", value: "blue", readOnly: false },
+          { name: "Line Width", value: "2", readOnly: false }
+        ];
+      case 'box-plot':
+        return [
+          { name: "Values", value: "12, 15, 18, 22, 25, 23, 28, 32, 30, 35", readOnly: false },
+          { name: "Main Title", value: "Box Plot Example", readOnly: false },
+          { name: "Y-axis Label", value: "Values", readOnly: false },
+          { name: "Color", value: "lightgreen", readOnly: false },
+          { name: "Border Color", value: "darkgreen", readOnly: false },
+          { name: "Horizontal", value: "FALSE", readOnly: false }
+        ];
+      case 'anova':
+        return [
+          { name: "Formula", value: "value ~ group", readOnly: false }
+        ];
+      default:
+        return [
+          { name: "Formula", value: "y ~ x1 + x2", readOnly: true },
+          { 
+            name: "df (Initialize data)", 
+            type: "data",
+            data: [
+              { label: "y:", value: "5, 7, 8, 6, 9" },
+              { label: "x1:", value: "1, 2, 3, 4, 5" },
+              { label: "x2:", value: "2, 3, 4, 5, 6" }
+            ]
+          }
+        ];
+    }
+  }
+
+  /**
+   * Update data in the dataset
+   * @param {Array<Object>} currentData - Current dataset
+   * @param {number} rowIndex - Index of the row to update
+   * @param {string} columnName - Name of the column to update
+   * @param {string} newValue - New value
+   * @returns {Array<Object>} Updated dataset
+   */
+  static updateDataValue(currentData, rowIndex, columnName, newValue) {
+    if (!currentData || rowIndex < 0 || rowIndex >= currentData.length) {
+      return currentData;
+    }
+
+    const updatedData = [...currentData];
+    updatedData[rowIndex] = {
+      ...updatedData[rowIndex],
+      [columnName]: newValue
+    };
+
+    return updatedData;
+  }
+
+  /**
+   * Get column names from data
+   * @param {Array<Object>} data - Dataset
+   * @returns {Array<string>} Column names
+   */
+  static getColumnNames(data) {
+    if (!data || data.length === 0) return [];
+    return Object.keys(data[0]);
+  }
+
+  /**
+   * Validate data based on tool type
+   * @param {Array<Object>} data - Dataset to validate
+   * @param {string} toolId - Tool identifier
+   * @returns {Object} Validation result with isValid and errors
+   */
+  static validateData(data, toolId) {
+    if (!data || data.length === 0) {
+      return { isValid: false, errors: ['No data available'] };
+    }
+
+    const errors = [];
+    const columns = this.getColumnNames(data);
+
+    switch (toolId) {
+      case 'linear-regression':
+        if (columns.length < 2) {
+          errors.push('At least 2 columns are required for linear regression');
+        }
+        break;
+      case 'bar-chart':
+      case 'line-chart':
+      case 'pie-chart':
+        if (columns.length < 2) {
+          errors.push('At least 2 columns are required for this chart type');
+        }
+        break;
+      case 'dot-plot':
+        if (columns.length < 2) {
+          errors.push('At least 2 columns are required for dot plot');
+        }
+        break;
+      case 'histogram':
+      case 'density-plot':
+      case 'box-plot':
+        if (columns.length < 1) {
+          errors.push('At least 1 column is required for this plot type');
+        }
+        break;
+      default:
+        if (columns.length < 2) {
+          errors.push('At least 2 columns are required');
+        }
+    }
+
+    // Check for numeric data in relevant columns
+    columns.forEach(col => {
+      const values = data.map(row => row[col]).filter(val => val !== '');
+      const numericValues = values.filter(val => !isNaN(parseFloat(val)));
+      
+      if (numericValues.length < values.length * 0.8) {
+        errors.push(`Column "${col}" contains mostly non-numeric values`);
+      }
+    });
+
+    return {
+      isValid: errors.length === 0,
+      errors
+    };
+  }
+
+  /**
+   * Validate data for linear regression (legacy method)
+   * @param {Array<Object>} data - Dataset to validate
+   * @returns {Object} Validation result with isValid and errors
+   */
+  static validateDataForLinearRegression(data) {
+    return this.validateData(data, 'linear-regression');
+  }
+
+  /**
+   * Get default IQR code
+   * @returns {string} Default R code
+   */
+  static getDefaultIQRCode() {
+    return `# Initialize data
+values <- c(12, 15, 18, 22, 25, 23, 28, 32, 30, 35, 18, 22, 25, 28, 30)
+
+# Calculate IQR
+iqr_value <- IQR(values, na.rm = TRUE)
+
+# Print result
+print(paste("Interquartile Range:", iqr_value))`;
+  }
+
+  /**
+   * Get default standard deviation code
+   * @returns {string} Default R code
+   */
+  static getDefaultStandardDeviationCode() {
+    return `# Initialize data
+values <- c(12, 15, 18, 22, 25, 23, 28, 32, 30, 35, 18, 22, 25, 28, 30)
+
+# Calculate standard deviation
+sd_value <- sd(values, na.rm = TRUE)
+
+# Print result
+print(paste("Standard Deviation:", sd_value))`;
+  }
+
+  /**
+   * Get default median code
+   * @returns {string} Default R code
+   */
+  static getDefaultMedianCode() {
+    return `# Initialize data
+values <- c(12, 15, 18, 22, 25, 23, 28, 32, 30, 35, 18, 22, 25, 28, 30)
+
+# Calculate median
+median_value <- median(values, na.rm = TRUE)
+
+# Print result
+print(paste("Median:", median_value))`;
+  }
+
+  /**
+   * Get default read CSV code
+   * @returns {string} Default R code
+   */
+  static getDefaultReadCSVCode() {
+    return `# Read CSV file
+data <- read.csv(
+  file = "data.csv",
+  header = TRUE,
+  sep = ",",
+  quote = "\\"",
+  dec = ".",
+  fill = TRUE,
+  comment.char = "",
+  stringsAsFactors = FALSE
+)
+
+# Display first few rows
+head(data)
+
+# Display structure
+str(data)`;
+  }
+
+  /**
+   * Get default combinations code
+   * @returns {string} Default R code
+   */
+  static getDefaultCombinationsCode() {
+    return `# Calculate combinations: choose(n, k)
+# n: total number of items
+# k: number of items to choose
+
+n <- 10
+k <- 3
+
+# Calculate combinations
+combinations <- choose(n, k)
+
+# Print result
+print(paste("Number of ways to choose", k, "items from", n, "items:", combinations))`;
+  }
+
+  /**
+   * Get default permutations code
+   * @returns {string} Default R code
+   */
+  static getDefaultPermutationsCode() {
+    return `# Calculate permutations
+# n: total number of items
+# k: number of items to arrange
+
+n <- 10
+k <- 3
+
+# Calculate permutations using factorial
+permutations <- factorial(n) / factorial(n - k)
+
+# Print result
+print(paste("Number of permutations of", k, "items from", n, "items:", permutations))`;
+  }
+
+  /**
+   * Get default ANOVA code
+   * @returns {string} Default R code
+   */
+  static getDefaultANOVACode() {
+    return `# Initialize data by groups
+group1 <- c(23, 25, 27, 29, 31)
+group2 <- c(30, 32, 34, 36, 38)
+group3 <- c(18, 20, 22, 24, 26)
+
+# Combine all groups into data frame
+df <- data.frame(
+  value = c(group1, group2, group3),
+  group = factor(c(rep("Group1", length(group1)), rep("Group2", length(group2)), rep("Group3", length(group3))))
+)
+
+# Fit ANOVA model
+anova_model <- aov(value ~ group, data = df)
+
+# Display summary
+summary(anova_model)
+
+# Post-hoc test (Tukey's HSD)
+TukeyHSD(anova_model)`;
+  }
+
+  /**
+   * Get default Z-value code
+   * @returns {string} Default R code
+   */
+  static getDefaultZValueCode() {
+    return `# Calculate Z-value
+sample_mean <- 52
+population_mean <- 50
+standard_deviation <- 5
+sample_size <- 30
+
+# Calculate standard error
+standard_error <- standard_deviation / sqrt(sample_size)
+
+# Calculate Z-value
+z_value <- (sample_mean - population_mean) / standard_error
+
+# Print result
+print(paste("Z-value:", z_value))
+
+# Calculate p-value (two-tailed)
+p_value <- 2 * pnorm(-abs(z_value))
+print(paste("P-value (two-tailed):", p_value))`;
+  }
+
+  /**
+   * Get default t-test code
+   * @returns {string} Default R code
+   */
+  static getDefaultTTestCode() {
+    return `# Initialize data
+group1 <- c(23, 25, 27, 29, 31, 33, 35)
+group2 <- c(18, 20, 22, 24, 26, 28, 30)
+
+# Perform t-test
+t_test_result <- t.test(
+  group1, 
+  group2,
+  paired = FALSE,
+  var.equal = FALSE
+)
+
+# Print results
+print(t_test_result)
+
+# Extract specific values
+print(paste("T-statistic:", t_test_result$statistic))
+print(paste("P-value:", t_test_result$p.value))
+print(paste("Degrees of freedom:", t_test_result$parameter))`;
+  }
+}

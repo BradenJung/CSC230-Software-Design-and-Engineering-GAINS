@@ -2,6 +2,9 @@ import Head from "next/head";
 import Link from "next/link";
 import Header from "../components/header";
 import styles from "../styles/Home.module.css";
+import AccessibilityButton from "../components/AccessibilityButton";
+import CodexTool from "../components/CodexTool";
+import RCodeHighlight from "../components/RCodeHighlight";
 
 const workflowSteps = [
   {
@@ -156,8 +159,8 @@ const workflowSteps = [
             <div className={styles.mockupCodeSection}>
               <h4>Code Snippet</h4>
               <div className={styles.mockupCodeBlock}>
-                <pre>
-{`# Initialize data
+                <RCodeHighlight 
+                  code={`# Initialize data
 df <- data.frame(
   y = c(5, 7, 8, 6, 9),
   x1 = c(1, 2, 3, 4, 5),
@@ -166,7 +169,8 @@ df <- data.frame(
 
 # Fit linear model
 model <- lm(y ~ x1 + x2, data = df)`}
-                </pre>
+                  theme="dark"
+                />
               </div>
             </div>
           </div>
@@ -273,7 +277,7 @@ export default function About() {
                 <li>Scatter Plots for correlation analysis</li>
                 <li>Statistical tests and hypothesis testing tools</li>
               </ul>
-              <Link href="/linear-regression" className={styles.inlineLink}>
+              <Link href="/dashboard" className={styles.inlineLink}>
                 Explore the R Tools →
               </Link>
             </div>
@@ -317,7 +321,7 @@ export default function About() {
               </p>
             </div>
             <div className={styles.ctaActions}>
-              <Link href="/linear-regression" className={styles.primaryButton}>
+              <Link href="/dashboard" className={styles.primaryButton}>
                 Start Using GAINS
               </Link>
               <Link href="/home" className={styles.secondaryButton}>
@@ -326,6 +330,10 @@ export default function About() {
             </div>
           </section>
         </main>
+        {/*Adds Accessibility Button to page */}
+      <AccessibilityButton />
+      {/*Adds Chat Option to the current page */}
+      <CodexTool />
       </div>
     </>
   );

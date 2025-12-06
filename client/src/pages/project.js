@@ -1,0 +1,464 @@
+import { useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/router";
+import Header from "../components/header";
+import Footer from "../components/footer";
+import layoutStyles from "../styles/Home.module.css";
+import projectStyles from "../styles/Project.module.css";
+import AccessibilityButton from "../components/AccessibilityButton";
+
+// Persist projects in localStorage so we remember state between sessions
+const STORAGE_KEY = "gains-projects";
+const ACTIVE_ACCOUNT_KEY = "gains.activeAccount";
+const ACTIVE_PROJECTS_KEY = "gains.activeProjects";
+const AUTH_CHANGE_EVENT = "gains-auth-change";
+const DEFAULT_ACCOUNT_KEY = "__guest__";
+const IMPORTED_CSV_DATA_KEY = "importedCsvData";
+const LAST_USED_R_TOOL_KEY = "lastUsedRTool";
+const DEFAULT_TOOL_ID = "linear-regression";
+// Map between our internal tool ids and the PascalCase values persisted in storage.
+// Keep storage mapper in sync with available dashboard tools
+const TOOL_ID_TO_STORAGE_VALUE = {
+  "linear-regression": "LinearRegression",
+  "line-chart": "LineChart",
+  "bar-chart": "BarChart",
+  "dot-plot": "DotPlot",
+  "pie-chart": "PieChart",
+  "histogram": "Histogram",
+  "density-plot": "DensityPlot",
+  "box-plot": "BoxPlot",
+  "iqr": "IQR",
+  "standard-deviation": "StandardDeviation",
+  "median": "Median",
+  "read-csv": "ReadCSV",
+  "combinations": "Combinations",
+  "permutations": "Permutations",
+  "anova": "ANOVA",
+  "z-value": "ZValue",
+  "t-test": "TTest"
+};
+const TOOL_STORAGE_VALUE_TO_ID = {
+  LinearRegression: "linear-regression",
+  LineChart: "line-chart",
+  BarChart: "bar-chart",
+  DotPlot: "dot-plot",
+  PieChart: "pie-chart",
+  Histogram: "histogram",
+  DensityPlot: "density-plot",
+  BoxPlot: "box-plot",
+  IQR: "iqr",
+  StandardDeviation: "standard-deviation",
+  Median: "median",
+  ReadCSV: "read-csv",
+  Combinations: "combinations",
+  Permutations: "permutations",
+  ANOVA: "anova",
+  ZValue: "z-value",
+  TTest: "t-test"
+};
+const TOTAL_TOOL_COUNT = Object.keys(TOOL_ID_TO_STORAGE_VALUE).length;
+
+// Normalize persisted tool identifiers into the canonical kebab-case ids we use in code.
+const coerceToolId = (value) => {
+  if (typeof value !== "string") {
+    return null;
+  }
+  const trimmed = value.trim();
+  if (!trimmed) {
+    return null;
+  }
+  if (TOOL_ID_TO_STORAGE_VALUE[trimmed]) {
+    return trimmed;
+  }
+  if (TOOL_STORAGE_VALUE_TO_ID[trimmed]) {
+    return TOOL_STORAGE_VALUE_TO_ID[trimmed];
+  }
+  return null;
+};
+const INITIAL_PROJECTS = [
+  { id: 1, name: "Sample Project 1" },
+  { id: 2, name: "Sample Project 2" },
+  { id: 3, name: "Sample Project 3" },
+  { id: 4, name: "Sample Project 4" }
+];
+
+// Keep a guaranteed CSV payload shell on every project record for the dashboard page.
+const withImportedCsvData = (project) => {
+  if (!project || typeof project !== "object") {
+    return project;
+  }
+  const importedCsvData = Array.isArray(project[IMPORTED_CSV_DATA_KEY])
+    ? project[IMPORTED_CSV_DATA_KEY]
+    : [];
+  const importedRows = Array.isArray(project.importedRows)
+    ? project.importedRows
+    : importedCsvData;
+  const normalizedToolId =
+    coerceToolId(project[LAST_USED_R_TOOL_KEY]) ||
+    coerceToolId(project.selectedTool) ||
+    DEFAULT_TOOL_ID;
+  return {
+    ...project,
+    [IMPORTED_CSV_DATA_KEY]: importedCsvData,
+    importedRows,
+    selectedTool: normalizedToolId,
+    [LAST_USED_R_TOOL_KEY]: TOOL_ID_TO_STORAGE_VALUE[normalizedToolId] || TOOL_ID_TO_STORAGE_VALUE[DEFAULT_TOOL_ID]
+  };
+};
+
+// Build the default state object used before localStorage synchronizes
+const createDefaultProjectsState = () => ({
+  projects: INITIAL_PROJECTS.map((project) => withImportedCsvData({ ...project })),
+  nextIndex: INITIAL_PROJECTS.length + 1
+});
+
+// Translate any provided account identifier into the normalized storage key
+const normalizeAccountKey = (accountName) => {
+  if (!accountName || typeof accountName !== "string") {
+    return DEFAULT_ACCOUNT_KEY;
+  }
+  const normalized = accountName.trim().toLowerCase();
+  return normalized || DEFAULT_ACCOUNT_KEY;
+};
+
+// Read the serialized storage payload and coerce it into the expected structure
+const parseStoredProjects = (raw) => {
+  const base = { accounts: {} };
+  if (!raw) {
+    return base;
+  }
+
+  try {
+    const data = JSON.parse(raw);
+    if (data && typeof data === "object") {
+      if (Array.isArray(data.projects)) {
+        base.accounts[DEFAULT_ACCOUNT_KEY] = {
+          projects: data.projects,
+          nextIndex:
+            typeof data.nextIndex === "number"
+              ? data.nextIndex
+              : data.projects.length + 1
+        };
+        return base;
+      }
+
+      if (data.accounts && typeof data.accounts === "object") {
+        const normalizedAccounts = {};
+        Object.entries(data.accounts).forEach(([key, value]) => {
+          if (Array.isArray(value?.projects) && typeof value?.nextIndex === "number") {
+            normalizedAccounts[normalizeAccountKey(key)] = {
+              projects: value.projects,
+              nextIndex: value.nextIndex
+            };
+          }
+        });
+        return { accounts: normalizedAccounts };
+      }
+    }
+  } catch (error) {
+    console.error("Failed to parse project storage", error);
+  }
+
+  return base;
+};
+
+export default function Project() {
+  // Track the list of projects and the next id we should assign
+  const defaultState = createDefaultProjectsState();
+  const [projects, setProjects] = useState(defaultState.projects);
+  const [nextIndex, setNextIndex] = useState(defaultState.nextIndex);
+  const router = useRouter();
+  // Delete-related UI state
+  const [deleteMode, setDeleteMode] = useState(false);
+  // Set once localStorage has been read on the client
+  const [hydrated, setHydrated] = useState(false);
+  const [activeAccount, setActiveAccount] = useState(null);
+
+  // Keep the active account in sync with localStorage and custom auth events
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    const syncAccount = () => {
+      const accountName = window.localStorage.getItem(ACTIVE_ACCOUNT_KEY);
+      setActiveAccount(accountName);
+    };
+
+    syncAccount();
+
+    const handleStorage = (event) => {
+      if (event.key === ACTIVE_ACCOUNT_KEY) {
+        setActiveAccount(event.newValue);
+      }
+    };
+
+    const handleAuthChange = (event) => {
+      if (event.detail && Object.prototype.hasOwnProperty.call(event.detail, "accountName")) {
+        setActiveAccount(event.detail.accountName);
+      } else {
+        syncAccount();
+      }
+    };
+
+    window.addEventListener("storage", handleStorage);
+    window.addEventListener(AUTH_CHANGE_EVENT, handleAuthChange);
+    return () => {
+      window.removeEventListener("storage", handleStorage);
+      window.removeEventListener(AUTH_CHANGE_EVENT, handleAuthChange);
+    };
+  }, []);
+
+  // Load the project list for the active account once the client has storage access
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    setHydrated(false);
+    const snapshot = parseStoredProjects(window.localStorage.getItem(STORAGE_KEY));
+    const accountKey = normalizeAccountKey(activeAccount);
+    const accountState = snapshot.accounts[accountKey];
+
+    if (accountState) {
+      setProjects(accountState.projects.map((project) => withImportedCsvData(project)));
+      setNextIndex(accountState.nextIndex);
+    } else {
+      const defaults = createDefaultProjectsState();
+      setProjects(defaults.projects);
+      setNextIndex(defaults.nextIndex);
+    }
+
+    setDeleteMode(false);
+    setHydrated(true);
+  }, [activeAccount]);
+
+  // Persist the current account's projects whenever the list or active account changes
+  useEffect(() => {
+    if (typeof window === "undefined" || !hydrated) {
+      return;
+    }
+    // Persist projects whenever they change for the active account
+    try {
+      const snapshot = parseStoredProjects(window.localStorage.getItem(STORAGE_KEY));
+      const accountKey = normalizeAccountKey(activeAccount);
+      snapshot.accounts[accountKey] = {
+        projects: projects.map((project) => withImportedCsvData(project)),
+        nextIndex
+      };
+      window.localStorage.setItem(
+        STORAGE_KEY,
+        JSON.stringify(snapshot)
+      );
+    } catch (err) {
+      console.error("Failed to persist projects", err);
+    }
+  }, [projects, nextIndex, activeAccount, hydrated]);
+
+  // Recompute the delete button styling when delete mode toggles
+  const deleteButtonClassName = useMemo(() => {
+    const base = `${layoutStyles.primaryButton} ${projectStyles.actionButton} ${projectStyles.deleteButton}`;
+    return deleteMode ? `${base} ${projectStyles.deleteButtonActive}` : base;
+  }, [deleteMode]);
+
+  // Give project cards a distinct style while delete mode is active
+  const cardClassName = useMemo(() => {
+    return deleteMode
+      ? `${projectStyles.projectCard} ${projectStyles.projectCardDeleteMode}`
+      : projectStyles.projectCard;
+  }, [deleteMode]);
+
+  // Add a new project shell with an auto-incrementing label
+  function handleCreateProject() {
+    // Create a new project with an incrementing label and id
+    setProjects((prev) => {
+      const label = `Sample Project ${nextIndex}`;
+      const project = withImportedCsvData({ id: nextIndex, name: label });
+      return [...prev, project];
+    });
+    setNextIndex((prev) => prev + 1);
+  }
+
+  // Toggle deletion mode to enable the tap-to-remove UX
+  function handleToggleDeleteMode() {
+    if (projects.length === 0 && !deleteMode) {
+      return;
+    }
+    // Flip delete mode so cards become clickable for removal
+    setDeleteMode((prev) => !prev);
+  }
+
+  // Remove a project when the user clicks it while in delete mode
+  function persistActiveProjectSelection(projectId) {
+    if (typeof window === "undefined") {
+      return;
+    }
+    try {
+      const accountKey = normalizeAccountKey(activeAccount);
+      const raw = window.localStorage.getItem(ACTIVE_PROJECTS_KEY);
+      const snapshot = raw ? JSON.parse(raw) : {};
+      snapshot[accountKey] = projectId;
+      window.localStorage.setItem(ACTIVE_PROJECTS_KEY, JSON.stringify(snapshot));
+    } catch (err) {
+      console.error("Failed to persist active project selection", err);
+    }
+  }
+
+  function navigateToProject(project) {
+    persistActiveProjectSelection(project.id);
+    router
+      .push({
+        pathname: "/dashboard",
+        query: { projectId: project.id }
+      })
+      .catch((err) => console.error("Failed to navigate to project page", err));
+  }
+
+  function handleProjectCardClick(project) {
+    if (deleteMode) {
+      // Remove the selected project and exit delete mode afterward
+      setProjects((prev) => prev.filter((candidate) => candidate.id !== project.id));
+      setDeleteMode(false);
+      return;
+    }
+    navigateToProject(project);
+  }
+
+  function handleDeleteAll() {
+    if (!deleteMode || projects.length === 0) {
+      return;
+    }
+    setProjects([]);
+    setDeleteMode(false);
+  }
+
+  function handleCardKeyDown(event, project) {
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      handleProjectCardClick(project);
+    }
+  }
+
+  const projectHighlights = useMemo(
+    () => [
+      {
+        label: "Active projects",
+        value: projects.length.toString().padStart(2, "0")
+      },
+      {
+        label: "Available tools",
+        value: `${TOTAL_TOOL_COUNT} modules`
+      },
+      {
+        label: "Delete mode",
+        value: deleteMode ? "Enabled" : "Disabled"
+      }
+    ],
+    [projects.length, deleteMode]
+  );
+
+  return (
+    <div className={layoutStyles.home}>
+      <Header />
+      <main className={layoutStyles.homeMain}>
+        <section className={`${layoutStyles.heroSection} ${projectStyles.heroSection}`}>
+          <div className={layoutStyles.heroCopy}>
+            <p className={layoutStyles.heroEyebrow}>Workspace</p>
+            <h1 className={layoutStyles.heroTitle}>Organize every GAINS scenario in one place.</h1>
+            <p className={layoutStyles.heroSubtitle}>
+              Spin up draft analyses, revisit saved regressions, and hop into dashboards without
+              losing your momentum. Launch a new idea or prune older work with a couple of clicks.
+            </p>
+            <div className={layoutStyles.heroActions}>
+              <button
+                type="button"
+                className={`${layoutStyles.primaryButton} ${projectStyles.actionButton}`}
+                onClick={handleCreateProject}
+              >
+                New project +
+              </button>
+              <button
+                type="button"
+                className={deleteButtonClassName}
+                onClick={handleToggleDeleteMode}
+                disabled={projects.length === 0 && !deleteMode}
+              >
+                {deleteMode ? "Cancel delete" : "Delete project -"}
+              </button>
+              {deleteMode && projects.length > 0 && (
+                <button
+                  type="button"
+                  className={`${layoutStyles.secondaryButton} ${projectStyles.actionButton} ${projectStyles.selectAllButton}`}
+                  onClick={handleDeleteAll}
+                >
+                  Select all
+                </button>
+              )}
+            </div>
+            {deleteMode && (
+              <p className={projectStyles.deleteHelper}>
+                Delete mode: select a project card to remove it, or use Select all to delete
+                everything.
+              </p>
+            )}
+          </div>
+          <div className={projectStyles.heroAside} aria-hidden="true">
+            <div className={projectStyles.heroBadge}>Project Overview</div>
+            <div className={layoutStyles.metricsGrid}>
+              {projectHighlights.map(({ label, value }) => (
+                <div key={label} className={layoutStyles.metricCard}>
+                  <p className={layoutStyles.metricValue}>{value}</p>
+                  <p className={layoutStyles.metricLabel}>{label}</p>
+                </div>
+              ))}
+            </div>
+            <div className={projectStyles.heroChecklist}>
+              <p className={projectStyles.heroChecklistTitle}>Quick actions</p>
+              <ul className={layoutStyles.previewList}>
+                <li>Create a fresh scenario with “New project +”.</li>
+                <li>Click any project to reopen it on the dashboard with saved data and tool.</li>
+                <li>Toggle Delete mode to remove projects, or Select all to clear the list.</li>
+              </ul>
+            </div>
+          </div>
+        </section>
+
+        <section className={`${layoutStyles.featuresSection} ${projectStyles.projectsSection}`}>
+          <div className={layoutStyles.sectionHeaderRow}>
+            <div>
+              <h2 className={layoutStyles.sectionTitle}>Choose a project to continue</h2>
+              <p className={layoutStyles.sectionSubtitle}>
+                Every project retains its imported data, your last selected tool, and dashboard
+                settings so you can pick up right where you left off.
+              </p>
+            </div>
+          </div>
+          {projects.length === 0 ? (
+            <p className={projectStyles.emptyState}>
+              You haven&apos;t created any projects yet. Click “New project +” to get started.
+            </p>
+          ) : (
+            <div className={projectStyles.projectsGrid}>
+              {projects.map((project) => (
+                <div
+                  key={project.id}
+                  className={cardClassName}
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => handleProjectCardClick(project)}
+                  onKeyDown={(event) => handleCardKeyDown(event, project)}
+                >
+                  <div className={projectStyles.cardHeader}>
+                    <div className={projectStyles.projectName}>{project.name}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </section>
+      </main>
+      <Footer />
+      {/*Adds Accessibility Button to page */}
+      <AccessibilityButton />
+    </div>
+  );
+}
