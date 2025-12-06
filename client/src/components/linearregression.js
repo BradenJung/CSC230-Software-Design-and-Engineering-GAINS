@@ -295,7 +295,7 @@ export default function LinearRegressionPreview({
     <div style={{ padding: 24, maxWidth: 980, margin: "0 auto" }}>
       <h1>{title}</h1>
       {usingProjectData ? (
-        <p>
+        <p style={{ marginBottom: "20px", color: "lightgray" }}>
           Using <strong>{predictorColumns.join(", ")}</strong> to predict <strong>{responseColumn}</strong> from the imported dataset.
         </p>
       ) : (

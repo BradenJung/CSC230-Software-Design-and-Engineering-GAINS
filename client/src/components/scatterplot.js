@@ -178,7 +178,7 @@ export default function ScatterplotTool({
     <div style={{ padding: 24, maxWidth: 980, margin: "0 auto" }}>
       <h1>{mainTitle}</h1>
       {usingProjectData ? (
-        <p>
+        <p style={{ marginBottom: "20px", color: "lightgray" }}>
           Using <strong>{xColumn}</strong> vs <strong>{yColumn}</strong> from the imported dataset (
           {data.length} row{data.length === 1 ? "" : "s"}).
         </p>

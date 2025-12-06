@@ -232,7 +232,7 @@ export default function DensityTool({
     <div style={{ padding: 24, maxWidth: 800, margin: "0 auto" }}>
       <h1>R Density Plot</h1>
       {usingProjectData ? (
-        <p>
+        <p style={{ marginBottom: "20px", color: "lightgray" }}>
           Using <strong>{valueColumn}</strong> from the imported dataset ({projectValues.length} row
           {projectValues.length === 1 ? "" : "s"}).
         </p>

@@ -343,7 +343,7 @@ export default function BoxplotTool({
     <div style={{ padding: 24, maxWidth: 800, margin: "0 auto" }}>
       <h1>R Boxplot</h1>
       {usingProjectData ? (
-        <p>
+        <p style={{ marginBottom: "20px", color: "lightgray" }}>
           Using <strong>{valueColumn}</strong>
           {groupColumn ? (
             <> grouped by <strong>{groupColumn}</strong></>
