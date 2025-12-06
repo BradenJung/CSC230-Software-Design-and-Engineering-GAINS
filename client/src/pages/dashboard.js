@@ -2206,8 +2206,10 @@ print(paste("Degrees of freedom:", t_test_result$parameter))`,
                 <button 
                   className={styles.clearDatasetBtn}
                   onClick={() => {
-                    applyImportedRows([], selectedTool);
-                    persistImportedCsvData([]);
+                    if (window.confirm("Are you sure you want to clear the dataset? This action cannot be undone.")) {
+                      applyImportedRows([], selectedTool);
+                      persistImportedCsvData([]);
+                    }
                   }}
                   title="Clear Dataset"
                 >

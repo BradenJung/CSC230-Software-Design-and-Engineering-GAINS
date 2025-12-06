@@ -315,9 +315,11 @@ export default function Project() {
 
   function handleProjectCardClick(project) {
     if (deleteMode) {
-      // Remove the selected project and exit delete mode afterward
-      setProjects((prev) => prev.filter((candidate) => candidate.id !== project.id));
-      setDeleteMode(false);
+      // Confirm before removing the selected project
+      if (window.confirm(`Are you sure you want to delete "${project.name}"? This action cannot be undone.`)) {
+        setProjects((prev) => prev.filter((candidate) => candidate.id !== project.id));
+        setDeleteMode(false);
+      }
       return;
     }
     navigateToProject(project);
@@ -327,8 +329,11 @@ export default function Project() {
     if (!deleteMode || projects.length === 0) {
       return;
     }
-    setProjects([]);
-    setDeleteMode(false);
+    // Confirm before deleting all projects
+    if (window.confirm(`Are you sure you want to delete all ${projects.length} project(s)? This action cannot be undone.`)) {
+      setProjects([]);
+      setDeleteMode(false);
+    }
   }
 
   function handleCardKeyDown(event, project) {
